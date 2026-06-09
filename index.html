@@ -3606,7 +3606,28 @@ function playFinish(){ensureAudio();[523,659,784,1047,1319].forEach((f,i)=>beep(
 function vibrate(p){try{if(navigator.vibrate)navigator.vibrate(p);}catch(e){}}
 
 /* ─────────────────────────  발음 (TTS)  ───────────────────────── */
-function speak(text){try{if(!('speechSynthesis'in window))return;const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=0.9;window.speechSynthesis.cancel();window.speechSynthesis.speak(u);}catch(e){}}
+let _enVoice=null;
+function pickEnVoice(){
+  try{
+    const vs=window.speechSynthesis.getVoices()||[];
+    const en=vs.filter(v=>/^en[-_]?/i.test(v.lang));
+    if(!en.length) return null;
+    const pref=["Samantha","Google US English","Microsoft Aria","Microsoft Jenny","Microsoft Guy","Daniel","Karen","Moira","Alex","Google UK English"];
+    for(const name of pref){ const m=en.find(v=>v.name&&v.name.indexOf(name)>=0); if(m) return m; }
+    return en.find(v=>/en[-_]us/i.test(v.lang)) || en.find(v=>/en[-_]gb/i.test(v.lang)) || en[0];
+  }catch(e){ return null; }
+}
+try{ if('speechSynthesis' in window){ _enVoice=pickEnVoice(); window.speechSynthesis.onvoiceschanged=function(){ _enVoice=pickEnVoice(); }; } }catch(e){}
+function speak(text){
+  try{
+    if(!('speechSynthesis'in window))return;
+    const u=new SpeechSynthesisUtterance(text);
+    if(!_enVoice)_enVoice=pickEnVoice();
+    if(_enVoice){ u.voice=_enVoice; u.lang=_enVoice.lang; } else { u.lang='en-US'; }
+    u.rate=0.9;
+    window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+  }catch(e){}
+}
 
 /* ─────────────────────────  BGM (마리오풍 오리지널 8비트)  ───────────────────────── */
 const BGM={playing:false,timer:null,gain:null,muted:(typeof localStorage!=='undefined'&&localStorage.getItem('studyquest:bgm')==='off')};
