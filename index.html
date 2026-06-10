@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>StudyQuest</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;background:#0f172a;overflow:hidden}
+  #app{position:fixed;inset:0;border:0;width:100%;height:100%;display:block;background:#0f172a}
+  #boot{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+        font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;color:#e2e8f0;gap:14px}
+  #boot .logo{font-size:40px}
+  #boot .spin{width:34px;height:34px;border:4px solid #334155;border-top-color:#38bdf8;border-radius:50%;animation:s .8s linear infinite}
+  #boot .msg{font-size:13px;color:#94a3b8}
+  #boot button{margin-top:6px;padding:10px 18px;border:0;border-radius:10px;background:#38bdf8;color:#0f172a;font-weight:700}
+  @keyframes s{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="boot"><div class="logo">📚</div><div class="spin"></div><div class="msg">최신 버전 불러오는 중…</div></div>
+<iframe id="app" allow="autoplay; clipboard-write; microphone" style="display:none"></iframe>
+<script>
+(function(){
+  var SRC="https://raw.githubusercontent.com/jeongwooLee1/bliss/claude/mobile-pc-project-sync-mok0ie/studyquest.html";
+  var boot=document.getElementById('boot'),app=document.getElementById('app');
+  function fail(m){boot.innerHTML='<div class="logo">😵</div><div class="msg">'+(m||'불러오기 실패')+'</div><button onclick="location.reload()">다시 시도</button>';}
+  fetch(SRC+"?t="+Date.now(),{cache:'no-store'})
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();})
+    .then(function(h){if(!h||h.length<1000)throw new Error('빈 응답');app.srcdoc=h;
+      app.onload=function(){boot.style.display='none';app.style.display='block';};
+      setTimeout(function(){boot.style.display='none';app.style.display='block';},1500);})
+    .catch(function(e){fail('네트워크 오류: '+e.message);});
+})();
+</script>
+</body>
+</html>
