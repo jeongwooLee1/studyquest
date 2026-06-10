@@ -3650,7 +3650,7 @@ function bgmStop(){BGM.playing=false;if(BGM.timer){clearTimeout(BGM.timer);BGM.t
 function bgmSetMuted(m){BGM.muted=m;try{localStorage.setItem('studyquest:bgm',m?'off':'on');}catch(e){}if(m)bgmStop();}
 
 /* ─────────────────────────  퀴즈 로직  ───────────────────────── */
-const DAILY_NEW_WORDS=20;
+const DAILY_NEW_WORDS=40;
 const QUESTION_SECONDS=10;
 function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 // 학년별 난이도 세분화: 같은 밴드 안에서 CEFR/길이 기준으로 정렬 후, 해당 밴드의 학년 수만큼 등분하여 선택 학년 구간을 반환
@@ -3672,6 +3672,25 @@ function wordsForGrade(gradeId){
   }
   return slice.length?slice:wordsForBand(band);
 }
+// 각 단어의 '글로벌 학년 인덱스'(0~9) 미리 계산 — 밴드 내 난이도순 등분 기준
+const WORD_GRADE={};
+(function(){ for(const band of ["elem","mid","high"]){ const subs=GRADES.filter(g=>g.band===band); const n=subs.length;
+  const pool=wordsForBand(band).slice().sort((a,b)=>{ const r=(CEFR_RANK[a.cefr]||3)-(CEFR_RANK[b.cefr]||3); if(r)return r; if(a.term.length!==b.term.length)return a.term.length-b.term.length; return a.term<b.term?-1:(a.term>b.term?1:0); });
+  const size=Math.max(1,Math.ceil(pool.length/n));
+  pool.forEach((w,i)=>{ const bk=Math.min(n-1,Math.floor(i/size)); WORD_GRADE[w.id]=GRADES.findIndex(g=>g.id===subs[bk].id); }); } })();
+function wordGradeIndex(word){ return (word&&WORD_GRADE[word.id]!=null)?WORD_GRADE[word.id]:0; }
+// 본인 난이도 대비 가중치: 같으면 1, 어려우면 +20%/단계, 쉬우면 -20%/단계(최저 0.2)
+function diffWeight(wordIdx,userIdx){ const d=wordIdx-userIdx; if(d===0)return 1; if(d>0)return 1+0.2*d; return Math.max(0.2,1+0.2*d); }
+// 단어별 정답통계 분류: c=정답수, w=오답수. 정답률 80%↑이면 마스터(다시 안 냄), 틀린 적 있고 80%미만이면 weak(가끔 복습)
+function wAcc(st){ const t=(st.c||0)+(st.w||0); return t?st.c/t:0; }
+function isMastered(st){ return st&&(st.c||0)>=1&&((st.w||0)===0||wAcc(st)>=0.8); }
+function isWeak(st){ return st&&(st.w||0)>=1&&!isMastered(st); }
+function classifyIds(wordStats){ const m=new Set(),wk=new Set(); for(const id in (wordStats||{})){ const st=wordStats[id]; if(isMastered(st))m.add(id); else if(isWeak(st))wk.add(id); } return {mastered:m,weak:wk}; }
+// 본인 레벨 기준 인접 클래스 비중(잘할수록 위쪽으로 이동)
+function blendGrades(L,mix){ const b=Math.min(1,(mix||0)/10);
+  let spec=[[L-1,0.2*(1-b)],[L,0.55-0.15*b],[L+1,0.2+0.25*b],[L+2,0.05+0.15*b]];
+  spec=spec.filter(([g,w])=>g>=0&&g<GRADES.length&&w>0); const tot=spec.reduce((a,x)=>a+x[1],0)||1;
+  return spec.map(([g,w])=>[g,w/tot]); }
 function pickRound(pool, reviewIds, excludeIds){
   const reviews=(reviewIds||[]).map(wordById).filter(Boolean).slice(0,8).map(word=>({word,isReview:true}));
   const reviewSet=new Set(reviews.map(r=>r.word.id));
@@ -3720,9 +3739,15 @@ function loadAuth(){try{const r=localStorage.getItem("studyquest:auth");return r
 function saveAuth(a){try{localStorage.setItem("studyquest:auth",JSON.stringify(a));}catch(e){}}
 function clearAuth(){try{localStorage.removeItem("studyquest:auth");}catch(e){}}
 
-const defaultProgress={gradeId:"e3",mix:0,games:0,streak:0,lastPlayedDate:null,wrongQueue:[],learnedIds:[]};
+const defaultProgress={gradeId:"e3",mix:0,games:0,streak:0,lastPlayedDate:null,wordStats:{},gradeAppliedAt:null};
 function pKey(u){return "studyquest:progress:"+u;}
-function loadProgress(u){try{const r=localStorage.getItem(pKey(u));return r?{...defaultProgress,...JSON.parse(r)}:{...defaultProgress};}catch(e){return {...defaultProgress};}}
+function loadProgress(u){try{const r=localStorage.getItem(pKey(u));const p=r?{...defaultProgress,...JSON.parse(r)}:{...defaultProgress};
+  if(!p.wordStats)p.wordStats={};
+  // 구버전(learnedIds/wrongQueue) → wordStats 변환
+  if(p.learnedIds){p.learnedIds.forEach(id=>{if(!p.wordStats[id])p.wordStats[id]={c:1,w:0};});delete p.learnedIds;}
+  if(p.wrongQueue){p.wrongQueue.forEach(q=>{const id=q&&q.id;if(id&&!p.wordStats[id])p.wordStats[id]={c:0,w:1};});delete p.wrongQueue;}
+  return p;
+}catch(e){return {...defaultProgress};}}
 function saveProgress(u,p){try{localStorage.setItem(pKey(u),JSON.stringify(p));}catch(e){}}
 function todayStr(){return new Date().toISOString().slice(0,10);}
 function yesterdayStr(){const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);}
@@ -3744,7 +3769,7 @@ function AuthScreen({onAuth}){
     setBusy(true);
     try{
       const res=await callFn("sq-auth",{action:mode,username:username.trim(),password,nickname:nickname.trim()});
-      if(res&&res.ok){try{localStorage.setItem("studyquest:lastUser",res.username);}catch(e){}onAuth({username:res.username,token:res.token,nickname:res.nickname},res,mode==="signup"?grade:null);}
+      if(res&&res.ok){try{localStorage.setItem("studyquest:lastUser",res.username);}catch(e){}onAuth({username:res.username,token:res.token,nickname:res.nickname,isAdmin:!!res.isAdmin},res,mode==="signup"?grade:null);}
       else setErr((res&&res.error)||"실패했습니다");
     }catch(e){setErr("네트워크 오류");}
     setBusy(false);
@@ -3804,9 +3829,9 @@ function RankList({rank,me}){
   );
 }
 
-function Home({auth,progress,wallet,rank,onStart,onStartWrong,onWithdraw,onSelectGrade,onDashboard,onProgress,onLogout,onToggleBgm,bgmMuted}){
+function Home({auth,progress,wallet,rank,onStart,onStartWrong,onWithdraw,onSelectGrade,onDashboard,onProgress,onAdmin,onLogout,onToggleBgm,bgmMuted}){
   const grade=GRADES.find(g=>g.id===progress.gradeId);
-  const wrongCount=(progress.wrongQueue||[]).length;
+  const wrongCount=classifyIds(progress.wordStats).weak.size;
   return (
     <main className="flex flex-1 flex-col gap-4 bg-slate-50 p-5">
       <header className="flex items-center justify-between pt-1">
@@ -3815,6 +3840,7 @@ function Home({auth,progress,wallet,rank,onStart,onStartWrong,onWithdraw,onSelec
           <button onClick={onToggleBgm} className="rounded-full bg-white px-3 py-2 text-sm shadow-sm ring-1 ring-slate-200">{bgmMuted?"🔇":"🎵"}</button>
           <button onClick={onProgress} className="rounded-full bg-white px-3 py-2 text-sm font-semibold text-emerald-600 shadow-sm ring-1 ring-slate-200">진행율</button>
           <button onClick={onDashboard} className="rounded-full bg-white px-3 py-2 text-sm font-semibold text-brand-600 shadow-sm ring-1 ring-slate-200">기록</button>
+          {auth.isAdmin&&<button onClick={onAdmin} className="rounded-full bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm">관리자</button>}
         </div>
       </header>
       <section className="grid grid-cols-3 gap-2">
@@ -3832,7 +3858,7 @@ function Home({auth,progress,wallet,rank,onStart,onStartWrong,onWithdraw,onSelec
 
       <section className="rounded-3xl bg-gradient-to-br from-brand-500 to-brand-700 p-5 text-white shadow-lg animate-glow">
         <p className="text-sm opacity-90">{grade&&grade.label} {progress.mix>0?"· 상위 단어 "+Math.min(progress.mix,20)+"개 섞임 ⬆️":""} · 오늘 {wallet.dailyRemaining!=null?wallet.dailyRemaining:5000}P 남음</p>
-        <p className="mt-1 text-2xl font-extrabold">⚡ 단어 퀴즈 20문제</p>
+        <p className="mt-1 text-2xl font-extrabold">⚡ 단어 퀴즈 40문제</p>
         <p className="mt-1 text-sm opacity-90">3초 안에 연속으로 맞히면 콤보! 잘하면 난이도가 올라가요 🔥</p>
         <button onClick={onStart} className="mt-4 block w-full rounded-2xl bg-white py-3 text-center text-base font-bold text-brand-700 active:scale-95 transition">미션 시작하기 →</button>
       </section>
@@ -3859,7 +3885,7 @@ function Home({auth,progress,wallet,rank,onStart,onStartWrong,onWithdraw,onSelec
   );
 }
 
-function Quiz({words,pool,scoreMult,bonusMult,onFinish,onExit}){
+function Quiz({words,pool,userLevel,bonusMult,onFinish,onExit}){
   const [questions]=useState(()=>words.map(rw=>({...buildQuestion(rw.word,pool),isReview:rw.isReview})));
   const [index,setIndex]=useState(0);
   const [selected,setSelected]=useState(null);
@@ -3911,7 +3937,8 @@ function Quiz({words,pool,scoreMult,bonusMult,onFinish,onExit}){
       const mult=c>=6?2:c>=3?1.5:1;
       const base=current.isReview?5:3;
       const speedBonus=Math.max(0,Math.round((timeLeft/QUESTION_SECONDS)*3));
-      const g=Math.max(1,Math.round((base+speedBonus)*mult*(scoreMult||1)));
+      const weight=diffWeight(wordGradeIndex(current.word),userLevel||0);
+      const g=Math.max(1,Math.round((base+speedBonus)*mult*weight*0.5));
       setGain(g); setPoints(p=>p+g);
       vibrate(fast?[20,30,20]:30);
     } else {
@@ -3929,7 +3956,8 @@ function Quiz({words,pool,scoreMult,bonusMult,onFinish,onExit}){
     if(correct){
       correctCount.current++; correctIds.current.push(current.word.id);
       const mult=combo>=6?2:combo>=3?1.5:1;
-      const g=Math.max(1,Math.round((6)*mult*(scoreMult||1))); // 다의어 정답 보너스 기본 6점
+      const weight=diffWeight(wordGradeIndex(current.word),userLevel||0);
+      const g=Math.max(1,Math.round((6)*mult*weight*0.5)); // 다의어 정답 보너스 기본 6점(×0.5×가중치)
       setGain(g); setPoints(p=>p+g); setFx({n:0,mult:"다의어 정답! ✨",big:false}); setFlash(f=>f+1);
       playCombo3(); vibrate([20,30,20]);
     } else {
@@ -3945,7 +3973,7 @@ function Quiz({words,pool,scoreMult,bonusMult,onFinish,onExit}){
   }
   function finish(){
     const perfect=wrongIds.current.length===0;
-    const earned=Math.round((points+5+(perfect?10:0))*(bonusMult||1)); // 완료+5, 만점+10, 오답게임 1.5배
+    const earned=Math.round((points+3+(perfect?5:0))*(bonusMult||1)); // 완료+3, 만점+5, 오답게임 1.5배
     const wrongUniq=[...new Set(wrongIds.current)];
     onFinish({correct:correctCount.current,total,wrong:wrongUniq.length,earned,maxCombo,perfect,
       wrongWords:wrongUniq.map(wordById).filter(Boolean),
@@ -4025,11 +4053,15 @@ function Result({result,wallet,onContinue,onHome,onDashboard}){
   const capped=result.added!=null&&result.added<result.earned;
   const canContinue=wallet.dailyRemaining==null||wallet.dailyRemaining>0;
   const wrong=result.wrongWords||[];
+  const wt=result.wt;
   return (
     <main className="relative flex h-[100dvh] flex-col items-center gap-3 overflow-y-auto bg-slate-900 px-6 py-8 text-center text-white">
-      {result.perfect&&<Confetti/>}
-      <div className="animate-pop text-6xl">{result.perfect?"🏆":"🎉"}</div>
-      <h1 className="text-2xl font-black">{result.perfect?"올킬! 만점!":"미션 완료!"}</h1>
+      {(result.perfect||(wt&&wt.passed))&&<Confetti/>}
+      {result.withdrawTest&&wt&&<div className={"w-full rounded-2xl p-4 font-bold "+(wt.passed?"bg-emerald-500/20 ring-1 ring-emerald-400 text-emerald-300":"bg-rose-500/20 ring-1 ring-rose-400 text-rose-300")}>
+        {wt.passed? (wt.submitted? "🎉 오답시험 통과! 출금 신청 완료 — 사장님 승인 대기 중":"오답시험 통과! 다만 출금 신청 실패: "+(wt.err||"잠시 후 다시")) : "❌ 출금 불가 — 정답률 "+Math.round(wt.acc*100)+"% (95% 이상 필요). 오답을 더 연습해요!"}
+      </div>}
+      <div className="animate-pop text-6xl">{result.withdrawTest?"📝":result.perfect?"🏆":"🎉"}</div>
+      <h1 className="text-2xl font-black">{result.withdrawTest?"오답 시험 결과":result.perfect?"올킬! 만점!":"미션 완료!"}</h1>
       <p className="text-slate-400">{result.total}문제 중 <b className="text-emerald-400">{result.correct}개</b> 정답 · 최고 콤보 🔥{result.maxCombo}</p>
       <div className="my-1 rounded-3xl bg-brand-600/20 px-10 py-5 ring-1 ring-brand-500/40">
         <p className="text-sm text-slate-400">이번 라운드 획득</p>
@@ -4059,7 +4091,7 @@ function Result({result,wallet,onContinue,onHome,onDashboard}){
 }
 
 function Dashboard({auth,progress,wallet,rank,onHome}){
-  const reviewWords=(progress.wrongQueue||[]).map(q=>wordById(q.id)).filter(Boolean).slice(0,30);
+  const reviewWords=[...classifyIds(progress.wordStats).weak].map(id=>wordById(id)).filter(Boolean).slice(0,40);
   return (
     <main className="flex flex-1 flex-col gap-4 bg-slate-50 p-5">
       <header className="flex items-center gap-3 pt-2"><button onClick={onHome} className="text-slate-400 text-lg">←</button><h1 className="text-xl font-bold">{auth.nickname} 님의 기록</h1></header>
@@ -4080,7 +4112,7 @@ function Dashboard({auth,progress,wallet,rank,onHome}){
 }
 
 function Progress({progress,onHome}){
-  const learned=new Set(progress.learnedIds||[]);
+  const learned=classifyIds(progress.wordStats).mastered;
   const rows=GRADES.map(g=>{const pool=wordsForGrade(g.id);const total=pool.length;const done=pool.filter(w=>learned.has(w.id)).length;return {label:g.label,total,done,pct:total?Math.round(done/total*100):0,current:g.id===progress.gradeId};});
   return (
     <main className="flex flex-1 flex-col gap-4 overflow-y-auto bg-slate-50 p-5">
@@ -4102,6 +4134,65 @@ function Progress({progress,onHome}){
   );
 }
 
+function Admin({data,onHome,onReload}){
+  const users=(data&&data.users)?data.users.filter(u=>u.username!=="admin"):null;
+  const wds=(data&&data.withdrawals)||[];
+  const pending=wds.filter(w=>w.status==="pending");
+  const stLabel=s=>s==="pending"?"⏳대기":s==="approved"?"✅완료":"❌거절";
+  const dt=s=>{try{return new Date(s).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});}catch(e){return "";}};
+  return (
+    <main className="flex flex-1 flex-col gap-3 overflow-y-auto bg-slate-50 p-4">
+      <header className="flex items-center justify-between pt-2">
+        <div className="flex items-center gap-3"><button onClick={onHome} className="text-slate-400 text-lg">←</button><h1 className="text-xl font-bold">관리자 · 사용현황</h1></div>
+        <button onClick={onReload} className="rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-brand-600 shadow-sm ring-1 ring-slate-200">새로고침</button>
+      </header>
+      {data===null?<p className="py-6 text-center text-sm text-slate-400">불러오는 중…</p>:<React.Fragment>
+        {pending.length>0&&<section className="rounded-2xl bg-amber-50 p-3 ring-1 ring-amber-200">
+          <p className="font-bold text-amber-700">⏳ 승인 대기 출금 {pending.length}건</p>
+          <ul className="mt-1 flex flex-col gap-0.5 text-sm">{pending.map((w,i)=><li key={i} className="flex justify-between"><span>{w.nickname} (@{w.account})</span><span className="font-bold text-amber-700">{w.points}P</span></li>)}</ul>
+          <p className="mt-1 text-xs text-amber-600">텔레그램(@BlissUBot)에서 승인/거절하세요. 승인 시 요청액만 차감됩니다.</p>
+        </section>}
+        <p className="text-sm font-semibold text-slate-600">학생 현황 ({users?users.length:0}명)</p>
+        <div className="overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-xs text-slate-500"><th className="p-2">닉네임</th><th className="p-2">학년</th><th className="p-2">외운</th><th className="p-2">틀린</th><th className="p-2">초/중/고</th><th className="p-2">잔액</th><th className="p-2">누적</th><th className="p-2">콤보</th></tr></thead>
+            <tbody>
+              {(users||[]).map((u,i)=>{const s=u.stats||{};return (
+                <tr key={i} className="border-t border-slate-100">
+                  <td className="whitespace-nowrap p-2 font-bold">{u.nickname}</td>
+                  <td className="whitespace-nowrap p-2 text-slate-500">{u.level||"-"}</td>
+                  <td className="p-2 font-bold text-emerald-600">{u.learned_count||0}</td>
+                  <td className="p-2 font-bold text-rose-600">{u.wrong_count||0}</td>
+                  <td className="whitespace-nowrap p-2 text-xs text-slate-500">{(s.elem||0)}/{(s.mid||0)}/{(s.high||0)}</td>
+                  <td className="p-2 font-bold text-brand-600">{u.points||0}</td>
+                  <td className="p-2 text-slate-500">{u.total_points||0}</td>
+                  <td className="whitespace-nowrap p-2">🔥{u.best_combo||0}</td>
+                </tr>);})}
+            </tbody>
+          </table>
+          {users&&users.length===0&&<p className="py-4 text-center text-sm text-slate-400">아직 학생이 없어요.</p>}
+        </div>
+        <p className="mt-1 text-sm font-semibold text-slate-600">출금 내역 ({wds.length})</p>
+        <div className="overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-xs text-slate-500"><th className="p-2">학생</th><th className="p-2">금액</th><th className="p-2">상태</th><th className="p-2">요청</th></tr></thead>
+            <tbody>
+              {wds.map((w,i)=>(
+                <tr key={i} className="border-t border-slate-100">
+                  <td className="whitespace-nowrap p-2 font-bold">{w.nickname}</td>
+                  <td className="p-2 font-bold">{w.points}P</td>
+                  <td className="whitespace-nowrap p-2">{stLabel(w.status)}</td>
+                  <td className="whitespace-nowrap p-2 text-xs text-slate-400">{dt(w.created_at)}</td>
+                </tr>))}
+            </tbody>
+          </table>
+          {wds.length===0&&<p className="py-4 text-center text-sm text-slate-400">출금 내역이 없어요.</p>}
+        </div>
+      </React.Fragment>}
+    </main>
+  );
+}
+
 /* ─────────────────────────  앱  ───────────────────────── */
 function App(){
   const [auth,setAuth]=useState(loadAuth);
@@ -4112,6 +4203,7 @@ function App(){
   const [rank,setRank]=useState({topPoints:[],topCombo:[]});
   const [bgmMuted,setBgmMuted]=useState(BGM.muted);
   const [round,setRound]=useState(null);
+  const [adminUsers,setAdminUsers]=useState(null);
   const prevPending=useRef(false);
 
   useEffect(()=>{ if(auth)saveProgress(auth.username,progress); },[auth,progress]);
@@ -4119,13 +4211,21 @@ function App(){
   // BGM: 퀴즈 화면에서만 재생
   useEffect(()=>{ if(view==="quiz"&&!BGM.muted)bgmStart(); else bgmStop(); return ()=>{}; },[view,bgmMuted]);
 
-  async function refresh(addPoints,combo){
+  function summaryOf(p){
+    const cl=classifyIds(p.wordStats); const byBand={elem:0,mid:0,high:0};
+    cl.mastered.forEach(id=>{const w=wordById(id); if(w&&byBand[w.band]!=null)byBand[w.band]++;});
+    const g=GRADES.find(x=>x.id===p.gradeId);
+    return {level:(g?g.label:p.gradeId), learned:cl.mastered.size, wrong:cl.weak.size, stats:byBand};
+  }
+  async function loadAdmin(){ try{ const res=await callFn("sq-admin",{username:auth.username,token:auth.token}); if(res&&res.users)setAdminUsers(res); else if(res&&res.error)alert(res.error);}catch(e){alert("불러오기 실패");} }
+  async function refresh(addPoints,combo,summary){
     if(!auth)return null;
     try{
-      const res=await callFn("sq-sync",{username:auth.username,token:auth.token,addPoints:addPoints||0,combo:combo||0});
+      const s=summary||summaryOf(progress);
+      const res=await callFn("sq-sync",{username:auth.username,token:auth.token,addPoints:addPoints||0,combo:combo||0,level:s.level,learned:s.learned,wrong:s.wrong,stats:s.stats});
       if(res&&res.error&&/세션/.test(res.error)){doLogout();return null;}
       if(res&&typeof res.points==="number"){
-        if(prevPending.current&&!res.pending){alert(res.points===0?"🎉 출금 완료! 포인트가 0으로 초기화되었어요.":"출금 요청이 처리되었습니다.");}
+        if(prevPending.current&&!res.pending){alert("✅ 출금이 처리되었습니다! (요청액 차감)");}
         prevPending.current=res.pending;
         setWallet({points:res.points,totalPoints:res.totalPoints,bestCombo:res.bestCombo,pending:res.pending,withdrawable:res.withdrawable,threshold:res.threshold||1000,dailyRemaining:res.dailyRemaining,dailyCap:res.dailyCap||5000,dailyPoints:res.dailyPoints||0});
         return res;
@@ -4141,66 +4241,92 @@ function App(){
   function onAuth(a,res,grade){
     saveAuth(a); setAuth(a);
     let had=null; try{had=localStorage.getItem("studyquest:progress:"+a.username);}catch(e){}
-    const prog=loadProgress(a.username); if(grade&&!had){prog.gradeId=grade;} saveProgress(a.username,prog); setProgress(prog);
+    const prog=loadProgress(a.username);
+    if(grade&&!had){prog.gradeId=grade;}
+    // 서버 지정 시작 학년(관리자/가입) — grade_set_at이 새로우면 1회 적용
+    if(res&&res.grade&&res.gradeSetAt&&res.gradeSetAt!==prog.gradeAppliedAt){ prog.gradeId=res.grade; prog.mix=0; prog.gradeAppliedAt=res.gradeSetAt; }
+    saveProgress(a.username,prog); setProgress(prog);
     if(res)setWallet(w=>({...w,points:res.points||0,totalPoints:res.totalPoints||0,bestCombo:res.bestCombo||0,pending:!!res.pending}));
     refresh(0,0); refreshRank(); setView("home");
   }
   function doLogout(){ clearAuth(); setAuth(null); bgmStop(); setView("home"); }
 
   function gradeIndex(){ const i=GRADES.findIndex(g=>g.id===progress.gradeId); return i<0?0:i; }
+  function buildBlendWords(lvl,mix,count,excludeSet){
+    const blend=blendGrades(lvl,mix); const used=new Set(excludeSet); const out=[]; let remaining=count;
+    blend.forEach(([gi,wgt],i)=>{
+      const n=(i===blend.length-1)?remaining:Math.round(count*wgt);
+      const pool=shuffle(wordsForGrade(GRADES[gi].id).filter(w=>!used.has(w.id)));
+      const pick=pool.slice(0,Math.max(0,Math.min(n,pool.length)));
+      pick.forEach(w=>used.add(w.id)); out.push(...pick); remaining-=pick.length;
+    });
+    if(out.length<count){ const pool=shuffle(wordsForGrade(GRADES[lvl].id).filter(w=>!used.has(w.id))); for(const w of pool){ if(out.length>=count)break; used.add(w.id); out.push(w);} }
+    return out;
+  }
   function startQuiz(){
     const lvl=gradeIndex();
-    const baseId=GRADES[lvl].id, higherId=GRADES[Math.min(lvl+1,GRADES.length-1)].id;
-    const due=(progress.wrongQueue||[]).filter(q=>q.due<=(progress.games||0)).map(q=>q.id);
-    const reviewWords=due.map(wordById).filter(Boolean).slice(0,6);
-    const reviewSet=new Set(reviewWords.map(w=>w.id));
-    const rest=DAILY_NEW_WORDS-reviewWords.length;
-    const higherN=lvl<GRADES.length-1?Math.min(progress.mix||0,rest):0;
-    const baseN=rest-higherN;
-    const basePool=wordsForGrade(baseId).filter(w=>!reviewSet.has(w.id));
-    const base=shuffle(basePool).slice(0,baseN);
-    const baseIds=new Set(base.map(w=>w.id));
-    const higher=shuffle(wordsForGrade(higherId).filter(w=>!reviewSet.has(w.id)&&!baseIds.has(w.id))).slice(0,higherN);
-    const ws=shuffle([...reviewWords.map(w=>({word:w,isReview:true})),...base.map(w=>({word:w,isReview:false})),...higher.map(w=>({word:w,isReview:false}))]).slice(0,DAILY_NEW_WORDS);
-    setRound({words:ws,pool:wordsForGrade(baseId),bonus:1,wrongGame:false});
+    const cl=classifyIds(progress.wordStats);
+    const weakArr=shuffle([...cl.weak]);
+    const reviewN=Math.min(weakArr.length,8); // 오답은 한 라운드에 8개까지 '중간중간' 섞기
+    const reviewWords=weakArr.slice(0,reviewN).map(id=>wordById(id)).filter(Boolean);
+    const exclude=new Set([...cl.mastered,...cl.weak]); // 마스터·오답은 새 문제 풀에서 제외
+    const newN=DAILY_NEW_WORDS-reviewWords.length;
+    const newWords=buildBlendWords(lvl,progress.mix,newN,exclude);
+    const ws=shuffle([...reviewWords.map(w=>({word:w,isReview:true})),...newWords.map(w=>({word:w,isReview:false}))]).slice(0,DAILY_NEW_WORDS);
+    setRound({words:ws,pool:wordsForGrade(GRADES[lvl].id),bonus:1,wrongGame:false});
     ensureAudio(); setView("quiz");
   }
   function startWrongGame(){
-    const ids=(progress.wrongQueue||[]).map(q=>q.id);
-    const ws=shuffle(ids).slice(0,DAILY_NEW_WORDS).map(id=>wordById(id)).filter(Boolean).map(w=>({word:w,isReview:true}));
+    const cl=classifyIds(progress.wordStats);
+    const ws=shuffle([...cl.weak]).slice(0,DAILY_NEW_WORDS).map(id=>wordById(id)).filter(Boolean).map(w=>({word:w,isReview:true}));
     if(ws.length===0){alert("오답 단어가 없어요! 먼저 미션을 풀어보세요.");return;}
     setRound({words:ws,pool:null,bonus:1.5,wrongGame:true});
     ensureAudio(); setView("quiz");
   }
   async function onFinish(r){
     const wrongGame=round&&round.wrongGame;
-    setProgress(p=>{
-      const today=todayStr();
-      let streak=p.streak,last=p.lastPlayedDate;
-      if(last!==today){ streak=(last===yesterdayStr())?p.streak+1:1; last=today; }
-      const games=(p.games||0)+1;
-      let gradeId=p.gradeId, mix=p.mix||0;
-      if(!wrongGame){
-        const idx=Math.max(0,GRADES.findIndex(g=>g.id===gradeId));
-        if(r.wrong<2){ mix+=2; if(mix>=10){gradeId=GRADES[Math.min(idx+1,GRADES.length-1)].id; mix=0;} }
-        else if(r.wrong>=4){ gradeId=GRADES[Math.max(idx-1,0)].id; mix=0; }
-      }
-      const due=games+2+Math.floor(Math.random()*2); // 2~3게임 뒤 재등장
-      const qmap=new Map((p.wrongQueue||[]).map(q=>[q.id,q]));
-      const learned=new Set(p.learnedIds||[]);
-      (r.correctIds||[]).forEach(id=>{ qmap.delete(id); learned.add(id); });
-      (r.wrongIds||[]).forEach(id=>{ qmap.set(id,{id,due}); learned.delete(id); });
-      return {...p,streak,lastPlayedDate:last,games,gradeId,mix,wrongQueue:[...qmap.values()],learnedIds:[...learned]};
-    });
-    const res=await refresh(r.earned,r.maxCombo);
-    setResult({...r,added:res?res.added:null,wrongGame});
+    const withdrawTest=round&&round.withdrawTest;
+    const p=progress;
+    const today=todayStr();
+    let streak=p.streak,last=p.lastPlayedDate;
+    if(last!==today){ streak=(last===yesterdayStr())?p.streak+1:1; last=today; }
+    const games=(p.games||0)+1;
+    let gradeId=p.gradeId, mix=p.mix||0;
+    if(!wrongGame&&!withdrawTest){
+      const idx=Math.max(0,GRADES.findIndex(g=>g.id===gradeId));
+      if(r.wrong<2){ mix+=2; if(mix>=10){gradeId=GRADES[Math.min(idx+1,GRADES.length-1)].id; mix=0;} } // 잘하면 난이도↑
+      else if(r.wrong>=4){ gradeId=GRADES[Math.max(idx-1,0)].id; mix=0; }
+    }
+    const ws2={...(p.wordStats||{})};
+    (r.correctIds||[]).forEach(id=>{ const s=ws2[id]||{c:0,w:0}; ws2[id]={c:(s.c||0)+1,w:(s.w||0)}; });
+    (r.wrongIds||[]).forEach(id=>{ const s=ws2[id]||{c:0,w:0}; ws2[id]={c:(s.c||0),w:(s.w||0)+1}; });
+    const np={...p,streak,lastPlayedDate:last,games,gradeId,mix,wordStats:ws2};
+    setProgress(np);
+    const res=await refresh(r.earned,r.maxCombo,summaryOf(np));
+    let wt=null;
+    if(withdrawTest){
+      const acc=r.total?r.correct/r.total:1;
+      if(acc>=0.95){ const wr=await callFn("sq-withdraw",{username:auth.username,token:auth.token});
+        if(wr&&wr.ok){prevPending.current=true;setWallet(w=>({...w,pending:true,withdrawable:false}));wt={passed:true,acc,submitted:true};}
+        else wt={passed:true,acc,submitted:false,err:(wr&&wr.error)};
+      } else { wt={passed:false,acc}; }
+    }
+    setResult({...r,added:res?res.added:null,wrongGame,withdrawTest,wt});
     refreshRank(); setView("result");
   }
-  async function requestWithdraw(){
+  async function submitWithdraw(){
     try{ const res=await callFn("sq-withdraw",{username:auth.username,token:auth.token});
       if(res&&res.ok){prevPending.current=true;setWallet(w=>({...w,pending:true,withdrawable:false}));alert("출금 요청 완료! 사장님 승인을 기다려 주세요. ⏳");}
       else alert("출금 실패: "+((res&&res.error)||"잠시 후 다시"));
     }catch(e){alert("네트워크 오류");}
+  }
+  function requestWithdraw(){
+    const cl=classifyIds(progress.wordStats);
+    if(cl.weak.size===0){ submitWithdraw(); return; }
+    const ws=shuffle([...cl.weak]).slice(0,DAILY_NEW_WORDS).map(id=>wordById(id)).filter(Boolean).map(w=>({word:w,isReview:true}));
+    alert("출금 신청 전 '오답 시험'을 봅니다 📝\n"+ws.length+"문제 중 95% 이상 맞히면 출금이 신청돼요!");
+    setRound({words:ws,pool:null,bonus:1.5,withdrawTest:true});
+    ensureAudio(); setView("quiz");
   }
   function toggleBgm(){ const m=!bgmMuted; bgmSetMuted(m); setBgmMuted(m); if(!m&&view==="quiz")bgmStart(); ensureAudio(); }
 
@@ -4211,11 +4337,12 @@ function App(){
       {view==="home"&&<Home auth={auth} progress={progress} wallet={wallet} rank={rank} bgmMuted={bgmMuted}
         onStart={startQuiz} onStartWrong={startWrongGame} onWithdraw={requestWithdraw}
         onSelectGrade={(g)=>setProgress(p=>({...p,gradeId:g}))}
-        onDashboard={()=>setView("dashboard")} onProgress={()=>setView("progress")} onLogout={doLogout} onToggleBgm={toggleBgm}/>}
-      {view==="quiz"&&round&&<Quiz words={round.words} pool={round.pool} bonusMult={round.bonus} scoreMult={1+gradeIndex()*0.1} onExit={()=>setView("home")} onFinish={onFinish}/>}
+        onDashboard={()=>setView("dashboard")} onProgress={()=>setView("progress")} onAdmin={()=>{setAdminUsers(null);loadAdmin();setView("admin");}} onLogout={doLogout} onToggleBgm={toggleBgm}/>}
+      {view==="quiz"&&round&&<Quiz words={round.words} pool={round.pool} bonusMult={round.bonus} userLevel={gradeIndex()} onExit={()=>setView("home")} onFinish={onFinish}/>}
       {view==="result"&&result&&<Result result={result} wallet={wallet} onContinue={startQuiz} onHome={()=>setView("home")} onDashboard={()=>setView("dashboard")}/>}
       {view==="dashboard"&&<Dashboard auth={auth} progress={progress} wallet={wallet} rank={rank} onHome={()=>setView("home")}/>}
       {view==="progress"&&<Progress progress={progress} onHome={()=>setView("home")}/>}
+      {view==="admin"&&<Admin data={adminUsers} onHome={()=>setView("home")} onReload={loadAdmin}/>}
     </Shell>
   );
 }
