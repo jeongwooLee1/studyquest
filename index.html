@@ -3679,6 +3679,7 @@ const WORD_GRADE={};
   const size=Math.max(1,Math.ceil(pool.length/n));
   pool.forEach((w,i)=>{ const bk=Math.min(n-1,Math.floor(i/size)); WORD_GRADE[w.id]=GRADES.findIndex(g=>g.id===subs[bk].id); }); } })();
 function wordGradeIndex(word){ return (word&&WORD_GRADE[word.id]!=null)?WORD_GRADE[word.id]:0; }
+const GRADE_TOTALS=new Array(GRADES.length).fill(0); for(const id in WORD_GRADE){ GRADE_TOTALS[WORD_GRADE[id]]++; }
 // 본인 난이도 대비 가중치: 같으면 1, 어려우면 +20%/단계, 쉬우면 -20%/단계(최저 0.2)
 function diffWeight(wordIdx,userIdx){ const d=wordIdx-userIdx; if(d===0)return 1; if(d>0)return 1+0.2*d; return Math.max(0.2,1+0.2*d); }
 // 단어별 정답통계 분류: c=정답수, w=오답수. 정답률 80%↑이면 마스터(다시 안 냄), 틀린 적 있고 80%미만이면 weak(가끔 복습)
@@ -3834,13 +3835,18 @@ function Home({auth,progress,wallet,rank,onStart,onStartWrong,onWithdraw,onSelec
   const wrongCount=classifyIds(progress.wordStats).weak.size;
   return (
     <main className="flex flex-1 flex-col gap-4 bg-slate-50 p-5">
-      <header className="flex items-center justify-between pt-1">
-        <div><p className="text-sm text-slate-500">{auth.nickname} 님 👋</p><h1 className="text-2xl font-bold">오늘의 영어 미션</h1></div>
+      <header className="flex flex-col gap-2 pt-1">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-sm text-slate-500">{auth.nickname} 님 👋</p>
+            <h1 className="whitespace-nowrap text-2xl font-bold">오늘의 영어 미션</h1>
+          </div>
+          {auth.isAdmin&&<button onClick={onAdmin} className="shrink-0 rounded-full bg-slate-900 px-4 py-2 text-sm font-bold text-white shadow-sm active:scale-95">🛠 관리자</button>}
+        </div>
         <div className="flex gap-2">
           <button onClick={onToggleBgm} className="rounded-full bg-white px-3 py-2 text-sm shadow-sm ring-1 ring-slate-200">{bgmMuted?"🔇":"🎵"}</button>
-          <button onClick={onProgress} className="rounded-full bg-white px-3 py-2 text-sm font-semibold text-emerald-600 shadow-sm ring-1 ring-slate-200">진행율</button>
-          <button onClick={onDashboard} className="rounded-full bg-white px-3 py-2 text-sm font-semibold text-brand-600 shadow-sm ring-1 ring-slate-200">기록</button>
-          {auth.isAdmin&&<button onClick={onAdmin} className="rounded-full bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm">관리자</button>}
+          <button onClick={onProgress} className="flex-1 rounded-full bg-white px-3 py-2 text-sm font-semibold text-emerald-600 shadow-sm ring-1 ring-slate-200">📊 진행율</button>
+          <button onClick={onDashboard} className="flex-1 rounded-full bg-white px-3 py-2 text-sm font-semibold text-brand-600 shadow-sm ring-1 ring-slate-200">📒 기록</button>
         </div>
       </header>
       <section className="grid grid-cols-3 gap-2">
@@ -3849,8 +3855,22 @@ function Home({auth,progress,wallet,rank,onStart,onStartWrong,onWithdraw,onSelec
         <Stat label="최고콤보" value={"🔥"+(wallet.bestCombo||0)} accent="text-purple-600"/>
       </section>
 
-      <section>
-        <p className="mb-2 text-sm font-semibold text-slate-600">난이도 (학년)</p>
+      <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+        {(()=>{const ci=Math.max(0,GRADES.findIndex(g=>g.id===progress.gradeId));const cg=GRADES[ci];return (
+          <React.Fragment>
+            <div className="mb-2 flex items-center justify-between text-sm">
+              <span className="font-semibold text-slate-600">난이도</span>
+              <span className="font-bold text-brand-600">현재 {cg.label}{progress.mix>0?" · 승급 "+Math.min(100,Math.round(progress.mix/10*100))+"%":""}</span>
+            </div>
+            <div className="relative">
+              <div className="pointer-events-none absolute -top-3 z-10 -translate-x-1/2 text-xs leading-none" style={{left:((ci+0.5)/GRADES.length*100)+"%"}}>🔻</div>
+              <div className="flex h-3 gap-px overflow-hidden rounded-full bg-slate-100">
+                {GRADES.map((g,i)=>{const on=i<=ci;const onC=g.band==="elem"?"bg-emerald-400":g.band==="mid"?"bg-sky-400":"bg-purple-400";const offC=g.band==="elem"?"bg-emerald-100":g.band==="mid"?"bg-sky-100":"bg-purple-100";return <div key={i} className={"flex-1 "+(on?onC:offC)}/>;})}
+              </div>
+              <div className="mt-1 flex justify-between text-[10px] text-slate-400"><span>쉬움 · 초3</span><span>중1</span><span>고1</span><span>어려움 · 고3</span></div>
+            </div>
+          </React.Fragment>);})()}
+        <p className="mb-2 mt-3 text-xs font-semibold text-slate-500">직접 변경 (학년)</p>
         <div className="flex gap-2 overflow-x-auto pb-1">
           {GRADES.map(g=>(<button key={g.id} onClick={()=>onSelectGrade(g.id)} className={"shrink-0 rounded-full px-4 py-2 text-sm font-bold transition active:scale-95 "+(g.id===progress.gradeId?"bg-brand-600 text-white shadow":"bg-white text-slate-600 ring-1 ring-slate-200")}>{g.label}</button>))}
         </div>
@@ -4005,7 +4025,8 @@ function Quiz({words,pool,userLevel,bonusMult,onFinish,onExit}){
         {phase==="answering"&&<span className="text-xs text-slate-500">초</span>}
       </div>
       <div className={"mt-2 flex flex-col items-center "+(answered&&!lastCorrect?"animate-shake":"")}>
-        <div className="mb-1 flex items-center gap-1.5">
+        <div className="mb-1 flex flex-wrap items-center justify-center gap-1.5">
+          {(()=>{const g=GRADES[wordGradeIndex(current.word)];const sh=({e:"초",m:"중",h:"고"}[g.id[0]])+g.id[1];const col=g.band==="elem"?"bg-emerald-500/20 text-emerald-300":g.band==="mid"?"bg-sky-500/20 text-sky-300":"bg-purple-500/20 text-purple-300";return <span className={"rounded-full px-2 py-0.5 text-xs font-bold "+col}>🎚 {sh}·{current.word.cefr}</span>;})()}
           {current.word.exam&&<span className="rounded-full bg-rose-500/25 px-2 py-0.5 text-xs font-bold text-rose-300">🎯 수능기출</span>}
           {current.isReview?<span className="rounded-full bg-orange-500/20 px-2 py-0.5 text-xs font-bold text-orange-300">복습 · 보너스</span>:<span className="text-xs text-slate-500">{current.word.pos}</span>}
         </div>
@@ -4134,7 +4155,11 @@ function Progress({progress,onHome}){
   );
 }
 
-function Admin({data,onHome,onReload}){
+function Admin({data,onHome,onReload,onDetail}){
+  const [sel,setSel]=useState(null);
+  const [detailStats,setDetailStats]=useState(null);
+  const [expand,setExpand]=useState(null);
+  function openStudent(u){ setSel(u); setDetailStats(null); setExpand(null); onDetail(u.username).then(setDetailStats).catch(()=>setDetailStats({})); }
   const users=(data&&data.users)?data.users.filter(u=>u.username!=="admin"):null;
   const wds=(data&&data.withdrawals)||[];
   const pending=wds.filter(w=>w.status==="pending");
@@ -4147,22 +4172,48 @@ function Admin({data,onHome,onReload}){
         <button onClick={onReload} className="rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-brand-600 shadow-sm ring-1 ring-slate-200">새로고침</button>
       </header>
       {data===null?<p className="py-6 text-center text-sm text-slate-400">불러오는 중…</p>:<React.Fragment>
+        {sel&&(()=>{const ws=detailStats||{};const byGrade={};for(const id in ws){const gi=WORD_GRADE[id];if(gi==null)continue;(byGrade[gi]=byGrade[gi]||[]).push(id);}return (
+          <section className="rounded-2xl bg-white p-4 shadow-sm ring-2 ring-indigo-300">
+            <div className="mb-1 flex items-center justify-between"><span className="font-bold">📚 {sel.nickname} 상세</span><button onClick={()=>setSel(null)} className="text-sm font-semibold text-slate-400">닫기 ✕</button></div>
+            <p className="mb-2 text-xs text-slate-400">학년을 누르면 그 학년에서 푼 단어 목록(✓익힘 / ✗틀림)을 볼 수 있어요</p>
+            {detailStats===null?<p className="py-3 text-center text-sm text-slate-400">불러오는 중…</p>:
+            <ul className="flex flex-col gap-1">
+              {GRADES.map((g,i)=>{const ids=byGrade[i]||[];const total=GRADE_TOTALS[i]||0;const mastered=ids.filter(id=>isMastered(ws[id])).length;const pct=total?Math.round(mastered/total*100):0;const open=expand===i;return (
+                <li key={i} className="rounded-xl ring-1 ring-slate-100">
+                  <button onClick={()=>setExpand(open?null:i)} className="flex w-full items-center justify-between p-2 text-left">
+                    <span className="text-sm font-semibold">{g.label} <span className="text-xs font-normal text-slate-400">({ids.length}개 풀이)</span></span>
+                    <span className="text-xs text-slate-500">마스터 {mastered}/{total}·{pct}% {open?"▲":"▼"}</span>
+                  </button>
+                  {open&&<div className="px-2 pb-2">
+                    {ids.length===0?<p className="text-xs text-slate-400">아직 이 학년 단어를 안 풀었어요.</p>:
+                    <ul className="flex flex-col gap-0.5">
+                      {ids.map(id=>{const w=wordById(id);if(!w)return null;const st=ws[id]||{};const m=isMastered(st);return (
+                        <li key={id} className="flex items-center justify-between gap-2 rounded bg-slate-50 px-2 py-1 text-xs">
+                          <span className="min-w-0 truncate"><b>{w.term}</b> <span className="text-slate-400">{w.meaning}</span></span>
+                          <span className={"shrink-0 font-bold "+(m?"text-emerald-600":"text-rose-500")}>{m?"✓ 익힘":"✗ "+(st.c||0)+"/"+((st.c||0)+(st.w||0))}</span>
+                        </li>);})}
+                    </ul>}
+                  </div>}
+                </li>);})}
+            </ul>}
+          </section>);})()}
         {pending.length>0&&<section className="rounded-2xl bg-amber-50 p-3 ring-1 ring-amber-200">
           <p className="font-bold text-amber-700">⏳ 승인 대기 출금 {pending.length}건</p>
           <ul className="mt-1 flex flex-col gap-0.5 text-sm">{pending.map((w,i)=><li key={i} className="flex justify-between"><span>{w.nickname} (@{w.account})</span><span className="font-bold text-amber-700">{w.points}P</span></li>)}</ul>
           <p className="mt-1 text-xs text-amber-600">텔레그램(@BlissUBot)에서 승인/거절하세요. 승인 시 요청액만 차감됩니다.</p>
         </section>}
-        <p className="text-sm font-semibold text-slate-600">학생 현황 ({users?users.length:0}명)</p>
+        <p className="text-sm font-semibold text-slate-600">학생 현황 ({users?users.length:0}명) · <span className="text-indigo-500">행을 누르면 클래스별 상세</span></p>
         <div className="overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-xs text-slate-500"><th className="p-2">닉네임</th><th className="p-2">학년</th><th className="p-2">외운</th><th className="p-2">틀린</th><th className="p-2">초/중/고</th><th className="p-2">잔액</th><th className="p-2">누적</th><th className="p-2">콤보</th></tr></thead>
+            <thead><tr className="text-left text-xs text-slate-500"><th className="p-2">닉네임</th><th className="p-2">학년</th><th className="p-2">외운</th><th className="p-2">틀린</th><th className="p-2">성취율</th><th className="p-2">초/중/고</th><th className="p-2">잔액</th><th className="p-2">누적</th><th className="p-2">콤보</th></tr></thead>
             <tbody>
               {(users||[]).map((u,i)=>{const s=u.stats||{};return (
-                <tr key={i} className="border-t border-slate-100">
+                <tr key={i} onClick={()=>openStudent(u)} className="cursor-pointer border-t border-slate-100 active:bg-indigo-50">
                   <td className="whitespace-nowrap p-2 font-bold">{u.nickname}</td>
                   <td className="whitespace-nowrap p-2 text-slate-500">{u.level||"-"}</td>
                   <td className="p-2 font-bold text-emerald-600">{u.learned_count||0}</td>
                   <td className="p-2 font-bold text-rose-600">{u.wrong_count||0}</td>
+                  <td className="whitespace-nowrap p-2 font-bold text-indigo-600">{(()=>{const t=(u.learned_count||0)+(u.wrong_count||0);return t?Math.round((u.learned_count||0)/t*100):0;})()}%</td>
                   <td className="whitespace-nowrap p-2 text-xs text-slate-500">{(s.elem||0)}/{(s.mid||0)}/{(s.high||0)}</td>
                   <td className="p-2 font-bold text-brand-600">{u.points||0}</td>
                   <td className="p-2 text-slate-500">{u.total_points||0}</td>
@@ -4212,17 +4263,18 @@ function App(){
   useEffect(()=>{ if(view==="quiz"&&!BGM.muted)bgmStart(); else bgmStop(); return ()=>{}; },[view,bgmMuted]);
 
   function summaryOf(p){
-    const cl=classifyIds(p.wordStats); const byBand={elem:0,mid:0,high:0};
-    cl.mastered.forEach(id=>{const w=wordById(id); if(w&&byBand[w.band]!=null)byBand[w.band]++;});
+    const cl=classifyIds(p.wordStats); const byBand={elem:0,mid:0,high:0}; const grades=new Array(GRADES.length).fill(0);
+    cl.mastered.forEach(id=>{const w=wordById(id); if(w&&byBand[w.band]!=null)byBand[w.band]++; const gi=WORD_GRADE[id]; if(gi!=null)grades[gi]++;});
     const g=GRADES.find(x=>x.id===p.gradeId);
-    return {level:(g?g.label:p.gradeId), learned:cl.mastered.size, wrong:cl.weak.size, stats:byBand};
+    return {level:(g?g.label:p.gradeId), learned:cl.mastered.size, wrong:cl.weak.size, stats:{...byBand,grades}, wordStats:p.wordStats||{}};
   }
   async function loadAdmin(){ try{ const res=await callFn("sq-admin",{username:auth.username,token:auth.token}); if(res&&res.users)setAdminUsers(res); else if(res&&res.error)alert(res.error);}catch(e){alert("불러오기 실패");} }
+  async function loadDetail(username){ try{ const res=await callFn("sq-admin",{username:auth.username,token:auth.token,detail:username}); return (res&&res.wordStats)||{}; }catch(e){ return {}; } }
   async function refresh(addPoints,combo,summary){
     if(!auth)return null;
     try{
       const s=summary||summaryOf(progress);
-      const res=await callFn("sq-sync",{username:auth.username,token:auth.token,addPoints:addPoints||0,combo:combo||0,level:s.level,learned:s.learned,wrong:s.wrong,stats:s.stats});
+      const res=await callFn("sq-sync",{username:auth.username,token:auth.token,addPoints:addPoints||0,combo:combo||0,level:s.level,learned:s.learned,wrong:s.wrong,stats:s.stats,wordStats:s.wordStats});
       if(res&&res.error&&/세션/.test(res.error)){doLogout();return null;}
       if(res&&typeof res.points==="number"){
         if(prevPending.current&&!res.pending){alert("✅ 출금이 처리되었습니다! (요청액 차감)");}
@@ -4342,7 +4394,7 @@ function App(){
       {view==="result"&&result&&<Result result={result} wallet={wallet} onContinue={startQuiz} onHome={()=>setView("home")} onDashboard={()=>setView("dashboard")}/>}
       {view==="dashboard"&&<Dashboard auth={auth} progress={progress} wallet={wallet} rank={rank} onHome={()=>setView("home")}/>}
       {view==="progress"&&<Progress progress={progress} onHome={()=>setView("home")}/>}
-      {view==="admin"&&<Admin data={adminUsers} onHome={()=>setView("home")} onReload={loadAdmin}/>}
+      {view==="admin"&&<Admin data={adminUsers} onHome={()=>setView("home")} onReload={loadAdmin} onDetail={loadDetail}/>}
     </Shell>
   );
 }
