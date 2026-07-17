@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+<!--
+  StudyQuest live loader.
+  이 파일을 studyquest 저장소의 index.html 로 넣으면, 페이지를 열 때마다
+  bliss 저장소의 최신 studyquest.html 을 직접 불러와 보여줍니다.
+  => 코드가 bliss 에 올라가면 별도 동기화/워크플로 없이 바로 반영됩니다.
+-->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -8,11 +14,11 @@
   html,body{margin:0;padding:0;height:100%;background:#0f172a;overflow:hidden}
   #app{position:fixed;inset:0;border:0;width:100%;height:100%;display:block;background:#0f172a}
   #boot{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-        font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;color:#e2e8f0;gap:14px}
+        font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",sans-serif;color:#e2e8f0;gap:14px}
   #boot .logo{font-size:40px}
   #boot .spin{width:34px;height:34px;border:4px solid #334155;border-top-color:#38bdf8;border-radius:50%;animation:s .8s linear infinite}
   #boot .msg{font-size:13px;color:#94a3b8}
-  #boot button{margin-top:6px;padding:10px 18px;border:0;border-radius:10px;background:#38bdf8;color:#0f172a;font-weight:700}
+  #boot button{margin-top:6px;padding:10px 18px;border:0;border-radius:10px;background:#38bdf8;color:#0f172a;font-weight:700;font-size:14px}
   @keyframes s{to{transform:rotate(360deg)}}
 </style>
 </head>
@@ -21,15 +27,47 @@
 <iframe id="app" allow="autoplay; clipboard-write; microphone" style="display:none"></iframe>
 <script>
 (function(){
-  var SRC="https://raw.githubusercontent.com/jeongwooLee1/bliss/claude/mobile-pc-project-sync-mok0ie/studyquest.html";
-  var boot=document.getElementById('boot'),app=document.getElementById('app');
-  function fail(m){boot.innerHTML='<div class="logo">😵</div><div class="msg">'+(m||'불러오기 실패')+'</div><button onclick="location.reload()">다시 시도</button>';}
-  fetch(SRC+"?t="+Date.now(),{cache:'no-store'})
-    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();})
-    .then(function(h){if(!h||h.length<1000)throw new Error('빈 응답');app.srcdoc=h;
-      app.onload=function(){boot.style.display='none';app.style.display='block';};
-      setTimeout(function(){boot.style.display='none';app.style.display='block';},1500);})
-    .catch(function(e){fail('네트워크 오류: '+e.message);});
+  // bliss 저장소(개발 브랜치)의 최신 앱을 직접 가져온다.
+  var BRANCH = "claude/mobile-pc-project-sync-mok0ie";
+  var RAW = "https://dpftlrsuqxqqeouwbfjd.functions.supabase.co/sq-app";                            // 1순위: Supabase 서빙(저장소 비공개와 무관)
+  var JSD = "https://raw.githubusercontent.com/jeongwooLee1/bliss/" + BRANCH + "/studyquest.html";  // 2순위: 저장소가 공개일 때만 동작
+  var boot = document.getElementById('boot');
+  var app  = document.getElementById('app');
+
+  function fail(msg){
+    boot.innerHTML =
+      '<div class="logo">😵</div>' +
+      '<div class="msg">'+(msg||'불러오기에 실패했어요')+'</div>' +
+      '<button onclick="location.reload()">다시 시도</button>';
+  }
+  function setMsg(t){ var m=boot.querySelector('.msg'); if(m)m.textContent=t; }
+
+  function show(html){
+    if(!html || html.length < 1000) throw new Error('빈 응답');
+    app.srcdoc = html;
+    app.onload = function(){ boot.style.display='none'; app.style.display='block'; };
+    // srcdoc 가 이미 즉시 렌더되는 브라우저 대비
+    setTimeout(function(){ boot.style.display='none'; app.style.display='block'; }, 1500);
+  }
+
+  // 타임아웃 있는 fetch — 응답이 없으면 매달리지 않고 실패시킨다(멈춤 방지)
+  function fetchT(url, ms){
+    var ctrl = ('AbortController' in window) ? new AbortController() : null;
+    var to = ctrl ? setTimeout(function(){ ctrl.abort(); }, ms) : null;
+    return fetch(url + (url.indexOf('?')<0?'?':'&') + "t=" + Date.now(), { cache:'no-store', signal: ctrl?ctrl.signal:undefined })
+      .then(function(r){ if(to) clearTimeout(to); if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); });
+  }
+
+  function load(){
+    // raw 가 느리거나 rate-limit 이면 8초 후 jsDelivr 로 폴백, 둘 다 실패하면 에러/재시도(절대 멈추지 않음)
+    fetchT(RAW, 8000).then(show).catch(function(){
+      setMsg('불러오는 중… (예비 서버)');
+      fetchT(JSD, 12000).then(show).catch(function(e){
+        fail('네트워크가 불안정해요. 잠시 후 다시 시도해 주세요.');
+      });
+    });
+  }
+  load();
 })();
 </script>
 </body>
