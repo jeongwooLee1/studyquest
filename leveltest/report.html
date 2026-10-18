@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>레벨테스트 리포트</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="lt.css">
+<style>
+  .wrap { max-width: 900px; }
+  .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 16px; }
+  .stat { background: var(--bg); border-radius: 12px; padding: 12px 14px; }
+  .stat b { display: block; font-size: 22px; letter-spacing: -.01em; }
+  .stat span { font-size: 13px; color: var(--muted); font-weight: 700; }
+  .areas .nm small { color: var(--muted); font-weight: 500; margin-left: 6px; }
+  .slow { font-size: 12px; font-weight: 700; color: var(--weak); margin-left: 6px; }
+  ol.plan { margin: 0; padding: 0; list-style: none; counter-reset: p; }
+  ol.plan > li { counter-increment: p; position: relative; padding: 14px 0 14px 46px; border-top: 1px solid var(--line); }
+  ol.plan > li:first-child { border-top: 0; padding-top: 4px; }
+  ol.plan > li::before { content: counter(p); position: absolute; left: 0; top: 12px; width: 32px; height: 32px; border-radius: 10px; background: var(--brand); color: var(--brand-ink);
+    font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  ol.plan > li:first-child::before { top: 2px; }
+  ol.plan .t { font-weight: 800; font-size: 16px; }
+  ol.plan .u { color: var(--ink2); font-size: 14px; }
+  ol.plan ul { margin: 6px 0 0; padding-left: 18px; }
+  ol.plan .why { font-size: 14px; color: var(--muted); margin-top: 4px; }
+  .habits { margin: 0; padding-left: 18px; } .habits li { margin: 4px 0; }
+  .filter { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .filter button { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: 14px; }
+  .filter button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .q { border-top: 1px solid var(--line); padding: 14px 0; }
+  .q:first-child { border-top: 0; }
+  .q .qh { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--muted); font-weight: 700; }
+  .res { font-weight: 900; font-size: 13px; padding: 2px 9px; border-radius: 999px; }
+  .res.o { background: var(--pass-soft); color: var(--pass); } .res.x { background: var(--focus-soft); color: var(--focus); }
+  .res.d { background: var(--weak-soft); color: var(--weak); } .res.b { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+  .q .qt { margin-top: 6px; font-size: 16px; line-height: 1.7; }
+  .q .opts { margin: 6px 0 0; padding: 0; list-style: none; font-size: 15px; }
+  .q .opts li { padding: 2px 0; } .q .opts li.k { color: var(--pass); font-weight: 800; } .q .opts li.g { color: var(--focus); font-weight: 800; }
+  .q .ab { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 8px; font-size: 15px; }
+  .q .ab span em { font-style: normal; color: var(--muted); font-size: 13px; margin-right: 6px; }
+  .q .trap { margin-top: 6px; font-size: 14px; color: var(--weak); font-weight: 700; }
+  .q .fig svg { max-width: 220px; }
+  table.list { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.list th, table.list td { text-align: left; padding: 10px 8px; border-top: 1px solid var(--line); vertical-align: middle; }
+  table.list th { font-size: 12px; color: var(--muted); border-top: 0; }
+  table.list tr.me td { background: var(--brand-soft); }
+  .dots { display: inline-flex; gap: 3px; flex-wrap: wrap; } .dots i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .dots i.pass { background: var(--pass); } .dots i.weak { background: var(--weak); } .dots i.focus { background: var(--focus); }
+  .scroll { overflow-x: auto; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .linkbox { display: flex; gap: 8px; margin-top: 10px; }
+  .linkbox input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+  @media print { .q { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div style="padding-top:80px"><div class="spin"></div></div></div>
+<div id="modal-root"></div>
+<script src="lt-common.js"></script>
+<script>
+(function () {
+  var app = document.getElementById('app');
+  var params = new URLSearchParams(location.search);
+  var r = params.get('r');
+  var KEY = 'lt.parentKey';
+  var BASE = location.href.replace(/report\.html.*$/, '');
+  var STATUS = { in_progress: '응시 중', submitted: '제출 완료', expired: '시간 종료(자동 제출)' };
+
+  function fail(msg) { app.innerHTML = '<div class="card center" style="text-align:center"><div style="font-size:36px">😵</div><p class="sub">' + LT.esc(msg) + '</p></div>'; }
+
+  // ── 상세 리포트 ──
+  function renderReport(j) {
+    var at = j.attempt, res = j.result, test = j.test;
+    var areaMeta = {}; test.areas.forEach(function (a) { areaMeta[a.id] = a; });
+    var qById = {}; test.questions.forEach(function (q) { qById[q.id] = q; });
+    document.title = at.student + ' · ' + test.title;
+    var h = '<div class="card"><div class="head"><div><h1>' + LT.esc(at.student) + ' · ' + LT.esc(test.title) + '</h1>' +
+      '<p class="sub">' + LT.esc(STATUS[at.status] || at.status) + ' · ' + LT.esc(LT.kst(at.startedAt)) + ' 시작</p></div>' +
+      '<div class="row noprint"><button class="btn ghost sm" onclick="print()">인쇄</button><a class="btn ghost sm" href="report.html">전체 기록</a></div></div>';
+    if (!res) { h += '<p class="sub" style="margin-top:14px">아직 응시 중이에요. 제출되거나 시간이 끝나면 결과가 나와요 (마감 ' + LT.esc(LT.kst(at.deadlineAt)) + ').</p></div>'; app.innerHTML = h + history(j); return; }
+    var elapsed = Math.min((new Date(at.submittedAt) - new Date(at.startedAt)) / 1000, test.minutes * 60);
+    var dk = res.perQ.filter(function (p) { return p.dk; }).length, blank = res.perQ.filter(function (p) { return p.blank; }).length;
+    h += '<div class="stats">' +
+      '<div class="stat"><span>점수</span><b>' + res.score + ' / ' + res.total + '</b><span>' + res.pct + '% · ' + LT.esc(res.overall) + '</span></div>' +
+      '<div class="stat"><span>소요 시간</span><b>' + LT.mmss(elapsed) + '</b><span>제한 ' + test.minutes + '분' + (res.auto || at.status === 'expired' ? ' · 시간 종료' : '') + '</span></div>' +
+      '<div class="stat"><span>잘 모르겠어요 · 빈칸</span><b>' + dk + ' · ' + blank + '</b><span>찍지 않은 문항</span></div>' +
+      '<div class="stat"><span>화면 이탈</span><b>' + (at.tabLeaves || 0) + '회</b><span>다른 앱·탭으로 나감</span></div></div></div>';
+
+    // 영역별
+    h += '<div class="card"><h2>영역별 진단</h2>';
+    ['초등', '중1'].forEach(function (g) {
+      var as = res.areas.filter(function (a) { return a.group === g; }); if (!as.length) return;
+      h += '<div class="grp">' + g + '</div><ul class="areas">' + as.map(function (a) {
+        var L = LT.LEVEL[a.level];
+        return '<li><span class="nm">' + LT.esc(a.name) + '<small>' + LT.esc(areaMeta[a.id].unit) + '</small>' + (a.slow ? '<span class="slow">🐢 풀이 속도 느림</span>' : '') + '</span>' +
+          '<span class="sc">' + a.correct + '/' + a.total + (a.dk ? ' · 모름 ' + a.dk : '') + ' <span class="lv ' + L.c + '">' + L.t + '</span></span>' +
+          '<div class="bar"><i class="' + L.c + '" style="width:' + Math.max(3, a.correct / a.total * 100) + '%"></i></div></li>';
+      }).join('') + '</ul>';
+    });
+    h += '<p class="muted" style="margin-top:12px">통과 80% 이상 · 보완 50~79% · 집중 50% 미만 (영역별 정답률)</p></div>';
+
+    // 학습 순서
+    h += '<div class="card"><h2>👉 학습 순서</h2>';
+    if (!res.priority.length) h += '<p class="sub">모든 영역 통과! 겨울방학 중2 예습(뉴런 수학 2(상))으로 넘어가도 좋아요.</p>';
+    else {
+      h += '<p class="muted" style="margin:-4px 0 12px">집중 영역부터, 교육과정 앞 단원부터 순서대로. 강의 → 같은 단원 문제 → 바로 채점 → 틀린 문제 3일·1주 뒤 재풀이.</p><ol class="plan">';
+      res.priority.forEach(function (id) {
+        var a = areaMeta[id], ra = res.areas.find(function (x) { return x.id === id; }), L = LT.LEVEL[ra.level];
+        var extra = (a.group === '중1' && ra.level === 'focus') ? '<li>기본 문제도 많이 틀린 단원 → <b>바쁜 중1을 위한 빠른 중학연산</b>(이지스에듀) 해당 단원 추가</li>' : '';
+        h += '<li><div class="t">' + LT.esc(a.name) + ' <span class="lv ' + L.c + '">' + L.t + ' ' + ra.correct + '/' + ra.total + '</span></div>' +
+          '<div class="u">' + LT.esc(a.unit) + '</div><ul>' + a.study.map(function (s) { return '<li>' + LT.esc(s) + '</li>'; }).join('') + extra + '</ul>' +
+          '<div class="why">' + LT.esc(a.why) + '</div></li>';
+      });
+      h += '</ol>';
+    }
+    h += '</div>';
+
+    if (res.habits.length) {
+      h += '<div class="card"><h2>🔍 오답 습관</h2><ul class="habits">' + res.habits.map(function (x) { return '<li>' + LT.esc(x.note) + (x.n > 1 ? ' <b>(' + x.n + '번)</b>' : '') + '</li>'; }).join('') + '</ul>' +
+        '<p class="muted" style="margin-top:10px">자주 나오는 오답과 아이의 답이 같을 때 표시돼요. 함께 풀이를 보며 확인해 주세요.</p></div>';
+    }
+
+    // 문항별
+    h += '<div class="card"><h2>문항별 결과</h2><div class="filter noprint" id="flt"><button data-f="wrong" class="on">틀린 것·모름·빈칸</button><button data-f="all">전체</button></div><div id="qlist"></div></div>';
+    h += history(j);
+    app.innerHTML = h;
+
+    function qHtml(p) {
+      var q = qById[p.id], k = p.correct ? 'o' : p.dk ? 'd' : p.blank ? 'b' : 'x';
+      var label = { o: '정답', x: '오답', d: '모르겠어요', b: '빈칸' }[k];
+      var s = '<div class="q" data-k="' + k + '"><div class="qh"><span class="res ' + k + '">' + p.no + '번 ' + label + '</span><span>' + LT.esc(areaMeta[q.area].group + ' · ' + areaMeta[q.area].name) + '</span>' +
+        (p.sec ? '<span>' + LT.mmss(p.sec) + '</span>' : '') + '</div><div class="qt">' + LT.md(q.text) + '</div>' + LT.figure(q.fig);
+      var given = p.given;
+      if (q.type === 'choice') {
+        s += '<ul class="opts">' + q.options.map(function (o, i) {
+          var cls = i + 1 === q.answer ? 'k' : i + 1 === given ? 'g' : '';
+          return '<li class="' + cls + '">' + LT.CIRC[i] + ' ' + LT.md(o) + (i + 1 === q.answer ? ' ✓' : '') + (i + 1 === given && i + 1 !== q.answer ? ' ← 아이 답' : '') + '</li>';
+        }).join('') + '</ul>';
+      } else {
+        var fmt = function (v) {
+          if (v == null || v === '') return '—';
+          if (Array.isArray(v)) return (q.layout === 'pair' ? '(' : '') + v.map(function (x, i) { return (q.layout === 'pair' ? '' : LT.esc(q.labels[i]) + ' ') + (x ? LT.fmtNum(x) : '—'); }).join(q.layout === 'pair' ? ', ' : ' · ') + (q.layout === 'pair' ? ')' : '');
+          return LT.fmtNum(v);
+        };
+        var unit = q.unit ? ' ' + LT.esc(q.unit) : '';
+        s += '<div class="ab"><span><em>아이 답</em>' + (p.dk ? '모르겠어요' : fmt(given) + (given != null && given !== '' ? unit : '')) + '</span><span><em>정답</em>' + fmt(q.answer) + unit + '</span></div>';
+      }
+      if (p.trap) s += '<div class="trap">🔍 ' + LT.esc(p.trap) + '</div>';
+      return s + '</div>';
+    }
+    function drawQ(f) {
+      var list = res.perQ.filter(function (p) { return f === 'all' || !p.correct; });
+      document.getElementById('qlist').innerHTML = list.length ? list.map(qHtml).join('') : '<p class="sub">모두 맞혔어요! 🎉</p>';
+    }
+    drawQ('wrong');
+    document.getElementById('flt').onclick = function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      [].forEach.call(this.children, function (x) { x.classList.toggle('on', x === b); });
+      drawQ(b.dataset.f);
+    };
+  }
+
+  function history(j) {
+    if (!j.history || j.history.length < 2) return '';
+    return '<div class="card"><h2>' + LT.esc(j.attempt.student) + '의 응시 기록</h2><div class="scroll"><table class="list"><tr><th>날짜</th><th>점수</th><th>영역</th><th></th></tr>' +
+      j.history.map(function (x) {
+        return '<tr class="' + (x.id === j.attempt.id ? 'me' : '') + '"><td>' + LT.esc(LT.kst(x.startedAt)) + '</td><td>' + (x.score != null ? x.score + '/' + x.total : LT.esc(STATUS[x.status])) + '</td><td>' + dots(x) + '</td>' +
+          '<td>' + (x.id === j.attempt.id ? '보는 중' : '<a href="report.html?r=' + x.reportToken + '">열기</a>') + '</td></tr>';
+      }).join('') + '</table></div></div>';
+  }
+  function dots(x) { return x.areas ? '<span class="dots">' + x.areas.map(function (a) { return '<i class="' + a.level + '" title="' + LT.esc(a.name + ' ' + a.correct + '/' + a.total) + '"></i>'; }).join('') + '</span>' : ''; }
+
+  // ── 전체 기록(학부모 키) ──
+  function gate(msg) {
+    app.innerHTML = '<div class="card"><h1>레벨테스트 기록</h1><p class="sub">학부모 키를 입력하면 모든 응시 기록을 볼 수 있어요. 텔레그램 알림의 「상세 리포트 보기」는 키 없이 열려요.</p>' +
+      '<label class="field"><span>학부모 키</span><input id="k" autocomplete="off" autocapitalize="off"></label><div class="err">' + LT.esc(msg || '') + '</div>' +
+      '<button class="btn" id="go" style="margin-top:6px">열기</button></div>';
+    document.getElementById('go').onclick = function () { var k = document.getElementById('k').value.trim(); if (k) { LT.store(KEY, k); loadList(); } };
+  }
+  function loadList() {
+    var k = LT.store(KEY); if (!k) return gate();
+    LT.api('list', { key: k }).then(renderList).catch(function (e) { if (e.status === 403) { LT.store(KEY, null); gate(e.message); } else fail(e.message); });
+  }
+  function renderList(j) {
+    var titles = {}; j.tests.forEach(function (t) { titles[t.id] = t.title; });
+    var h = '<div class="card"><h1>레벨테스트 기록</h1><p class="sub">아이가 시작하면 ▶️, 제출하면 📝 텔레그램 알림이 와요.</p></div>';
+    h += '<div class="card"><h2>📨 아이에게 보낼 응시 링크</h2><div class="row"><input id="nm" placeholder="아이 이름" style="flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;font-size:15px"><select id="tid" style="border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px;font-size:15px;color:var(--ink)">' +
+      j.tests.map(function (t) { return '<option value="' + t.id + '">' + LT.esc(t.title) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="linkbox"><input id="lnk" readonly><button class="btn sm" id="cp">복사</button></div><p class="muted" style="margin-top:8px">이름이 들어간 링크라 아이는 이름 입력 없이 바로 시작해요. 카톡으로 보내 주세요.</p></div>';
+    h += '<div class="card"><h2>응시 기록</h2>';
+    if (!j.attempts.length) h += '<p class="sub">아직 기록이 없어요.</p>';
+    else h += '<div class="scroll"><table class="list"><tr><th>학생</th><th>시작</th><th>상태</th><th>점수</th><th>영역</th><th></th></tr>' + j.attempts.map(function (x) {
+      return '<tr><td><b>' + LT.esc(x.student) + '</b><br><span class="muted">' + LT.esc(titles[x.testId] || x.testId) + '</span></td><td>' + LT.esc(LT.kst(x.startedAt)) + '</td><td>' + LT.esc(STATUS[x.status] || x.status) +
+        (x.tabLeaves ? '<br><span class="muted">이탈 ' + x.tabLeaves + '회</span>' : '') + '</td><td>' + (x.score != null ? '<b>' + x.score + '</b>/' + x.total : '—') + '</td><td>' + dots(x) + '</td>' +
+        '<td style="white-space:nowrap"><a class="btn soft sm" href="report.html?r=' + x.reportToken + '">리포트</a> <button class="btn ghost sm" data-del="' + x.id + '" data-nm="' + LT.esc(x.student) + '">삭제</button></td></tr>';
+    }).join('') + '</table></div>';
+    h += '</div><p class="center muted noprint" style="text-align:center"><a href="#" id="logout">학부모 키 지우기</a></p>';
+    app.innerHTML = h;
+    var nm = document.getElementById('nm'), tid = document.getElementById('tid'), lnk = document.getElementById('lnk');
+    var upd = function () { var q = new URLSearchParams(); if (tid.value !== 'math-m1') q.set('test', tid.value); if (nm.value.trim()) q.set('n', nm.value.trim()); lnk.value = BASE + (q.toString() ? '?' + q.toString() : ''); };
+    nm.oninput = upd; tid.onchange = upd; upd();
+    document.getElementById('cp').onclick = function () {
+      var done = function () { document.getElementById('cp').textContent = '복사됨 ✓'; setTimeout(function () { document.getElementById('cp').textContent = '복사'; }, 1500); };
+      if (navigator.clipboard) navigator.clipboard.writeText(lnk.value).then(done, function () { lnk.select(); document.execCommand('copy'); done(); });
+      else { lnk.select(); document.execCommand('copy'); done(); }
+    };
+    document.getElementById('logout').onclick = function (e) { e.preventDefault(); LT.store(KEY, null); gate(); };
+    app.querySelectorAll('[data-del]').forEach(function (b) {
+      b.onclick = function () {
+        if (!confirm(b.dataset.nm + ' 학생의 이 기록을 삭제할까요? 되돌릴 수 없어요.')) return;
+        LT.api('delete', { key: LT.store(KEY), id: b.dataset.del }).then(loadList).catch(function (e) { alert(e.message); });
+      };
+    });
+  }
+
+  if (r) LT.api('report', { r: r }).then(renderReport).catch(function (e) { fail(e.message); });
+  else loadList();
+})();
+</script>
+</body>
+</html>
