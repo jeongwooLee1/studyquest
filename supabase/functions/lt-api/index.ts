@@ -9,6 +9,7 @@
 //   catalog                         시험 목록(문제 없음)
 //   version                         시험별 내용 해시(배포 확인용)
 //   progress {student}              문제지 목록 화면용: 시험별 푼 횟수·최근/최고 점수(정답·리포트 링크 없음)
+//   avatars                         문제지 목록 이름 버튼 사진 {이름: data URI} (public.lt_avatars, 저장소에는 사진 없음)
 //   start   {testId, student}       응시 시작 → attemptId, kidToken, 문제, 마감 시각
 //   resume  {attemptId, kidToken}   새로고침·재접속 시 이어서 풀기
 //   save    {attemptId, kidToken, answers, qtimes, tabLeaves}
@@ -186,6 +187,11 @@ Deno.serve(async (req) => {
         else { o.done++; o.total = r.total; if (o.best == null || r.score > o.best) o.best = r.score; }
       }
       return json({ student, progress });
+    }
+
+    if (action === 'avatars') {
+      const { data } = await sb.from('lt_avatars').select('student,image');
+      return json({ avatars: Object.fromEntries((data || []).map((r: any) => [r.student, r.image])) });
     }
 
     if (action === 'start') {
