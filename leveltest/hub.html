@@ -57,6 +57,7 @@
       { id: 'rec-3', when: '2주' },
       { id: 'rec-4', when: '3주' },
     ], tests: [{ id: 'math-m1', when: '11/14(토) 다시 보기 · 아빠가 말하면 풀기' }] },
+    { name: '이다희', emoji: '🐥', sets: [], tests: [{ id: 'math-e4', when: '아빠가 말하면 풀기 · 45분' }] },
   ];
   var PASS = 0.8; // 이 비율 이상 맞히면 ⭐ 통과
   var app = document.getElementById('app');
@@ -121,10 +122,11 @@
     document.title = s.name + ' · 수학 문제지';
     var doneN = s.sets.filter(function (x) { return progress[x.id] && progress[x.id].done > 0; }).length;
     var h = '<div class="card"><div class="top"><h1>' + s.emoji + ' ' + LT.esc(s.name) + '</h1><button class="switch" id="switch">이름 바꾸기</button></div>' +
-      '<div class="sum"><b>초등 복습 문제지 ' + s.sets.length + '개 중 ' + doneN + '개 완료</b>' + (doneN === s.sets.length ? ' 🎉' : '') +
+      (s.sets.length ? '<div class="sum"><b>초등 복습 문제지 ' + s.sets.length + '개 중 ' + doneN + '개 완료</b>' + (doneN === s.sets.length ? ' 🎉' : '') +
       '<div class="bar"><i style="width:' + Math.max(3, doneN / s.sets.length * 100) + '%"></i></div></div>' +
-      '<p class="muted" style="margin:12px 0 0">EBS 강의 먼저 보고 → 문제지 풀기 → 틀린 문제는 풀이 보고 다시! 3일 뒤에 「다시 풀기」로 한 번 더 풀어요.</p></div>';
-    h += '<div class="sec">초등 복습 문제지</div>' + s.sets.map(function (x, i) { return card(x, i + 1, s.name, progress[x.id]); }).join('');
+      '<p class="muted" style="margin:12px 0 0">EBS 강의 먼저 보고 → 문제지 풀기 → 틀린 문제는 풀이 보고 다시! 3일 뒤에 「다시 풀기」로 한 번 더 풀어요.</p>'
+      : '<p class="muted" style="margin:12px 0 0">레벨테스트로 어디가 약한지 먼저 알아볼게요. 연습장과 연필 준비하고, 모르는 건 찍지 말고 「잘 모르겠어요」!</p>') + '</div>';
+    if (s.sets.length) h += '<div class="sec">초등 복습 문제지</div>' + s.sets.map(function (x, i) { return card(x, i + 1, s.name, progress[x.id]); }).join('');
     if (s.tests.length) h += '<div class="sec">레벨테스트</div>' + s.tests.map(function (x, i) { return card(x, 'T', s.name, progress[x.id]); }).join('');
     app.innerHTML = h;
     document.getElementById('switch').onclick = function () { LT.store('lt.hub.name', null); try { history.replaceState(null, '', location.pathname); } catch (e) {} pickName(); };
