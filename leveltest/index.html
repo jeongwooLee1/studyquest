@@ -105,6 +105,7 @@
     <label class="field" id="name-field"><span>이름</span><input id="name" maxlength="20" autocomplete="off" placeholder="이름을 입력해요"></label>
     <div class="err" id="intro-err"></div>
     <button class="btn block" id="start-btn" style="margin-top:8px">시험 시작하기</button>
+    <a class="btn ghost block hidden" id="hub-back" style="margin-top:10px">← 문제 목록으로</a>
   </div>
 </section>
 
@@ -137,7 +138,17 @@
 (function () {
   var params = new URLSearchParams(location.search);
   var TEST_ID = params.get('test') || 'math-m1';
-  var KEY_ATT = 'lt.att.' + TEST_ID;
+  var N_PARAM = (params.get('n') || '').trim();
+  // 응시 기록은 시험 + 이름별로 따로 — 형제가 같은 기기를 써도 섞이지 않게
+  var KEY_ATT = 'lt.att.' + TEST_ID + (N_PARAM ? '.' + N_PARAM : '');
+  var FROM_HUB = params.get('hub') === '1';
+  var HUB_URL = 'hub.html' + (N_PARAM ? '?n=' + encodeURIComponent(N_PARAM) : '');
+  if (params.get('new') === '1') {
+    // 문제지 목록의 「다시 풀기」: 이 기기의 지난 응시를 잊고 시작 화면으로. 새로고침해도 다시 지우지 않게 주소에서 뺀다.
+    LT.store(KEY_ATT, null);
+    params.delete('new');
+    try { history.replaceState(null, '', location.pathname + '?' + params.toString()); } catch (e) {}
+  }
   var $ = function (id) { return document.getElementById(id); };
   var S = { meta: null, qs: [], answers: {}, qtimes: {}, tabLeaves: 0, cur: 0, attemptId: null, kidToken: null, deadline: 0, offset: 0,
             active: 0, shownAt: 0, dirty: false, submitting: false, warned: {}, done: false };
@@ -373,7 +384,9 @@
     });
     h += '</div>';
     if (r.review) h += reviewHtml(r.review);
-    h += '<div class="center noprint" style="margin-top:18px"><button class="btn ghost sm" id="again">' + (j.test.practice ? '처음부터 다시 풀기' : '다시 응시하기') + '</button></div>';
+    h += '<div class="center noprint" style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +
+      (FROM_HUB ? '<a class="btn sm" href="' + HUB_URL + '">← 문제 목록으로</a>' : '') +
+      '<button class="btn ghost sm" id="again">' + (j.test.practice ? '처음부터 다시 풀기' : '다시 응시하기') + '</button></div>';
     $('done').innerHTML = h;
     show('done');
     var flt = $('rv-flt');
@@ -433,6 +446,8 @@
     var n = (params.get('n') || '').trim();
     if (n) { $('who').textContent = '👋 ' + n + ' 학생'; $('who').classList.remove('hidden'); $('name-field').classList.add('hidden'); $('name').value = n; }
     else { var last = LT.store('lt.name'); if (last) $('name').value = last; }
+    if (FROM_HUB) { $('hub-back').href = HUB_URL; $('hub-back').classList.remove('hidden'); }
+    if (meta.practice) $('start-btn').textContent = '문제 풀기 시작';
     show('intro');
     $('start-btn').onclick = function () {
       var name = $('name').value.trim();
