@@ -149,6 +149,7 @@
         s += '<div class="ab"><span><em>아이 답</em>' + (p.dk ? '모르겠어요' : fmt(given) + (given != null && given !== '' ? unit : '')) + '</span><span><em>정답</em>' + fmt(q.answer) + unit + '</span></div>';
       }
       if (p.trap) s += '<div class="trap">🔍 ' + LT.esc(p.trap) + '</div>';
+      if (q.explain) s += '<div class="muted" style="margin-top:6px">풀이: ' + LT.md(q.explain) + '</div>';
       return s + '</div>';
     }
     function drawQ(f) {

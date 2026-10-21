@@ -7,6 +7,7 @@
 //
 // POST { action, ... }
 //   catalog                         시험 목록(문제 없음)
+//   version                         시험별 내용 해시(배포 확인용)
 //   start   {testId, student}       응시 시작 → attemptId, kidToken, 문제, 마감 시각
 //   resume  {attemptId, kidToken}   새로고침·재접속 시 이어서 풀기
 //   save    {attemptId, kidToken, answers, qtimes, tabLeaves}
@@ -16,9 +17,10 @@
 //   delete  {key, id}               기록 삭제
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { MATH_M1 } from './tests/math_m1.ts';
+import { REC_1, REC_2, REC_3, REC_4 } from './tests/rec_e56.ts';
 import { grade } from './grade.ts';
 
-const TESTS: Record<string, any> = { [MATH_M1.id]: MATH_M1 };
+const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, REC_1, REC_2, REC_3, REC_4].map((t) => [t.id, t]));
 const SITE = 'https://study.blissme.ai/leveltest/';
 const GRACE_MS = 2 * 60 * 1000; // 마감 후 네트워크 지연 허용
 
@@ -31,14 +33,19 @@ const randTok = () => [...crypto.getRandomValues(new Uint8Array(18))].map((b) =>
 const escH = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const publicQuestions = (test: any) => test.questions.map((q: any) => {
-  const { answer: _a, traps: _t, ...rest } = q;
+  const { answer: _a, traps: _t, explain: _e, ...rest } = q; // 정답·함정·풀이는 제출 전엔 내려보내지 않음
   return rest;
 });
-const testMeta = (test: any) => ({ id: test.id, title: test.title, subtitle: test.subtitle, minutes: test.minutes, count: test.questions.length,
+const testMeta = (test: any) => ({ id: test.id, title: test.title, subtitle: test.subtitle, minutes: test.minutes, count: test.questions.length, practice: !!test.practice,
   areas: test.areas.map((a: any) => ({ id: a.id, group: a.group, name: a.name, unit: a.unit, why: a.why, study: a.study })) });
-// 아이에게 보여주는 결과(정답·풀이 없음 — 재시험 대비)
-const kidResult = (res: any) => ({ score: res.score, total: res.total, pct: res.pct, overall: res.overall,
-  areas: res.areas.map((a: any) => ({ id: a.id, group: a.group, name: a.name, correct: a.correct, total: a.total, level: a.level })) });
+// 아이에게 보여주는 결과. 레벨테스트는 정답·풀이 없음(재시험 대비), 복습 문제지(practice)는 문항별 정답·풀이까지
+const kidResult = (res: any, test: any) => ({ score: res.score, total: res.total, pct: res.pct, overall: res.overall,
+  areas: res.areas.map((a: any) => ({ id: a.id, group: a.group, name: a.name, correct: a.correct, total: a.total, level: a.level })),
+  review: test.practice ? res.perQ.map((p: any) => {
+    const q = test.questions.find((x: any) => x.id === p.id);
+    return { no: p.no, text: q.text, fig: q.fig, options: q.options, given: p.given, answer: q.answer, correct: p.correct, dk: p.dk, trap: p.trap, explain: q.explain };
+  }) : undefined });
+const sha256 = async (s: string) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))].map((b) => b.toString(16).padStart(2, '0')).join('');
 
 // ── 텔레그램 ──
 async function tgSend(sb: any, text: string, button?: { text: string; url: string }) {
@@ -160,6 +167,8 @@ Deno.serve(async (req) => {
     const now = Date.now();
 
     if (action === 'catalog') return json({ tests: Object.values(TESTS).map(testMeta) });
+    // 배포본 확인용: 시험별 내용 해시(저장소의 tests/*.ts 와 같은지 비교)
+    if (action === 'version') return json({ tests: Object.fromEntries(await Promise.all(Object.values(TESTS).map(async (t: any) => [t.id, await sha256(JSON.stringify(t))]))) });
 
     if (action === 'start') {
       const test = TESTS[String(body.testId || '')];
@@ -197,7 +206,7 @@ Deno.serve(async (req) => {
         return json({ status: 'in_progress', startedAt: row.started_at, deadlineAt: row.deadline_at, serverNow: new Date().toISOString(), student: row.student,
           answers: row.answers, qtimes: row.qtimes, tabLeaves: row.tab_leaves, test: testMeta(test), questions: publicQuestions(test) });
       }
-      return json({ status: row.status, student: row.student, test: testMeta(test), result: kidResult(row.result) });
+      return json({ status: row.status, student: row.student, test: testMeta(test), result: kidResult(row.result, test) });
     }
 
     if (action === 'report') {
