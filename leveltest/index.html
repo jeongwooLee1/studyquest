@@ -142,6 +142,7 @@
   // 응시 기록은 시험 + 이름별로 따로 — 형제가 같은 기기를 써도 섞이지 않게
   var KEY_ATT = 'lt.att.' + TEST_ID + (N_PARAM ? '.' + N_PARAM : '');
   var FROM_HUB = params.get('hub') === '1';
+  var IS_RETRY = /:re$/.test(TEST_ID), BASE_ID = TEST_ID.replace(/:re$/, ''); // 틀린 문제 다시 풀기(유사 문제)
   var HUB_URL = 'hub.html' + (N_PARAM ? '?n=' + encodeURIComponent(N_PARAM) : '');
   if (params.get('new') === '1') {
     // 문제지 목록의 「다시 풀기」: 이 기기의 지난 응시를 잊고 시작 화면으로. 새로고침해도 다시 지우지 않게 주소에서 뺀다.
@@ -384,9 +385,14 @@
     });
     h += '</div>';
     if (r.review) h += reviewHtml(r.review);
+    var wrongN = r.review ? r.review.filter(function (p) { return !p.correct; }).length : 0;
+    var reUrl = 'index.html?test=' + encodeURIComponent(BASE_ID + ':re') + '&n=' + encodeURIComponent(N_PARAM || j.student) + (FROM_HUB ? '&hub=1' : '') + '&new=1';
+    if (wrongN) h += '<div class="card center noprint"><h2>🔁 틀린 문제 다시 풀기</h2><p class="sub">틀린 ' + wrongN + '문제와 <b>비슷한 문제</b>를 새로 만들어 줘요. 풀이를 읽은 다음 도전!</p>' +
+      '<a class="btn" style="margin-top:12px" href="' + reUrl + '">비슷한 문제 풀기 ▶</a></div>';
+    else if (IS_RETRY) h += '<div class="card center"><h2>✅ 틀린 문제 해결!</h2><p class="sub">비슷한 문제를 다 맞혔어요. 3일 뒤에 원래 문제지를 「다시 풀기」로 한 번 더 확인해요.</p></div>';
     h += '<div class="center noprint" style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +
       (FROM_HUB ? '<a class="btn sm" href="' + HUB_URL + '">← 문제 목록으로</a>' : '') +
-      '<button class="btn ghost sm" id="again">' + (j.test.practice ? '처음부터 다시 풀기' : '다시 응시하기') + '</button></div>';
+      (IS_RETRY ? '' : '<button class="btn ghost sm" id="again">' + (j.test.practice ? '처음부터 다시 풀기' : '다시 응시하기') + '</button>') + '</div>';
     $('done').innerHTML = h;
     show('done');
     var flt = $('rv-flt');
@@ -395,7 +401,7 @@
       [].forEach.call(flt.children, function (x) { x.classList.toggle('on', x === b); });
       [].forEach.call(document.querySelectorAll('.rv'), function (el) { el.classList.toggle('hidden', b.dataset.f === 'wrong' && el.dataset.ok === '1'); });
     };
-    $('again').onclick = function () {
+    if ($('again')) $('again').onclick = function () {
       modal('<h2>다시 응시할까요?</h2><p class="sub">새 시험이 시작되고 부모님께 알림이 가요.</p><div class="acts"><button class="btn ghost" data-x>취소</button><button class="btn" data-ok>새로 시작</button></div>', function (m, close) {
         m.querySelector('[data-x]').onclick = close;
         m.querySelector('[data-ok]').onclick = function () { close(); LT.store(KEY_ATT, null); location.reload(); };
@@ -441,7 +447,7 @@
     $('t-title').textContent = meta.title;
     $('t-sub').textContent = meta.subtitle;
     var groups = {}; meta.areas.forEach(function (a) { groups[a.group] = (groups[a.group] || 0) + 1; });
-    $('t-chips').innerHTML = '<li>' + meta.count + '문항</li><li>제한 ' + meta.minutes + '분</li>' + (meta.practice ? '<li>제출하면 정답·풀이 확인</li>' : '') +
+    $('t-chips').innerHTML = (IS_RETRY ? '<li>🔁 틀린 문제와 비슷한 문제</li>' : '') + '<li>' + meta.count + '문항</li><li>제한 ' + meta.minutes + '분</li>' + (meta.practice ? '<li>제출하면 정답·풀이 확인</li>' : '') +
       Object.keys(groups).map(function (g) { return '<li>' + g + ' ' + groups[g] + '개 영역</li>'; }).join('');
     var n = (params.get('n') || '').trim();
     if (n) { $('who').textContent = '👋 ' + n + ' 학생'; $('who').classList.remove('hidden'); $('name-field').classList.add('hidden'); $('name').value = n; }
@@ -482,6 +488,17 @@
     } else loadIntro();
   }
   function loadIntro() {
+    if (IS_RETRY) {
+      LT.api('retryInfo', { testId: TEST_ID, student: N_PARAM }).then(function (j) {
+        if (!j.count) {
+          $('loading').innerHTML = '<div class="card center"><div style="font-size:44px">🎉</div><h1>다시 풀 틀린 문제가 없어요</h1><p class="sub">마지막에 푼 문제를 다 맞혔어요!</p>' +
+            (FROM_HUB ? '<a class="btn" style="margin-top:14px" href="' + HUB_URL + '">← 문제 목록으로</a>' : '') + '</div>';
+          show('loading'); return;
+        }
+        intro(j.test);
+      }).catch(retry);
+      return;
+    }
     LT.api('catalog').then(function (j) {
       var meta = j.tests.find(function (t) { return t.id === TEST_ID; });
       if (!meta) throw new Error('시험을 찾을 수 없어요');
