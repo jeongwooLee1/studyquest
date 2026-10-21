@@ -41,6 +41,8 @@
   .acts { margin-left: auto; display: flex; gap: 8px; }
   .lec { grid-column: 1 / -1; margin-top: 8px; padding: 9px 12px; background: var(--brand-soft); border-radius: 10px; font-size: 14px; line-height: 1.55; color: var(--ink); }
   .lec b { color: var(--brand); margin-right: 4px; }
+  .retry .btn { white-space: nowrap; flex: none; }
+  .retry { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; padding: 9px 12px; border-radius: 10px; background: var(--weak-soft); font-size: 14px; }
   .when { display: inline-block; margin-top: 2px; font-size: 13px; font-weight: 700; color: var(--brand); }
 </style>
 </head>
@@ -127,12 +129,16 @@
     if (going) {
       h += '<span class="chip go">✏️ 풀고 있어요</span><div class="acts"><a class="btn sm" href="' + link(item.id, name) + '">이어 풀기</a></div>';
     } else if (done) {
-      var last = p.last, star = p.best != null && p.total && p.best / p.total >= PASS;
+      var last = p.last, star = p.best != null && p.total && p.best / p.total >= PASS, re = p.retry;
       h += '<span class="chip ok">✅ 완료</span>' + (star ? '<span class="chip star">⭐ 통과</span>' : '') +
         '<span class="score">' + last.score + '<small> / ' + last.total + '</small></span>' +
         '<span class="chip">' + p.done + '번 풂' + (p.done > 1 ? ' · 최고 ' + p.best : '') + '</span>' +
+        (re && !re.inProgress && !re.wrong && re.rounds ? '<span class="chip ok">🔁 틀린 문제 해결</span>' : '') +
         '<div class="acts">' + (hasLocal(item.id, name) ? '<a class="btn ghost sm" href="' + link(item.id, name) + '">결과 보기</a>' : '') +
-        '<a class="btn sm" href="' + link(item.id, name, true) + '">다시 풀기</a></div>';
+        '<a class="btn ' + (re && (re.wrong || re.inProgress) ? 'ghost ' : '') + 'sm" href="' + link(item.id, name, true) + '">다시 풀기</a></div>';
+      // 틀린 문제가 남아 있으면: 비슷한 문제로 다시 풀기
+      if (re && re.inProgress) h += '<div class="retry"><span>🔁 틀린 문제 다시 풀기 하는 중</span><a class="btn sm" href="' + link(item.id + ':re', name) + '">이어 풀기</a></div>';
+      else if (re && re.wrong) h += '<div class="retry"><span>🔁 틀린 문제 <b>' + re.wrong + '개</b> — 비슷한 문제로 다시 풀어요</span><a class="btn sm" href="' + link(item.id + ':re', name, true) + '">다시 풀기 ▶</a></div>';
     } else {
       h += '<span class="chip">아직 안 풀었어요</span><div class="acts"><a class="btn sm" href="' + link(item.id, name, true) + '">풀기 ▶</a></div>';
     }
