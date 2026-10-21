@@ -21,9 +21,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { MATH_M1 } from './tests/math_m1.ts';
 import { REC_1, REC_2, REC_3, REC_4 } from './tests/rec_e56.ts';
 import { MATH_E4 } from './tests/math_e4.ts';
+import { UNIT_SETS } from './tests/rec_units.ts';
 import { grade } from './grade.ts';
 
-const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, REC_1, REC_2, REC_3, REC_4].map((t) => [t.id, t]));
+const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, REC_1, REC_2, REC_3, REC_4, ...UNIT_SETS].map((t) => [t.id, t]));
 const SITE = 'https://study.blissme.ai/leveltest/';
 const GRACE_MS = 2 * 60 * 1000; // 마감 후 네트워크 지연 허용
 
