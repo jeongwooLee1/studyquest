@@ -36,6 +36,8 @@
   .score { font-weight: 900; font-size: 18px; }
   .score small { font-size: 13px; color: var(--muted); font-weight: 600; }
   .acts { margin-left: auto; display: flex; gap: 8px; }
+  .lec { grid-column: 1 / -1; margin-top: 8px; padding: 9px 12px; background: var(--brand-soft); border-radius: 10px; font-size: 14px; line-height: 1.55; color: var(--ink); }
+  .lec b { color: var(--brand); margin-right: 4px; }
   .when { display: inline-block; margin-top: 2px; font-size: 13px; font-weight: 700; color: var(--brand); }
 </style>
 </head>
@@ -59,6 +61,13 @@
     ], tests: [{ id: 'math-m1', when: '11/14(토) 다시 보기 · 아빠가 말하면 풀기' }] },
     { name: '이다희', emoji: '🐥', sets: [], tests: [{ id: 'math-e4', when: '아빠가 말하면 풀기 · 45분' }] },
   ];
+  // 문제지를 풀기 전에 볼 EBS 강의 (EBS 초등 앱에서 교재 이름으로 검색 → 단원 이름 찾기)
+  var LECTURES = {
+    'rec-1': '「만점왕 수학 5-1」 → 「자연수의 혼합 계산」, 「약수와 배수」',
+    'rec-2': '「만점왕 수학 5-1」 → 「약분과 통분」, 「분수의 덧셈과 뺄셈」',
+    'rec-3': '「만점왕 수학 6-1」·「6-2」 → 「분수의 나눗셈」, 「소수의 나눗셈」',
+    'rec-4': '「만점왕 수학 6-1」·「6-2」 → 「비와 비율」, 「비례식과 비례배분」',
+  };
   var PASS = 0.8; // 이 비율 이상 맞히면 ⭐ 통과
   var app = document.getElementById('app');
   var params = new URLSearchParams(location.search);
@@ -102,7 +111,8 @@
     var h = '<div class="set' + (done ? ' done' : '') + '"><div class="num">' + (done ? '✓' : i) + '</div>' +
       '<div class="t">' + LT.esc(m.title) + '</div>' +
       '<div class="u">' + LT.esc(m.subtitle) + '</div>' +
-      '<div class="meta">' + m.count + '문항 · ' + m.minutes + '분<br><span class="when">📅 ' + LT.esc(item.when) + '</span></div><div class="st">';
+      '<div class="meta">' + m.count + '문항 · ' + m.minutes + '분<br><span class="when">📅 ' + LT.esc(item.when) + '</span></div>' +
+      (LECTURES[item.id] ? '<div class="lec"><b>📺 먼저 볼 강의</b> EBS 초등 앱에서 ' + LT.esc(LECTURES[item.id]) + '</div>' : '') + '<div class="st">';
     if (going) {
       h += '<span class="chip go">✏️ 풀고 있어요</span><div class="acts"><a class="btn sm" href="' + link(item.id, name) + '">이어 풀기</a></div>';
     } else if (done) {
