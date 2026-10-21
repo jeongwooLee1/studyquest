@@ -12,6 +12,9 @@
   .names button { border: 1.5px solid var(--line); background: var(--card); border-radius: 16px; padding: 18px; font-size: 20px; font-weight: 800; text-align: left;
     display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow); }
   .names button span { font-size: 30px; }
+  .face { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex: none; border: 2px solid var(--line); }
+  .top h1 { display: flex; align-items: center; gap: 10px; }
+  .top h1 .face { width: 44px; height: 44px; }
   .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .top h1 { margin: 0; }
   .switch { border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 6px 12px; font-size: 14px; font-weight: 700; }
@@ -72,15 +75,26 @@
   var app = document.getElementById('app');
   var params = new URLSearchParams(location.search);
   var catalog = null;
+  var avatars = null, avatarsP = null; // 사진은 저장소가 아니라 서버(lt_avatars)에서 받아 온다. 없으면 이모지
+  function loadAvatars() {
+    return avatarsP || (avatarsP = LT.api('avatars').then(function (r) { avatars = r.avatars || {}; }).catch(function () { avatars = {}; }));
+  }
+  function face(s) {
+    var src = avatars && avatars[s.name];
+    return src && /^data:image\/(jpeg|png|webp);base64,/.test(src) ? '<img class="face" src="' + src + '" alt="">' : '<span>' + s.emoji + '</span>';
+  }
 
   function pickName() {
     document.title = '수학 문제지';
     app.innerHTML = '<div class="card"><h1>📚 수학 문제지</h1><p class="sub">누구인지 골라 주세요</p><div class="names">' +
-      STUDENTS.map(function (s, i) { return '<button data-i="' + i + '"><span>' + s.emoji + '</span>' + LT.esc(s.name) + '</button>'; }).join('') + '</div></div>';
-    app.querySelector('.names').onclick = function (e) {
+      STUDENTS.map(function (s, i) { return '<button data-i="' + i + '">' + face(s) + LT.esc(s.name) + '</button>'; }).join('') + '</div></div>';
+    var names = app.querySelector('.names');
+    names.onclick = function (e) {
       var b = e.target.closest('button'); if (!b) return;
       choose(STUDENTS[Number(b.dataset.i)].name);
     };
+    // 사진이 나중에 오면 아직 이 화면일 때만 다시 그림
+    if (!avatars) loadAvatars().then(function () { if (names.isConnected) pickName(); });
   }
   function choose(name) {
     LT.store('lt.hub.name', name);
@@ -92,7 +106,7 @@
     var s = STUDENTS.find(function (x) { return x.name === name; });
     if (!s) return pickName();
     app.innerHTML = '<div style="padding-top:80px"><div class="spin"></div></div>';
-    Promise.all([catalog ? Promise.resolve(catalog) : LT.api('catalog'), LT.api('progress', { student: name })]).then(function (r) {
+    Promise.all([catalog ? Promise.resolve(catalog) : LT.api('catalog'), LT.api('progress', { student: name }), loadAvatars()]).then(function (r) {
       catalog = r[0];
       render(s, r[1].progress || {});
     }).catch(function (e) {
@@ -131,7 +145,7 @@
   function render(s, progress) {
     document.title = s.name + ' · 수학 문제지';
     var doneN = s.sets.filter(function (x) { return progress[x.id] && progress[x.id].done > 0; }).length;
-    var h = '<div class="card"><div class="top"><h1>' + s.emoji + ' ' + LT.esc(s.name) + '</h1><button class="switch" id="switch">이름 바꾸기</button></div>' +
+    var h = '<div class="card"><div class="top"><h1>' + face(s) + LT.esc(s.name) + '</h1><button class="switch" id="switch">이름 바꾸기</button></div>' +
       (s.sets.length ? '<div class="sum"><b>초등 복습 문제지 ' + s.sets.length + '개 중 ' + doneN + '개 완료</b>' + (doneN === s.sets.length ? ' 🎉' : '') +
       '<div class="bar"><i style="width:' + Math.max(3, doneN / s.sets.length * 100) + '%"></i></div></div>' +
       '<p class="muted" style="margin:12px 0 0">EBS 강의 먼저 보고 → 문제지 풀기 → 틀린 문제는 풀이 보고 다시! 3일 뒤에 「다시 풀기」로 한 번 더 풀어요.</p>'
