@@ -77,8 +77,12 @@ function build(r: Rng, sp: Spec) {
     // 값 순서로 놓되 정답 자리는 고르게: 정답 위치를 먼저 정하고 위·아래 보기를 고름
     const below = (o: Opt) => lt(o.v!, correct.v!);
     const pool = [...main, ...shuffle(r, extra)], lo = pool.filter(below), hi = pool.filter((o) => !below(o));
-    const pos = shuffle(r, Array.from({ length: n }, (_, i) => i)).find((k) => lo.length >= k && hi.length >= n - 1 - k);
-    if (pos === undefined) throw new Error('보기 부족: ' + sp.text);
+    // 함정 보기(main)를 가장 많이 넣을 수 있는 자리 중에서 무작위
+    const mLo = lo.filter((o) => main.includes(o)).length, mHi = hi.filter((o) => main.includes(o)).length;
+    const feas = Array.from({ length: n }, (_, i) => i).filter((k) => lo.length >= k && hi.length >= n - 1 - k);
+    if (!feas.length) throw new Error('보기 부족: ' + sp.text);
+    const kept = (k: number) => Math.min(mLo, k) + Math.min(mHi, n - 1 - k), best = Math.max(...feas.map(kept));
+    const pos = pick(r, feas.filter((k) => kept(k) >= Math.max(1, best - 1))) ?? pick(r, feas); // 함정 하나쯤은 빠져도 정답 자리를 고르게
     const take = (arr: Opt[], k: number) => { const pri = arr.filter((o) => main.includes(o)), rest = arr.filter((o) => !main.includes(o)); return [...shuffle(r, pri), ...rest].slice(0, k); };
     opts = [...take(lo, pos), correct, ...take(hi, n - 1 - pos)].sort((a, b) => num(a.v!) - num(b.v!));
   } else {
@@ -637,6 +641,188 @@ G['up-10'] = (r) => {
     wrongs: [{ v: q(small * k), note: '전체 대신 작은 쪽을 구함' }, { v: q(L * big), note: `${L}에 ${J(big, '을', '를')} 곱함 (비례배분의 뜻을 놓침)` }, { v: q(L + small) }],
     fill: nearInt(r, T, 8), fmt: intF, order: 'asc', explain: `큰 쪽은 전체의 ${M(fr(big, small + big))} → 한 칸 ${L} ÷ ${big} = ${k}, 전체 ${small + big}칸 = ${T}` });
 };
+
+// ── 다희(초4) 문제지: 분수 기초(초3-2) · 소수의 덧셈과 뺄셈(초4-2) · 끝까지 읽기(문장제·규칙·도형) ──
+// 소수 둘째 자리까지를 정수(× 100)로 다룸
+const c2 = (x: Q) => Math.round(num(x) * 100);
+const D2 = (n: number) => q(n, 100);
+// 자리마다 큰 수에서 작은 수를 빼는 실수(받아내림 안 함)
+function digitAbsSub(a: number, b: number) { let r = 0, p = 1; while (a > 0 || b > 0) { r += Math.abs((a % 10) - (b % 10)) * p; a = Math.floor(a / 10); b = Math.floor(b / 10); p *= 10; } return r; }
+// 받아올림을 하지 않는 실수
+function digitNoCarry(a: number, b: number) { let r = 0, p = 1; while (a > 0 || b > 0) { r += (((a % 10) + (b % 10)) % 10) * p; a = Math.floor(a / 10); b = Math.floor(b / 10); p *= 10; } return r; }
+const ff = (n: number, d: number) => ({ s: M(fr(n, d)), v: q(n, d) });
+
+// 분수 기초
+G['hf-1'] = (r) => { // 먹은/남은 부분
+  const n = ri(r, 5, 12), k = (() => { for (;;) { const x = ri(r, 2, n - 2); if (x * 2 !== n) return x; } })(), ate = r() < 0.5, it = pick(r, [['피자', '조각'], ['케이크', '조각'], ['초콜릿', '칸']]);
+  const want = ate ? k : n - k, other = ate ? n - k : k;
+  return build(r, { text: `${J(it[0], '을', '를')} 똑같이 ${n}${J(it[1], '으로', '로')} 나누어 그중 ${k}${J(it[1], '을', '를')} 먹었습니다. <b>${ate ? '먹은' : '남은'}</b> ${J(it[0], '은', '는')} 전체의 얼마인가요?`,
+    correct: ff(want, n), wrongs: [{ ...ff(other, n), note: ate ? '먹은 부분이 아니라 남은 부분을 구함' : '남은 부분이 아니라 먹은 부분을 구함' }, { ...ff(n, want), note: '분자와 분모를 바꿈' }, { ...ff(want, other), note: '전체 대신 나머지 조각 수를 분모로 씀' }, ff(1, want)],
+    fill: () => ff(ri(r, 1, n), ri(r, 2, n + 2)), order: 'shuffle', explain: `전체 ${n}${it[1]} 중 ${ate ? '먹은' : '남은'} 것은 ${want}${it[1]} → ${M(fr(want, n))}` });
+};
+G['hf-2'] = (r) => { // 단위분수 가장 큰/작은
+  const ds = shuffle(r, [2, 3, 4, 5, 6, 7, 8, 9, 10, 12]).slice(0, 5), big = r() < 0.6, mn = Math.min(...ds), mxd = Math.max(...ds);
+  const want = big ? mn : mxd, opp = big ? mxd : mn;
+  return build(r, { text: `다음 중 가장 <b>${big ? '큰' : '작은'}</b> 분수는?`, correct: { s: M(fr(1, want)) },
+    wrongs: ds.filter((d) => d !== want).map((d) => ({ s: M(fr(1, d)), note: d === opp ? (big ? '분모가 클수록 큰 분수라고 생각함 (분자가 1이면 분모가 작을수록 큼)' : '분모가 작을수록 작은 분수라고 생각함 (분자가 1이면 분모가 클수록 작음)') : undefined })),
+    order: 'shuffle', explain: `분자가 1이면 분모가 작을수록 커요 (똑같이 나눈 조각이 적을수록 한 조각이 큼) → 가장 ${big ? '큰' : '작은'} 것은 ${M(fr(1, want))}` });
+};
+G['hf-3'] = (r) => { // 단위분수 두 개 비교
+  const [a, b] = shuffle(r, [2, 3, 4, 5, 6, 7, 8, 9, 10]).slice(0, 2), A = M(fr(1, a)), B = M(fr(1, b));
+  const gt = a < b, opts = [{ s: `${A} > ${B}` }, { s: `${A} < ${B}` }, { s: `${A} = ${B}` }], correct = gt ? opts[0] : opts[1];
+  return build(r, { text: `${A} ${josa(1, '과', '와')} ${B} 의 크기를 바르게 비교한 것은?`, correct,
+    wrongs: opts.filter((o) => o !== correct).map((o, i) => (i === 0 ? { ...o, note: '분모가 클수록 큰 분수라고 생각함 (분자가 1이면 분모가 작을수록 큼)' } : o)), count: 3, order: 'shuffle',
+    explain: `${a}조각으로 나눈 한 조각과 ${b}조각으로 나눈 한 조각 → 적게 나눌수록 한 조각이 커요 → ${gt ? A + ' > ' + B : A + ' < ' + B}` });
+};
+G['hf-4'] = (r) => { // 분모가 같은 분수 중 가장 큰
+  const d = ri(r, 6, 12), ns = shuffle(r, Array.from({ length: d - 1 }, (_, i) => i + 1)).slice(0, 5), mxn = Math.max(...ns), mnn = Math.min(...ns);
+  return build(r, { text: '다음 중 가장 큰 분수는?', correct: ff(mxn, d), wrongs: ns.filter((n) => n !== mxn).map((n) => ({ ...ff(n, d), note: n === mnn ? '분자가 작을수록 큰 분수라고 생각함' : undefined })), order: 'shuffle',
+    explain: `분모가 같으면 분자가 클수록 커요 → ${M(fr(mxn, d))}` });
+};
+function partOf(r: Rng): any { const b = ri(r, 3, 8), a = ri(r, 2, b - 1), m = ri(r, 2, 9); if (gcd(a, b) !== 1) return partOf(r); return { a, b, m, N: b * m, ans: a * m }; }
+G['hf-5'] = (r) => { // N의 a/b
+  const { a, b, m, N, ans } = partOf(r);
+  return build(r, { text: `${N}의 ${M(fr(a, b))}${josa(a, '은', '는')} 얼마인가요?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(m), note: `${M(fr(1, b))}만큼만 구함 (× ${a} 빠뜨림)` }, ...(N % a === 0 && N / a !== ans ? [{ v: q(N / a), note: `분자(${a})로 나눔` }] : []), { v: q(N - ans), note: '나머지 부분을 구함' }, { v: q(N * a) }],
+    fill: nearInt(r, ans, 5), fmt: intF, order: 'asc', explain: `${N}을 ${b}묶음으로 똑같이 나누면 한 묶음 ${m} → ${a}묶음은 ${m} × ${a} = ${ans}` });
+};
+G['hf-6'] = (r) => { // 문장제 분수만큼
+  const { a, b, m, N, ans } = partOf(r), give = r() < 0.5, it = pick(r, [['사탕', '개'], ['색종이', '장'], ['구슬', '개']]), want = give ? ans : N - ans;
+  return build(r, { text: `${it[0]} ${N}${it[1]} 중에서 ${M(fr(a, b))}${josa(a, '을', '를')} 동생에게 주었습니다. ${give ? '동생에게 <b>준</b>' : '<b>남은</b>'} ${J(it[0], '은', '는')} 몇 ${it[1]}인가요?`,
+    correct: { v: q(want) }, wrongs: [{ v: q(give ? N - ans : ans), note: give ? '준 것이 아니라 남은 것을 구함' : '남은 것이 아니라 준 것을 구함' }, { v: q(m), note: `${M(fr(1, b))}만큼만 구함` }, { v: q(N) }],
+    fill: nearInt(r, want, 5), fmt: unit(it[1]), order: 'asc',
+    explain: `${N}의 ${M(fr(a, b))}: ${N} ÷ ${b} = ${m}, ${m} × ${a} = ${ans}${give ? '' : ` → 남은 것 ${N} − ${ans} = ${N - ans}`}${it[1]}` });
+};
+G['hf-7'] = (r) => { // 1시간·1 m의 a/b
+  const hour = r() < 0.5, b = hour ? pick(r, [3, 4, 5, 6, 10, 12]) : pick(r, [4, 5, 10]), a = ri(r, 2, b - 1), W = hour ? 60 : 100, ans = (W / b) * a, u = hour ? '분' : ' cm';
+  return build(r, { text: `${hour ? '1시간' : '1 m'}의 ${M(fr(a, b))}${josa(a, '은', '는')} 몇 ${hour ? '분' : 'cm'}인가요?`, correct: { v: q(ans) },
+    wrongs: [...(a > 1 ? [{ v: q(W / b), note: `${M(fr(1, b))}만큼만 구함 (× ${a} 빠뜨림)` }] : []), { v: q(W - ans), note: '나머지 부분을 구함' }, { v: q(a * 10) }, ...(hour ? [{ v: q((100 / b) * a), note: '1시간을 100분으로 계산함' }] : [{ v: q((60 / b) * a) }])].filter((o) => Number.isInteger(num(o.v!))),
+    fill: nearInt(r, ans, 8), fmt: unit(u), order: 'asc', explain: `${hour ? '1시간 = 60분' : '1 m = 100 cm'} → ${W} ÷ ${b} = ${W / b}, × ${a} = ${ans}${u}` });
+};
+G['hf-8'] = (r) => G['r2-1'](r);
+G['hf-9'] = (r) => G['r2-2'](r);
+G['hf-10'] = (r) => { // 0.1이 n개
+  const n = ri(r, 12, 89), ask = r() < 0.5;
+  if (ask) return build(r, { text: `0.1이 ${n}개인 수는?`, correct: { v: q(n, 10) }, wrongs: [{ v: q(n), note: '0.1이 몇 개인지를 그대로 씀' }, { v: q(n, 100), note: '소수점 자리를 잘못 셈' }, { v: q(n * 10) }, { v: q(n, 1000) }],
+    fmt: (v) => dec(v), order: 'asc', explain: `0.1이 10개면 1 → 0.1이 ${n}개면 ${dec(q(n, 10))}` });
+  return build(r, { text: `${dec(q(n, 10))}${josa(n, '은', '는')} 0.1이 몇 개인 수인가요?`, correct: { v: q(n) }, wrongs: [{ v: q(Math.floor(n / 10)), note: '자연수 부분만 셈' }, { v: q(n % 10 || 1), note: '소수 부분만 셈' }, { v: q(n * 10), note: '0.01로 셈' }],
+    fill: nearInt(r, n, 6), fmt: unit('개'), order: 'asc', explain: `1은 0.1이 10개 → ${dec(q(n, 10))} = 0.1이 ${n}개` });
+};
+
+// 소수의 덧셈과 뺄셈
+G['hd-1'] = (r) => { const n = ri(r, 102, 899); return build(r, { text: `0.01이 ${n}개인 수는?`, correct: { v: D2(n) },
+  wrongs: [{ v: q(n, 10), note: '0.1로 셈 (소수점 자리를 잘못 셈)' }, { v: q(n, 1000), note: '소수점 자리를 잘못 셈' }, { v: q(n) }], fill: nearDec(r, D2(n), 100), fmt: (v) => dec(v), order: 'asc',
+  explain: `0.01이 100개면 1 → 0.01이 ${n}개면 ${dec(D2(n))}` }); };
+G['hd-2'] = (r) => { // 자릿값
+  for (;;) { const a = ri(r, 1, 9), b = ri(r, 1, 9), c = ri(r, 1, 9); if (new Set([a, b, c]).size < 3) continue; const which = pick(r, [1, 2]), dgt = which === 1 ? b : c, val = which === 1 ? q(b, 10) : q(c, 100);
+    return build(r, { text: `${a}.${b}${c}에서 숫자 ${dgt}${josa(dgt, '이', '가')} 나타내는 수는?`, correct: { v: val },
+      wrongs: [{ v: q(dgt), note: '숫자를 그대로 씀 (자리를 생각하지 않음)' }, { v: which === 1 ? q(b, 100) : q(c, 10), note: '자리를 하나 잘못 셈' }, { v: q(dgt * 10) }, { v: q(dgt, 1000) }], fmt: (v) => dec(v), order: 'asc',
+      explain: `${a}.${b}${c} → 소수 첫째 자리 ${b}는 ${dec(q(b, 10))}, 둘째 자리 ${c}는 ${dec(q(c, 100))}` }); }
+};
+G['hd-3'] = (r) => { // 크기 비교 (자릿수가 다른 소수)
+  for (;;) { const xs = [q(ri(r, 2, 9), 10), D2(ri(r, 11, 99)), D2(ri(r, 11, 99)), q(ri(r, 1, 9), 10), D2(ri(r, 101, 199) - 100 + ri(r, 0, 0))];
+    const uniq = xs.filter((x, i) => xs.findIndex((y) => eq(x, y)) === i); if (uniq.length < 5) continue;
+    const mx0 = uniq.reduce((a, b) => (lt(a, b) ? b : a)); if (c2(mx0) % 10 !== 0) continue; // 가장 큰 수가 한 자리 소수일 때 → 함정이 살아남
+    const longest = uniq.filter((x) => c2(x) % 10).reduce((a, b) => (c2(a) % 100 > c2(b) % 100 ? a : b));
+    return build(r, { text: '다음 중 가장 큰 수는?', correct: { v: mx0 }, wrongs: uniq.filter((x) => x !== mx0).map((x) => ({ v: x, note: x === longest ? '소수점 아래 숫자가 많으면(길면) 크다고 생각함' : undefined })), fmt: (v) => dec(v), order: 'shuffle',
+      explain: `소수 첫째 자리부터 비교: ${uniq.map((x) => dec(x)).join(', ')} → ${dec(mx0)}${josa(c2(mx0) / 10, '이', '가')} 가장 커요 (${dec(mx0)} = ${(num(mx0)).toFixed(2)})` }); }
+};
+G['hd-4'] = (r) => { // 한 자리 소수 + 두 자리 소수
+  const a = ri(r, 2, 9), b = ri(r, 11, 99); if (b % 10 === 0) return G['hd-4'](r); const A = q(a, 10), B = D2(b), res = add(A, B);
+  return build(r, { text: `다음을 계산한 값은?\n${M(`${dec(A)} + ${dec(B)}`)}`, correct: { v: res },
+    wrongs: [{ v: D2(a + b), note: '소수점 자리를 맞추지 않고 더함' }, { v: q(a + b, 1000) }, { v: add(res, q(1, 10)) }, { v: q(a + Math.floor(b / 10), 10) }], fill: nearDec(r, res, 100), fmt: (v) => dec(v), order: 'asc',
+    explain: `소수점끼리 줄 맞춰 세로로: ${J(dec(A), '을', '를')} ${J((a / 10).toFixed(2), '으로', '로')} 보고 ${(a / 10).toFixed(2)} + ${dec(B)} = ${dec(res)}` });
+};
+G['hd-5'] = (r) => { // 두 자리 소수 덧셈 받아올림
+  for (;;) { const a = ri(r, 105, 599), b = ri(r, 105, 499); if (a % 10 + b % 10 < 10 || a % 10 === 0 || b % 10 === 0) continue; const s = a + b, nc = digitNoCarry(a, b); if (nc === s) continue;
+    return build(r, { text: `다음을 계산한 값은?\n${M(`${dec(D2(a))} + ${dec(D2(b))}`)}`, correct: { v: D2(s) },
+      wrongs: [{ v: D2(nc), note: '받아올림을 하지 않음' }, { v: D2(s - 10), note: '받아올림한 1을 더하지 않음' }, { v: D2(s + 100) }], fill: nearDec(r, D2(s), 100), fmt: (v) => dec(v), order: 'asc',
+      explain: `소수점 맞춰 세로로, 둘째 자리부터: ${dec(D2(a))} + ${dec(D2(b))} = ${dec(D2(s))} (받아올림 주의)` }); }
+};
+function decSub(r: Rng, aIn: number, bIn: number, text?: (A: string, B: string) => string, u = '') {
+  const A = D2(aIn), B = D2(bIn), res = D2(aIn - bIn), dab = digitAbsSub(aIn, bIn);
+  const f = u ? (v: Q) => dec(v) + u : (v: Q) => dec(v);
+  return build(r, { text: text ? text(dec(A), dec(B)) : `다음을 계산한 값은?\n${M(`${dec(A)} − ${dec(B)}`)}`, correct: { v: res },
+    wrongs: [...(dab !== aIn - bIn ? [{ v: D2(dab), note: '자리마다 큰 수에서 작은 수를 뺌 (받아내림 안 함)' }] : []), { v: D2(aIn - bIn + 100), note: '받아내림한 뒤 1을 빼지 않음' }, { v: add(A, B), note: '빼야 하는데 더함' }],
+    fill: nearDec(r, res, 100), fmt: f, order: 'asc', explain: `소수점 맞춰 세로로, 둘째 자리부터 빼요(모자라면 받아내림): ${dec(A)} − ${dec(B)} = ${dec(res)}${u}` });
+}
+G['hd-6'] = (r) => { for (;;) { const a = ri(r, 21, 69) * 10, b = ri(r, 101, a - 30); if (a % 100 && b % 10 && (a % 100) / 10 < Math.floor((b % 100) / 10) + 1) return decSub(r, a, b); } }; // 3.2 − 1.75 꼴
+G['hd-7'] = (r) => { for (;;) { const a = ri(r, 301, 899), b = ri(r, 101, a - 50); if (a % 10 < b % 10 && Math.floor(a / 10) % 10 <= Math.floor(b / 10) % 10) return decSub(r, a, b); } }; // 받아내림 두 번
+G['hd-8'] = (r) => { const b = ri(r, 11, 89); return b % 10 ? decSub(r, 100, b) : G['hd-8'](r); }; // 1 − 0.xx
+G['hd-9'] = (r) => { // 문장제 덧셈 (자리 다름)
+  const a = ri(r, 11, 39), b = ri(r, 11, 99); if (b % 10 === 0 || a % 10 === 0) return G['hd-9'](r); const A = q(a, 10), B = D2(b), res = add(A, B), [x, y] = pick(r, [['물', '주스'], ['우유', '물'], ['물', '식초']]);
+  return build(r, { text: `${x} ${dec(A)} L와 ${y} ${dec(B)} L를 섞으면 모두 몇 L인가요?`, correct: { v: res },
+    wrongs: [{ v: D2(a + b), note: '소수점 자리를 맞추지 않고 더함' }, { v: sub(B, A)[0] > 0 ? sub(B, A) : sub(A, B), note: '더해야 하는데 뺌' }, { v: add(res, q(1)) }], fill: nearDec(r, res, 100), fmt: (v) => dec(v) + ' L', order: 'asc',
+    explain: `${dec(A)} + ${dec(B)} → 소수점 맞춰 ${(a / 10).toFixed(2)} + ${dec(B)} = ${dec(res)} L` });
+};
+G['hd-10'] = (r) => { for (;;) { const a = ri(r, 15, 49) * 10, b = ri(r, 11, a - 20); if (b % 10 && b < a) return decSub(r, a, b, (A, B) => `끈 ${A} m 중에서 ${B} m를 사용했습니다. 남은 끈은 몇 m인가요?`, ' m'); } };
+
+// 끝까지 읽기: 계산·규칙·도형·문장제
+G['hw-1'] = (r) => { // 0이 있는 받아내림 세 자리 뺄셈
+  for (;;) { const a = ri(r, 3, 9) * 100 + ri(r, 1, 9), b = ri(r, 111, a - 100); if (Math.floor(b / 10) % 10 === 0 || b % 10 <= a % 10) continue; const d = a - b, dab = digitAbsSub(a, b);
+    return build(r, { text: `다음을 계산한 값은?\n$${a} − ${b}$`, correct: { v: q(d) }, wrongs: [{ v: q(dab), note: '자리마다 큰 수에서 작은 수를 뺌 (받아내림 안 함)' }, { v: q(d + 10), note: '0에서 받아내림할 때 실수함' }, { v: q(d + 100), note: '받아내림한 뒤 백의 자리에서 1을 빼지 않음' }, { v: q(a + b), note: '빼야 하는데 더함' }],
+      fill: nearInt(r, d, 20), fmt: intF, order: 'asc', explain: `일의 자리부터: ${a % 10}에서 ${b % 10}를 뺄 수 없으니 받아내림 — 십의 자리가 0이라 백의 자리에서 먼저 빌려 와요 → ${a} − ${b} = ${d}` }); }
+};
+G['hw-2'] = (r) => { // 세 자리 덧셈 받아올림 두 번
+  for (;;) { const a = ri(r, 135, 689), b = ri(r, 135, 299); if (a % 10 + b % 10 < 10 || Math.floor(a / 10) % 10 + Math.floor(b / 10) % 10 < 9) continue; const s = a + b, nc = digitNoCarry(a, b); if (s >= 1000) continue;
+    return build(r, { text: `다음을 계산한 값은?\n$${a} + ${b}$`, correct: { v: q(s) }, wrongs: [{ v: q(nc), note: '받아올림을 하지 않음' }, { v: q(s - 10), note: '받아올림한 1을 더하지 않음' }, { v: q(s - 100), note: '받아올림한 1을 더하지 않음' }],
+      fill: nearInt(r, s, 20), fmt: intF, order: 'asc', explain: `일의 자리부터 더하고 10이 넘으면 받아올림: ${a} + ${b} = ${s}` }); }
+};
+G['hw-3'] = (r) => { // 곱하는 규칙
+  const k = pick(r, [2, 3, 3, 4]), a = ri(r, 1, 4), s = [a, a * k, a * k * k, a * k ** 3], ans = a * k ** 4, last = s[3];
+  return build(r, { text: `규칙에 따라 수를 늘어놓았습니다. □ 안에 알맞은 수는?\n${s.join(', ')}, □`, correct: { v: q(ans) },
+    wrongs: [...(k !== 2 ? [{ v: q(last * 2), note: '몇 배씩 커지는 규칙을 2배로 착각함' }] : [{ v: q(last * 3), note: '몇 배씩 커지는 규칙을 잘못 봄' }]), { v: q(last + (last - s[2])), note: '같은 수만큼 커지는 규칙으로 착각함' }, { v: q(last + k) }],
+    fill: nearInt(r, ans, 20), fmt: intF, order: 'asc', explain: `${s.join(' → ')}: 앞의 수에 ${J(k, '을', '를')} 곱하는 규칙 → ${last} × ${k} = ${ans}` });
+};
+G['hw-4'] = (r) => { // 커지는 수가 1씩 늘어나는 규칙
+  const st = ri(r, 1, 10), d0 = ri(r, 1, 4), s = [st]; for (let i = 0; i < 4; i++) s.push(s[i] + d0 + i); const ans = s[4] + d0 + 4;
+  return build(r, { text: `규칙에 따라 수를 늘어놓았습니다. □ 안에 알맞은 수는?\n${s.join(', ')}, □`, correct: { v: q(ans) },
+    wrongs: [{ v: q(s[4] + d0 + 3), note: '커지는 수가 늘어나는 규칙을 놓침 (같은 수만큼 더함)' }, { v: q(s[4] + d0), note: '처음 커진 만큼만 더함' }, { v: q(s[4] * 2) }],
+    fill: nearInt(r, ans, 6), fmt: intF, order: 'asc', explain: `커지는 수: ${s.slice(1).map((x, i) => '+' + (x - s[i])).join(', ')} → 다음은 +${d0 + 4} → ${s[4]} + ${d0 + 4} = ${ans}` });
+};
+G['hw-5'] = (r) => { // 나머지 올림
+  for (;;) { const c = pick(r, [25, 30, 35, 40, 45]), N = ri(r, 4, 15) * c + ri(r, 1, c - 1); if (N > 600) continue; const fl = Math.floor(N / c), ans = fl + 1;
+    const [who, veh, u] = pick(r, [['학생', '버스', '대'], ['사람', '배', '척'], ['학생', '케이블카', '대']]);
+    return build(r, { text: `한 ${u}에 ${c}명이 탈 수 있는 ${veh}에 ${who} ${N}명이 모두 타려면 ${J(veh, '은', '는')} 적어도 몇 ${u} 필요한가요?`,
+      correct: { v: q(ans) }, wrongs: [{ v: q(fl), note: `남은 ${who}(나머지)을 태울 ${J(veh, '을', '를')} 빠뜨림` }, { v: q(c), note: '한 번에 타는 사람 수를 답함' }, { v: q(N - c) }],
+      fill: nearInt(r, ans, 3), fmt: unit(u), order: 'asc', explain: `${N} ÷ ${c} = ${fl} … ${N - fl * c} → 남은 ${N - fl * c}명도 타야 하니 ${fl} + 1 = ${ans}${u}` }); }
+};
+G['hw-6'] = (r) => { // 나머지 버림
+  const c = ri(r, 6, 15), n = ri(r, 4, 12), rem = ri(r, 1, c - 1), N = c * n + rem;
+  return build(r, { text: `끈 ${N} cm로 ${c} cm짜리 리본을 만들려고 합니다. 리본은 몇 개까지 만들 수 있나요?`, correct: { v: q(n) },
+    wrongs: [{ v: q(n + 1), note: '남는 끈으로도 하나 더 만들 수 있다고 생각함' }, { v: q(rem), note: '몫 대신 나머지를 답함' }, { v: q(N - c) }],
+    fill: nearInt(r, n, 3), fmt: unit('개'), order: 'asc', explain: `${N} ÷ ${c} = ${n} … ${rem} → 남는 ${rem} cm로는 리본을 못 만들어요 → ${n}개` });
+};
+G['hw-7'] = (r) => { // 사각형 나머지 각
+  for (;;) { const a = ri(r, 12, 30) * 5, b = ri(r, 12, 30) * 5, c = ri(r, 12, 30) * 5, x = 360 - a - b - c; if (x < 40 || x > 160 || new Set([a, b, c, x]).size < 4) continue;
+    return build(r, { text: `사각형의 세 각의 크기가 ${a}°, ${b}°, ${c}°일 때, 나머지 한 각의 크기는?`, correct: { v: q(x) },
+      wrongs: [{ v: q(a + b + c), note: '세 각을 더하기만 하고 360°에서 빼지 않음' }, { v: q(pick(r, [a, b, c])), note: '주어진 각 중 하나를 그대로 고름' }, { v: q(x + 10) }],
+      fill: () => q(Math.max(5, x + (r() < 0.5 ? -1 : 1) * ri(r, 1, 6) * 5)), fmt: unit('°'), order: 'asc', explain: `사각형의 네 각의 합은 360° → 360° − (${a}° + ${b}° + ${c}°) = ${x}°` }); }
+};
+G['hw-8'] = (r) => { // 삼각형 나머지 각
+  for (;;) { const a = ri(r, 6, 20) * 5, b = ri(r, 6, 20) * 5, x = 180 - a - b; if (x < 20 || a === b) continue;
+    return build(r, { text: `삼각형의 두 각의 크기가 ${a}°, ${b}°일 때, 나머지 한 각의 크기는?`, correct: { v: q(x) },
+      wrongs: [{ v: q(360 - a - b), note: '삼각형인데 360°에서 뺌 (삼각형 세 각의 합은 180°)' }, { v: q(a + b), note: '두 각을 더하기만 함' }, { v: q(x + 10) }],
+      fill: () => q(Math.max(5, x + (r() < 0.5 ? -1 : 1) * ri(r, 1, 6) * 5)), fmt: unit('°'), order: 'asc', explain: `삼각형의 세 각의 합은 180° → 180° − (${a}° + ${b}°) = ${x}°` }); }
+};
+G['hw-9'] = (r) => { // 먹고 더 사 온
+  const N = ri(r, 20, 60), a = ri(r, 5, N - 5), b = ri(r, 5, 30), ans = N - a + b, it = pick(r, ['귤', '사탕', '쿠키']);
+  return build(r, { text: `${it} ${N}개 중에서 ${a}개를 먹고, ${b}개를 더 사 왔습니다. 지금 ${J(it, '은', '는')} 몇 개인가요?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(N - a), note: '더 사 온 것을 더하지 않음 (끝까지 안 읽음)' }, { v: q(N + a + b), note: '먹은 것을 빼지 않고 더함' }, ...(N - a - b > 0 ? [{ v: q(N - a - b), note: '사 온 것을 빼버림' }] : [])],
+    fill: nearInt(r, ans, 6), fmt: unit('개'), order: 'asc', explain: `${N} − ${a} + ${b} = ${ans}개` });
+};
+G['hw-10'] = (r) => { // 잘못 계산한 수
+  const a = ri(r, 8, 30), x = ri(r, a + 5, 80), R = x + a, ans = x - a;
+  return build(r, { text: `어떤 수에서 ${J(a, '을', '를')} 빼야 할 것을 잘못하여 더했더니 ${J(R, '이', '가')} 되었습니다. 바르게 계산하면 얼마인가요?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(x), note: '어떤 수만 구하고 끝냄 (바르게 계산하기를 빠뜨림)' }, { v: q(R), note: '잘못 계산한 값을 그대로 씀' }, { v: q(R + a) }],
+    fill: nearInt(r, ans, 6), fmt: intF, order: 'asc', explain: `어떤 수: ${R} − ${a} = ${x} → 바르게 계산: ${x} − ${a} = ${ans}` });
+};
+
+// 고정 문항: 생성기를 정해진 seed 로 돌려 문제지의 원래 문항을 만든다(같은 코드면 항상 같은 문제)
+export function makeFixed(id: string, area: string, seed: number) {
+  const { _vals, ...rest } = G[id](makeRng(seed)) as any; void _vals;
+  return { id, area, type: 'choice', ...rest };
+}
 
 export const TWIN_IDS = Object.keys(G);
 export const hasTwin = (srcId: string) => !!G[srcId];
