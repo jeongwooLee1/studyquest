@@ -26,10 +26,11 @@ import { REC_1, REC_2, REC_3, REC_4 } from './tests/rec_e56.ts';
 import { MATH_E4 } from './tests/math_e4.ts';
 import { UNIT_SETS } from './tests/rec_units.ts';
 import { E4_SETS } from './tests/e4_sets.ts';
+import { GEO_E } from './tests/geo_e.ts';
 import { grade } from './grade.ts';
 import { makeTwin, hasTwin } from './twins.ts';
 
-const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, REC_1, REC_2, REC_3, REC_4, ...UNIT_SETS, ...E4_SETS].map((t) => [t.id, t]));
+const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, GEO_E, REC_1, REC_2, REC_3, REC_4, ...UNIT_SETS, ...E4_SETS].map((t) => [t.id, t]));
 const SITE = 'https://study.blissme.ai/leveltest/';
 const GRACE_MS = 2 * 60 * 1000; // 마감 후 네트워크 지연 허용
 
