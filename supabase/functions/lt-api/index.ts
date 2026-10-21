@@ -8,6 +8,7 @@
 // POST { action, ... }
 //   catalog                         시험 목록(문제 없음)
 //   version                         시험별 내용 해시(배포 확인용)
+//   progress {student}              문제지 목록 화면용: 시험별 푼 횟수·최근/최고 점수(정답·리포트 링크 없음)
 //   start   {testId, student}       응시 시작 → attemptId, kidToken, 문제, 마감 시각
 //   resume  {attemptId, kidToken}   새로고침·재접속 시 이어서 풀기
 //   save    {attemptId, kidToken, answers, qtimes, tabLeaves}
@@ -169,6 +170,22 @@ Deno.serve(async (req) => {
     if (action === 'catalog') return json({ tests: Object.values(TESTS).map(testMeta) });
     // 배포본 확인용: 시험별 내용 해시(저장소의 tests/*.ts 와 같은지 비교)
     if (action === 'version') return json({ tests: Object.fromEntries(await Promise.all(Object.values(TESTS).map(async (t: any) => [t.id, await sha256(JSON.stringify(t))]))) });
+
+    if (action === 'progress') {
+      const student = String(body.student || '').replace(/\s+/g, ' ').trim().slice(0, 20);
+      if (!student) return json({ error: '이름이 필요해요' }, 400);
+      await finalizeExpired(sb);
+      const { data } = await sb.from('lt_attempts').select('test_id,status,score,total,started_at,submitted_at').eq('student', student).order('started_at', { ascending: false }).limit(300);
+      const progress: Record<string, any> = {};
+      for (const r of data || []) {
+        const o = progress[r.test_id] ||= { count: 0, done: 0, best: null, total: r.total, inProgress: false, last: null };
+        o.count++;
+        if (!o.last) o.last = { status: r.status, score: r.score, total: r.total, startedAt: r.started_at, submittedAt: r.submitted_at };
+        if (r.status === 'in_progress') o.inProgress = true;
+        else { o.done++; o.total = r.total; if (o.best == null || r.score > o.best) o.best = r.score; }
+      }
+      return json({ student, progress });
+    }
 
     if (action === 'start') {
       const test = TESTS[String(body.testId || '')];
