@@ -19,9 +19,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { MATH_M1 } from './tests/math_m1.ts';
 import { REC_1, REC_2, REC_3, REC_4 } from './tests/rec_e56.ts';
+import { MATH_E4 } from './tests/math_e4.ts';
 import { grade } from './grade.ts';
 
-const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, REC_1, REC_2, REC_3, REC_4].map((t) => [t.id, t]));
+const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, REC_1, REC_2, REC_3, REC_4].map((t) => [t.id, t]));
 const SITE = 'https://study.blissme.ai/leveltest/';
 const GRACE_MS = 2 * 60 * 1000; // 마감 후 네트워크 지연 허용
 
@@ -37,7 +38,7 @@ const publicQuestions = (test: any) => test.questions.map((q: any) => {
   const { answer: _a, traps: _t, explain: _e, ...rest } = q; // 정답·함정·풀이는 제출 전엔 내려보내지 않음
   return rest;
 });
-const testMeta = (test: any) => ({ id: test.id, title: test.title, subtitle: test.subtitle, minutes: test.minutes, count: test.questions.length, practice: !!test.practice,
+const testMeta = (test: any) => ({ id: test.id, title: test.title, subtitle: test.subtitle, minutes: test.minutes, count: test.questions.length, practice: !!test.practice, passMsg: test.passMsg || '',
   areas: test.areas.map((a: any) => ({ id: a.id, group: a.group, name: a.name, unit: a.unit, why: a.why, study: a.study })) });
 // 아이에게 보여주는 결과. 레벨테스트는 정답·풀이 없음(재시험 대비), 복습 문제지(practice)는 문항별 정답·풀이까지
 const kidResult = (res: any, test: any) => ({ score: res.score, total: res.total, pct: res.pct, overall: res.overall,
@@ -76,7 +77,7 @@ function resultMessage(test: any, row: any, res: any) {
   L.push(`소요 ${mmss(elapsed)} / 제한 ${test.minutes}분${row.tab_leaves ? ` · 화면 이탈 ${row.tab_leaves}회` : ''}`);
   const dk = res.perQ.filter((p: any) => p.dk).length, blank = res.perQ.filter((p: any) => p.blank).length;
   if (dk || blank) L.push(`모르겠어요 ${dk}문항 · 빈칸 ${blank}문항`);
-  for (const g of ['초등', '중1']) {
+  for (const g of [...new Set(res.areas.map((a: any) => a.group))] as string[]) {
     const as = res.areas.filter((a: any) => a.group === g);
     if (!as.length) continue;
     L.push('');
@@ -92,7 +93,7 @@ function resultMessage(test: any, row: any, res: any) {
     });
   } else {
     L.push('');
-    L.push('👏 모든 영역 통과! 겨울방학 중2 예습으로 넘어가도 좋아요.');
+    L.push('👏 모든 영역 통과!' + (test.passMsg ? ' ' + test.passMsg : ''));
   }
   if (res.habits.length) {
     L.push('');

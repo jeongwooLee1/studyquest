@@ -374,7 +374,7 @@
       '<div class="big" style="margin-top:16px">' + r.score + ' <small>/ ' + r.total + '</small></div><p class="sub">' + LT.esc(r.overall) + '</p>' +
       '<p class="muted" style="margin-top:10px">자세한 결과와 공부할 순서는 부모님께 전달됐어요.</p></div>';
     h += '<div class="card"><h2>영역별 결과</h2>';
-    ['초등', '중1'].forEach(function (g) {
+    r.areas.map(function (a) { return a.group; }).filter(function (g, i, arr) { return arr.indexOf(g) === i; }).forEach(function (g) {
       var as = r.areas.filter(function (a) { return a.group === g; }); if (!as.length) return;
       h += '<div class="grp">' + g + '</div><ul class="areas">' + as.map(function (a) {
         var L = LT.LEVEL[a.level];

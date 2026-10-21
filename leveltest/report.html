@@ -91,7 +91,7 @@
 
     // 영역별
     h += '<div class="card"><h2>영역별 진단</h2>';
-    ['초등', '중1'].forEach(function (g) {
+    res.areas.map(function (a) { return a.group; }).filter(function (g, i, arr) { return arr.indexOf(g) === i; }).forEach(function (g) {
       var as = res.areas.filter(function (a) { return a.group === g; }); if (!as.length) return;
       h += '<div class="grp">' + g + '</div><ul class="areas">' + as.map(function (a) {
         var L = LT.LEVEL[a.level];
@@ -104,12 +104,12 @@
 
     // 학습 순서
     h += '<div class="card"><h2>👉 학습 순서</h2>';
-    if (!res.priority.length) h += '<p class="sub">모든 영역 통과! 겨울방학 중2 예습(뉴런 수학 2(상))으로 넘어가도 좋아요.</p>';
+    if (!res.priority.length) h += '<p class="sub">모든 영역 통과!' + (test.passMsg ? ' ' + LT.esc(test.passMsg) : '') + '</p>';
     else {
       h += '<p class="muted" style="margin:-4px 0 12px">집중 영역부터, 교육과정 앞 단원부터 순서대로. 강의 → 같은 단원 문제 → 바로 채점 → 틀린 문제 3일·1주 뒤 재풀이.</p><ol class="plan">';
       res.priority.forEach(function (id) {
         var a = areaMeta[id], ra = res.areas.find(function (x) { return x.id === id; }), L = LT.LEVEL[ra.level];
-        var extra = (a.group === '중1' && ra.level === 'focus') ? '<li>기본 문제도 많이 틀린 단원 → <b>바쁜 중1을 위한 빠른 중학연산</b>(이지스에듀) 해당 단원 추가</li>' : '';
+        var extra = (a.group === '중1' && ra.level === 'focus') ? '<li>기본 문제도 많이 틀린 단원 → <b>뉴런 연산 수학 1(상)</b> 해당 단원을 매일 1장 추가</li>' : '';
         h += '<li><div class="t">' + LT.esc(a.name) + ' <span class="lv ' + L.c + '">' + L.t + ' ' + ra.correct + '/' + ra.total + '</span></div>' +
           '<div class="u">' + LT.esc(a.unit) + '</div><ul>' + a.study.map(function (s) { return '<li>' + LT.esc(s) + '</li>'; }).join('') + extra + '</ul>' +
           '<div class="why">' + LT.esc(a.why) + '</div></li>';
