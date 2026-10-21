@@ -49,27 +49,24 @@
 <script src="lt-common.js"></script>
 <script>
 (function () {
-  // 아이별 문제지와 푸는 시기. 문제지를 더 만들면 여기에 id 를 추가한다(id 는 lt-api tests/*.ts 의 id).
+  // 아이별 문제지. EBS 만점왕 단원 하나에 문제지 하나(lt-api tests/rec_units.ts), 위에서부터 순서대로.
+  // 문제지를 더 만들면 여기에 id 를 추가한다(id 는 lt-api tests/*.ts 의 id).
+  var MATH_M1 = { id: 'math-m1', when: '11/14(토) 다시 보기 · 아빠가 말하면 풀기' };
   var STUDENTS = [
-    { name: '이다연', emoji: '🐰', sets: [
-      { id: 'rec-1', when: '이번 주 목요일' },
-      { id: 'rec-3', when: '이번 주 금요일' },
-      { id: 'rec-4', when: '이번 주 토요일' },
-    ], tests: [{ id: 'math-m1', when: '11/14(토) 다시 보기 · 아빠가 말하면 풀기' }] },
-    { name: '이다혜', emoji: '🐻', sets: [
-      { id: 'rec-1', when: '1주 · 화·목 (다연이랑 같이)' },
-      { id: 'rec-2', when: '1주 · 월·수·금' },
-      { id: 'rec-3', when: '2주' },
-      { id: 'rec-4', when: '3주' },
-    ], tests: [{ id: 'math-m1', when: '11/14(토) 다시 보기 · 아빠가 말하면 풀기' }] },
+    { name: '이다연', emoji: '🐰', sets: ['u-mix', 'u-div', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [MATH_M1] },
+    { name: '이다혜', emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-addf', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [MATH_M1] },
     { name: '이다희', emoji: '🐥', sets: [], tests: [{ id: 'math-e4', when: '아빠가 말하면 풀기 · 45분' }] },
   ];
-  // 문제지를 풀기 전에 볼 EBS 강의 (EBS 초등 앱에서 교재 이름으로 검색 → 단원 이름 찾기)
+  // 문제지를 풀기 전에 볼 EBS 강의 (EBS 초등 앱에서 교재 이름으로 검색 → 단원 이름 찾기). 단원평가·시험 문제 풀이 강의는 건너뛴다.
   var LECTURES = {
-    'rec-1': '「만점왕 수학 5-1」 → 「자연수의 혼합 계산」, 「약수와 배수」',
-    'rec-2': '「만점왕 수학 5-1」 → 「약분과 통분」, 「분수의 덧셈과 뺄셈」',
-    'rec-3': '「만점왕 수학 6-1」·「6-2」 → 「분수의 나눗셈」, 「소수의 나눗셈」',
-    'rec-4': '「만점왕 수학 6-1」·「6-2」 → 「비와 비율」, 「비례식과 비례배분」',
+    'u-mix': '「만점왕 수학 5-1」 → 「자연수의 혼합 계산」 01~03강 (04강부터는 안 봐도 돼요)',
+    'u-div': '「만점왕 수학 5-1」 → 「약수와 배수」 개념 강의',
+    'u-red': '「만점왕 수학 5-1」 → 「약분과 통분」 개념 강의',
+    'u-addf': '「만점왕 수학 5-1」 → 「분수의 덧셈과 뺄셈」 개념 강의',
+    'u-fdiv': '「만점왕 수학 6-1」 → 「분수의 나눗셈」, 「6-2」 → 「분수의 나눗셈」 개념 강의',
+    'u-ddiv': '「만점왕 수학 6-1」 → 「소수의 나눗셈」, 「6-2」 → 「소수의 나눗셈」 개념 강의',
+    'u-ratio': '「만점왕 수학 6-1」 → 「비와 비율」 개념 강의',
+    'u-prop': '「만점왕 수학 6-2」 → 「비례식과 비례배분」 개념 강의',
   };
   var PASS = 0.8; // 이 비율 이상 맞히면 ⭐ 통과
   var app = document.getElementById('app');
@@ -125,7 +122,7 @@
     var h = '<div class="set' + (done ? ' done' : '') + '"><div class="num">' + (done ? '✓' : i) + '</div>' +
       '<div class="t">' + LT.esc(m.title) + '</div>' +
       '<div class="u">' + LT.esc(m.subtitle) + '</div>' +
-      '<div class="meta">' + m.count + '문항 · ' + m.minutes + '분<br><span class="when">📅 ' + LT.esc(item.when) + '</span></div>' +
+      '<div class="meta">' + m.count + '문항 · ' + m.minutes + '분' + (item.when ? '<br><span class="when">📅 ' + LT.esc(item.when) + '</span>' : '') + '</div>' +
       (LECTURES[item.id] ? '<div class="lec"><b>📺 먼저 볼 강의</b> EBS 초등 앱에서 ' + LT.esc(LECTURES[item.id]) + '</div>' : '') + '<div class="st">';
     if (going) {
       h += '<span class="chip go">✏️ 풀고 있어요</span><div class="acts"><a class="btn sm" href="' + link(item.id, name) + '">이어 풀기</a></div>';
@@ -144,13 +141,14 @@
 
   function render(s, progress) {
     document.title = s.name + ' · 수학 문제지';
-    var doneN = s.sets.filter(function (x) { return progress[x.id] && progress[x.id].done > 0; }).length;
+    var sets = s.sets.map(function (id) { return { id: id }; });
+    var doneN = sets.filter(function (x) { return progress[x.id] && progress[x.id].done > 0; }).length;
     var h = '<div class="card"><div class="top"><h1>' + face(s) + LT.esc(s.name) + '</h1><button class="switch" id="switch">이름 바꾸기</button></div>' +
       (s.sets.length ? '<div class="sum"><b>초등 복습 문제지 ' + s.sets.length + '개 중 ' + doneN + '개 완료</b>' + (doneN === s.sets.length ? ' 🎉' : '') +
       '<div class="bar"><i style="width:' + Math.max(3, doneN / s.sets.length * 100) + '%"></i></div></div>' +
-      '<p class="muted" style="margin:12px 0 0">EBS 강의 먼저 보고 → 문제지 풀기 → 틀린 문제는 풀이 보고 다시! 3일 뒤에 「다시 풀기」로 한 번 더 풀어요.</p>'
+      '<p class="muted" style="margin:12px 0 0">위에서부터 하나씩! 그 단원 EBS 강의 먼저 보고 → 문제지 풀기 → 틀린 문제는 풀이 보고 다시. 3일 뒤에 「다시 풀기」로 한 번 더 풀어요.</p>'
       : '<p class="muted" style="margin:12px 0 0">레벨테스트로 어디가 약한지 먼저 알아볼게요. 연습장과 연필 준비하고, 모르는 건 찍지 말고 「잘 모르겠어요」!</p>') + '</div>';
-    if (s.sets.length) h += '<div class="sec">초등 복습 문제지</div>' + s.sets.map(function (x, i) { return card(x, i + 1, s.name, progress[x.id]); }).join('');
+    if (s.sets.length) h += '<div class="sec">초등 복습 문제지</div>' + sets.map(function (x, i) { return card(x, i + 1, s.name, progress[x.id]); }).join('');
     if (s.tests.length) h += '<div class="sec">레벨테스트</div>' + s.tests.map(function (x, i) { return card(x, 'T', s.name, progress[x.id]); }).join('');
     app.innerHTML = h;
     document.getElementById('switch').onclick = function () { LT.store('lt.hub.name', null); try { history.replaceState(null, '', location.pathname); } catch (e) {} pickName(); };
