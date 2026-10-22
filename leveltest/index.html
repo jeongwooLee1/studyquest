@@ -144,6 +144,8 @@
   var FROM_HUB = params.get('hub') === '1';
   var IS_RETRY = /:re$/.test(TEST_ID), BASE_ID = TEST_ID.replace(/:re$/, ''); // 틀린 문제 다시 풀기(유사 문제)
   var HUB_URL = 'hub.html' + (N_PARAM ? '?n=' + encodeURIComponent(N_PARAM) : '');
+  // 예전 다시 풀기 링크(test=…:re)는 전용 화면으로
+  if (IS_RETRY) { location.replace('retry.html?test=' + encodeURIComponent(BASE_ID) + '&n=' + encodeURIComponent(N_PARAM) + (FROM_HUB ? '&hub=1' : '') + (params.get('new') === '1' ? '&new=1' : '')); return; }
   if (params.get('new') === '1') {
     // 문제지 목록의 「다시 풀기」: 이 기기의 지난 응시를 잊고 시작 화면으로. 새로고침해도 다시 지우지 않게 주소에서 뺀다.
     LT.store(KEY_ATT, null);
@@ -386,8 +388,8 @@
     h += '</div>';
     if (r.review) h += reviewHtml(r.review);
     var wrongN = r.review ? r.review.filter(function (p) { return !p.correct; }).length : 0;
-    var reUrl = 'index.html?test=' + encodeURIComponent(BASE_ID + ':re') + '&n=' + encodeURIComponent(N_PARAM || j.student) + (FROM_HUB ? '&hub=1' : '') + '&new=1';
-    if (wrongN) h += '<div class="card center noprint"><h2>🔁 틀린 문제 다시 풀기</h2><p class="sub">틀린 ' + wrongN + '문제와 <b>비슷한 문제</b>를 새로 만들어 줘요. 풀이를 읽은 다음 도전!</p>' +
+    var reUrl = 'retry.html?test=' + encodeURIComponent(BASE_ID) + '&n=' + encodeURIComponent(N_PARAM || j.student) + (FROM_HUB ? '&hub=1' : '') + '&new=1';
+    if (wrongN) h += '<div class="card center noprint"><h2>🔁 틀린 문제 다시 풀기</h2><p class="sub">틀린 ' + wrongN + '문제의 <b>설명</b>을 먼저 읽고, 비슷한 문제를 <b>다 맞힐 때까지</b> 풀어요.</p>' +
       '<a class="btn" style="margin-top:12px" href="' + reUrl + '">비슷한 문제 풀기 ▶</a></div>';
     else if (IS_RETRY) h += '<div class="card center"><h2>✅ 틀린 문제 해결!</h2><p class="sub">비슷한 문제를 다 맞혔어요. 3일 뒤에 원래 문제지를 「다시 풀기」로 한 번 더 확인해요.</p></div>';
     h += '<div class="center noprint" style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +

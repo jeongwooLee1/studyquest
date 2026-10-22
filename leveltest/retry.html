@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>틀린 문제 다시 풀기</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="lt.css">
+<style>
+  .step { font-size: 13px; font-weight: 800; color: var(--brand); letter-spacing: .02em; }
+  .qtext { font-size: 18px; line-height: 1.75; margin-top: 8px; }
+  .qtext .m { font-size: 1.12em; }
+  .opts { display: grid; gap: 10px; margin-top: 16px; }
+  .opt { display: flex; align-items: center; gap: 12px; text-align: left; width: 100%; border: 1.5px solid var(--line); background: var(--card); border-radius: 14px; padding: 12px 14px; min-height: 52px; font-size: 17px; }
+  .opt .c { flex: none; font-size: 20px; color: var(--muted); width: 22px; text-align: center; }
+  .opt.on { border-color: var(--sel); background: var(--sel-soft); }
+  .opt.on .c { color: var(--sel); font-weight: 800; }
+  .opt.k { border-color: var(--pass); background: var(--pass-soft); font-weight: 800; }
+  .opt.g { border-color: var(--focus); background: var(--focus-soft); font-weight: 800; }
+  .opt .tag { margin-left: auto; font-size: 13px; font-weight: 800; }
+  .opt.k .tag { color: var(--pass); } .opt.g .tag { color: var(--focus); }
+  .opts.locked .opt { cursor: default; }
+  .dk { display: flex; justify-content: center; margin-top: 14px; }
+  .dkbtn { border: 1.5px dashed var(--line); background: transparent; border-radius: 999px; padding: 8px 16px; font-size: 15px; font-weight: 700; color: var(--ink2); }
+  .dkbtn.on { border-style: solid; border-color: var(--weak); background: var(--weak-soft); color: var(--weak); }
+  .box { margin-top: 12px; padding: 12px 14px; border-radius: 12px; font-size: 15px; line-height: 1.7; }
+  .box b { margin-right: 4px; }
+  .box.trap { background: var(--weak-soft); color: var(--ink); }
+  .box.exp { background: var(--bg); }
+  .box.tip { background: var(--brand-soft); }
+  .verdict { margin-top: 16px; padding: 14px; border-radius: 14px; font-size: 18px; font-weight: 900; text-align: center; }
+  .verdict.o { background: var(--pass-soft); color: var(--pass); } .verdict.x { background: var(--focus-soft); color: var(--focus); }
+  .verdict small { display: block; font-size: 14px; font-weight: 700; margin-top: 4px; color: var(--ink2); }
+  .types { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .type { border: 1.5px solid var(--line); border-radius: 999px; padding: 4px 10px; font-size: 13px; font-weight: 800; display: inline-flex; gap: 6px; align-items: center; }
+  .type.ok { border-color: var(--pass); background: var(--pass-soft); color: var(--pass); }
+  .type.stop { border-color: var(--focus); background: var(--focus-soft); color: var(--focus); }
+  .type.cur { box-shadow: 0 0 0 3px var(--sel-soft); border-color: var(--sel); }
+  .dots i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--line); margin-left: 2px; }
+  .dots i.on { background: var(--pass); }
+  .acts { display: flex; gap: 10px; margin-top: 16px; }
+  .acts .btn { flex: 1; }
+  .center { text-align: center; }
+  .big { font-size: 40px; }
+  .sum li { margin: 6px 0; }
+  .fig svg { max-width: 260px; }
+</style>
+</head>
+<body>
+<div id="app" class="wrap"><div style="padding-top:80px"><div class="spin"></div></div></div>
+<script src="lt-common.js"></script>
+<script>
+(function () {
+  // 틀린 문제 다시 풀기 — ① 틀린 문제 설명을 하나씩 읽고 ② 비슷한 문제를 한 문제씩 바로 채점
+  // 틀리면 그 자리에서 풀이를 보고 새 문제, 같은 유형을 연속으로 맞히면 통과. 다 통과할 때까지.
+  var params = new URLSearchParams(location.search);
+  var BASE = (params.get('test') || '').replace(/:re$/, '');
+  var NAME = (params.get('n') || '').trim();
+  var FROM_HUB = params.get('hub') === '1';
+  var HUB_URL = 'hub.html' + (NAME ? '?n=' + encodeURIComponent(NAME) : '');
+  var KEY = 'lt.mastery.' + BASE + '.' + NAME;
+  var READ_SEC = 5; // 설명은 최소 이만큼 읽어야 다음으로
+  var app = document.getElementById('app');
+  var S = { att: null, q: null, pick: null, dk: false, shownAt: 0, mastery: [], info: null, busy: false };
+  var CIRC = LT.CIRC || ['①', '②', '③', '④', '⑤'];
+
+  function hubBtn() { return FROM_HUB ? '<a class="btn ghost" href="' + HUB_URL + '">← 문제 목록으로</a>' : ''; }
+  function fail(e) {
+    app.innerHTML = '<div class="card center"><div style="font-size:36px">😵</div><p class="sub">' + LT.esc(e.message || '불러오지 못했어요') +
+      '</p><div class="acts"><button class="btn" onclick="location.reload()">다시 시도</button>' + hubBtn() + '</div></div>';
+  }
+  // 버튼을 READ_SEC 초 뒤에 누를 수 있게
+  function readTimer(btn, label) {
+    var left = READ_SEC; btn.disabled = true; btn.textContent = '읽는 중… ' + left;
+    var iv = setInterval(function () { left--; if (left <= 0) { clearInterval(iv); btn.disabled = false; btn.textContent = label; } else btn.textContent = '읽는 중… ' + left; }, 1000);
+  }
+  function optsHtml(q, marks) {
+    return '<div class="opts' + (marks ? ' locked' : '') + '">' + q.options.map(function (o, i) {
+      var n = i + 1, cls = '', tag = '';
+      if (marks) { if (n === marks.answer) { cls = ' k'; tag = '정답'; } else if (n === marks.given) { cls = ' g'; tag = '내 답'; } }
+      else if (S.pick === n) cls = ' on';
+      return '<button class="opt' + cls + '" data-n="' + n + '"><span class="c">' + CIRC[i] + '</span><span>' + LT.md(o) + '</span>' + (tag ? '<span class="tag">' + tag + '</span>' : '') + '</button>';
+    }).join('') + '</div>';
+  }
+  function typesHtml(curSrc) {
+    if (!S.mastery.length) return '';
+    return '<div class="types">' + S.mastery.map(function (t) {
+      var dots = ''; for (var i = 0; i < t.need; i++) dots += '<i class="' + (i < Math.min(t.streak, t.need) ? 'on' : '') + '"></i>';
+      var cls = t.mastered ? ' ok' : t.stopped ? ' stop' : '';
+      return '<span class="type' + cls + (t.src === curSrc && !t.mastered ? ' cur' : '') + '">' + t.no + '번 유형 ' + (t.mastered ? '✅' : t.stopped ? '⚠️' : '<span class="dots">' + dots + '</span>') + '</span>';
+    }).join('') + '</div>';
+  }
+  var srcOf = function (qid) { return String(qid).split('~')[0]; };
+
+  // ── ① 설명 카드 ──
+  function lessons(info, i) {
+    var L = info.lessons[i], n = info.lessons.length;
+    var given = L.dk ? '<b>내 답</b> 잘 모르겠어요' : '';
+    app.innerHTML = '<div class="card"><div class="step">STEP 1 · 틀린 문제 설명 ' + (i + 1) + ' / ' + n + '</div>' +
+      '<h2 style="margin:6px 0 0">' + LT.esc(info.title) + ' · ' + L.no + '번 유형' + (L.area ? ' <span class="muted">(' + LT.esc(L.area) + ')</span>' : '') + '</h2>' +
+      '<div class="qtext">' + LT.md(L.text) + '</div>' + LT.figure(L.fig) + optsHtml(L, { answer: L.answer, given: L.dk ? null : L.given }) +
+      (given ? '<div class="box trap">' + given + '</div>' : '') +
+      (L.trap ? '<div class="box trap"><b>🔍 왜 틀렸을까?</b>' + LT.esc(L.trap) + '</div>' : '') +
+      (L.explain ? '<div class="box exp"><b>풀이</b>' + LT.md(L.explain) + '</div>' : '') +
+      (L.tip ? '<div class="box tip"><b>💡 기억하기</b>' + LT.esc(L.tip) + '</div>' : '') +
+      '<p class="muted" style="margin-top:12px">풀이를 읽고 → 연습장에 직접 다시 풀어 봐요.</p>' +
+      '<div class="acts"><button class="btn" id="ok"></button></div></div>';
+    var b = document.getElementById('ok');
+    readTimer(b, i + 1 < n ? '이해했어요 ✓ 다음 설명' : '이해했어요 ✓');
+    b.onclick = function () { window.scrollTo(0, 0); if (i + 1 < n) lessons(info, i + 1); else ready(info); };
+  }
+  function ready(info) {
+    app.innerHTML = '<div class="card center"><div style="font-size:40px">💪</div><div class="step">STEP 2 · 비슷한 문제로 확인</div>' +
+      '<h1 style="margin-top:6px">이제 직접 풀어 봐요</h1>' +
+      '<p class="sub" style="text-align:left;margin-top:10px">• 방금 본 ' + info.lessons.length + '개 유형과 <b>비슷한 문제</b>가 한 문제씩 나와요.<br>' +
+      '• 답을 고르면 <b>바로 채점</b>돼요. 틀리면 풀이를 보고 <b>새 문제</b>가 나와요.<br>' +
+      '• 같은 유형을 <b>' + info.streak + '번 연속</b> 맞히면 그 유형 통과!<br>• 모두 통과할 때까지 계속해요. 연습장 준비!</p>' +
+      '<div class="acts"><button class="btn" id="go">시작하기 ▶</button></div></div>';
+    document.getElementById('go').onclick = function () {
+      this.disabled = true;
+      LT.api('start', { testId: BASE + ':re', student: NAME }).then(function (j) {
+        S.att = { attemptId: j.attemptId, kidToken: j.kidToken }; LT.store(KEY, S.att);
+        // 시작 응답에는 유형 상태가 없으니 설명 카드에서 만든다
+        S.mastery = info.lessons.map(function (L) { return { src: L.src, no: L.no, area: L.area, need: info.streak, streak: 0, tries: 0, mastered: false, stopped: false }; });
+        ask(j.questions[0]);
+      }).catch(fail);
+    };
+  }
+
+  // ── ② 한 문제씩 바로 채점 ──
+  function ask(q) {
+    S.q = q; S.pick = null; S.dk = false; S.shownAt = Date.now();
+    var done = S.mastery.filter(function (t) { return t.mastered; }).length;
+    app.innerHTML = '<div class="card"><div class="step">STEP 2 · 비슷한 문제 (' + done + ' / ' + S.mastery.length + ' 유형 통과)</div>' + typesHtml(srcOf(q.id)) +
+      '<div class="qtext" style="margin-top:14px">' + LT.md(q.text) + '</div>' + LT.figure(q.fig) + optsHtml(q, null) +
+      '<div class="dk"><button class="dkbtn" id="dk">잘 모르겠어요</button></div>' +
+      '<div class="acts"><button class="btn" id="chk" disabled>확인하기</button></div></div>';
+    var opts = app.querySelector('.opts');
+    opts.onclick = function (e) {
+      var b = e.target.closest('.opt'); if (!b) return;
+      S.pick = Number(b.dataset.n); S.dk = false;
+      [].forEach.call(opts.children, function (x) { x.classList.toggle('on', x === b); });
+      document.getElementById('dk').classList.remove('on'); document.getElementById('chk').disabled = false;
+    };
+    document.getElementById('dk').onclick = function () {
+      S.dk = !S.dk; S.pick = null; this.classList.toggle('on', S.dk);
+      [].forEach.call(opts.children, function (x) { x.classList.remove('on'); });
+      document.getElementById('chk').disabled = !S.dk;
+    };
+    document.getElementById('chk').onclick = check;
+  }
+  function check() {
+    if (S.busy) return; S.busy = true;
+    var btn = document.getElementById('chk'); btn.disabled = true; btn.textContent = '채점 중…';
+    var sec = Math.round((Date.now() - S.shownAt) / 1000);
+    LT.api('check', { attemptId: S.att.attemptId, kidToken: S.att.kidToken, qid: S.q.id, v: S.pick, dk: S.dk, sec: sec }).then(function (r) {
+      S.busy = false; S.mastery = r.mastery || S.mastery; feedback(r);
+    }).catch(function (e) { S.busy = false; btn.disabled = false; btn.textContent = '확인하기'; alert('채점하지 못했어요: ' + e.message); });
+  }
+  function feedback(r) {
+    var q = S.q, t = S.mastery.find(function (x) { return x.src === srcOf(q.id); }) || {};
+    var v = r.correct
+      ? '<div class="verdict o">⭕ 맞았어요!' + (r.justMastered ? '<small>🎉 ' + t.no + '번 유형 통과!</small>' : '<small>한 번 더 맞히면 이 유형 통과예요</small>') + '</div>'
+      : '<div class="verdict x">❌ 아쉬워요. 정답은 ' + CIRC[r.answer - 1] + '<small>' + (t.stopped ? '이 유형은 아빠랑 같이 볼게요' : '풀이를 읽고, 비슷한 문제로 다시 도전!') + '</small></div>';
+    app.innerHTML = '<div class="card"><div class="step">STEP 2 · 채점 결과</div>' + typesHtml(srcOf(q.id)) +
+      '<div class="qtext" style="margin-top:14px">' + LT.md(q.text) + '</div>' + LT.figure(q.fig) + optsHtml(q, { answer: r.answer, given: r.dk ? null : r.given }) + v +
+      (r.trap ? '<div class="box trap"><b>🔍 왜 틀렸을까?</b>' + LT.esc(r.trap) + '</div>' : '') +
+      (r.explain ? '<div class="box exp"><b>풀이</b>' + LT.md(r.explain) + '</div>' : '') +
+      '<div class="acts"><button class="btn" id="nx"></button></div></div>';
+    window.scrollTo(0, 0);
+    var b = document.getElementById('nx'), label = r.next ? '다음 문제 ▶' : '결과 보기 ▶';
+    if (r.correct) b.textContent = label; else readTimer(b, '이해했어요 ✓ ' + label);
+    b.onclick = function () { if (r.next) ask(r.next); else finish(); };
+  }
+  function finish() {
+    app.innerHTML = '<div style="padding-top:80px"><div class="spin"></div></div>';
+    LT.api('submit', { attemptId: S.att.attemptId, kidToken: S.att.kidToken, answers: {}, qtimes: {}, tabLeaves: 0 }).then(result).catch(fail);
+  }
+  function result(j) {
+    var ms = j.mastery || S.mastery, ok = ms.filter(function (t) { return t.mastered; }), stop = ms.filter(function (t) { return !t.mastered; });
+    app.innerHTML = '<div class="card center"><div style="font-size:48px">' + (stop.length ? '💪' : '🎉') + '</div>' +
+      '<h1>' + (stop.length ? '거의 다 왔어요!' : '틀린 문제 모두 해결!') + '</h1>' +
+      '<p class="sub">' + LT.esc(j.test ? j.test.title : '') + '</p>' +
+      '<ul class="sum" style="text-align:left;margin-top:14px">' + ms.map(function (t) {
+        return '<li>' + (t.mastered ? '✅' : '⚠️') + ' <b>' + t.no + '번 유형</b> ' + (t.area ? '(' + LT.esc(t.area) + ') ' : '') + '— ' + t.tries + '문제 ' + (t.mastered ? '만에 통과' : '풀었지만 아직이에요') + '</li>';
+      }).join('') + '</ul>' +
+      (stop.length ? '<p class="muted" style="text-align:left">⚠️ 유형은 아빠랑 같이 보고, 내일 문제 목록에서 「다시 풀기」로 한 번 더 도전해요.</p>'
+        : '<p class="muted">3일 뒤에 원래 문제지를 「다시 풀기」로 한 번 더 확인하면 완벽해요.</p>') +
+      '<div class="acts">' + hubBtn() + '</div></div>';
+    LT.store(KEY, null);
+  }
+
+  // ── 시작 ──
+  function fresh() {
+    LT.api('retryInfo', { testId: BASE + ':re', student: NAME }).then(function (info) {
+      S.info = info;
+      if (!info.count) {
+        app.innerHTML = '<div class="card center"><div style="font-size:44px">🎉</div><h1>다시 풀 틀린 문제가 없어요</h1><p class="sub">마지막에 푼 문제를 다 맞혔어요!</p><div class="acts">' + hubBtn() + '</div></div>';
+        return;
+      }
+      lessons(info, 0);
+    }).catch(fail);
+  }
+  function boot() {
+    if (!BASE || !NAME) { fail(new Error('문제 목록에서 들어와 주세요')); return; }
+    if (params.get('new') === '1') {
+      // 문제 목록의 「다시 풀기 ▶」: 이 기기에 남은 지난 기록은 잊고 새로. 새로고침해도 다시 지우지 않게 주소에서 뺀다.
+      LT.store(KEY, null); params.delete('new');
+      try { history.replaceState(null, '', location.pathname + '?' + params.toString()); } catch (e) {}
+    }
+    var saved = LT.store(KEY);
+    if (!saved || !saved.attemptId) return fresh();
+    S.att = saved;
+    LT.api('resume', saved).then(function (j) {
+      if (j.status !== 'in_progress') { if (j.mastery) return result(j); LT.store(KEY, null); return fresh(); }
+      S.mastery = j.mastery || [];
+      var answers = j.answers || {}, next = (j.questions || []).find(function (q) { return !answers[q.id]; });
+      if (next) ask(next); else finish();
+    }).catch(function (e) { if (e.status === 404) { LT.store(KEY, null); fresh(); } else fail(e); });
+  }
+  boot();
+})();
+</script>
+</body>
+</html>

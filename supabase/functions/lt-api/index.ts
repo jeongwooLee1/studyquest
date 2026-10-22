@@ -10,9 +10,10 @@
 //   version                         시험별 내용 해시(배포 확인용)
 //   progress {student}              문제지 목록 화면용: 시험별 푼 횟수·최근/최고 점수(정답·리포트 링크 없음)
 //   avatars                         문제지 목록 이름 버튼 사진 {이름: data URI} (public.lt_avatars, 저장소에는 사진 없음)
-//   retryInfo {testId, student}     틀린 문제 다시 풀기 안내(testId 는 '<문제지 id>:re') — 다시 풀 문항 수
-//   start {testId: '<id>:re', …}    마지막으로 낸 답안(원래 문제지 또는 다시 풀기)에서 틀린 문항마다 유사 문제 2개(twins.ts)를 만들어 응시 시작.
-//                                   만든 문제는 lt_attempts.questions 에 저장하고 채점·리포트는 저장된 문제로 한다.
+//   retryInfo {testId, student}     틀린 문제 다시 풀기 안내(testId 는 '<문제지 id>:re') — 해결 못 한 유형 수와 유형별 설명 카드
+//   start {testId: '<id>:re', …}    해결 못 한 유형마다 비슷한 문제(twins.ts) 1개로 시작. 만든 문제는 lt_attempts.questions 에 저장
+//   check {attemptId, kidToken, qid, v | dk, sec}  다시 풀기 한 문제 바로 채점 → 정답·풀이, 통과 전이면 같은 유형 문제를 하나 더 붙임
+//                                   같은 유형 2번 연속 정답이면 통과. 다 끝나면 submit 으로 마감(답은 서버에 저장된 것으로 채점)
 //   start   {testId, student}       응시 시작 → attemptId, kidToken, 문제, 마감 시각
 //   resume  {attemptId, kidToken}   새로고침·재접속 시 이어서 풀기
 //   save    {attemptId, kidToken, answers, qtimes, tabLeaves}
@@ -34,29 +35,60 @@ const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, GEO_E, 
 const SITE = 'https://study.blissme.ai/leveltest/';
 const GRACE_MS = 2 * 60 * 1000; // 마감 후 네트워크 지연 허용
 
-// ── 틀린 문제 다시 풀기 ──
+// ── 틀린 문제 다시 풀기 (완벽히 맞힐 때까지) ──
+// 1) 틀린 문제마다 설명(정답·풀이·오답 습관)을 먼저 읽고
+// 2) 유형마다 비슷한 문제(twins.ts)를 한 문제씩 바로 채점: 틀리면 그 자리에서 풀이를 보고 새 문제
+// 3) 같은 유형을 STREAK번 연속 맞히면 통과, MAX_TRIES번 넘게 못 맞히면 멈추고 부모님께 알림
 const RE = ':re';
-const TWINS_PER_Q = 2, MAX_SRC = 6; // 틀린 문항 하나에 유사 문제 2개, 한 번에 최대 6문항(12문제)
+const MAX_SRC = 6, STREAK = 2, MAX_TRIES = 6;
 const baseOf = (id: string) => TESTS[String(id || '').replace(/:re$/, '')];
-const retryTest = (base: any, questions: any[]) => ({ ...base, id: base.id + RE, title: base.title + ' · 틀린 문제 다시 풀기',
-  minutes: Math.max(4, questions.length * 2), questions });
+const retryTest = (base: any, questions: any[]) => ({ ...base, id: base.id + RE, title: base.title + ' · 틀린 문제 다시 풀기', minutes: 90, questions });
 // 응시 행이 쓰는 시험: 다시 풀기는 행에 저장된 문제로
 const testOf = (row: any) => { const base = baseOf(row.test_id); return row.questions ? retryTest(base, row.questions) : base; };
 const srcId = (qid: string) => String(qid).split('~')[0];
-// 이 아이가 이 문제지(원래 또는 다시 풀기)에서 마지막으로 낸 답안의 틀린 문항(유사 문제를 만들 수 있는 것만)
+const seed = () => crypto.getRandomValues(new Uint32Array(1))[0];
+// 유형(원래 문항)별 상태: 문제 순서대로 맞힘/틀림을 보고 마지막 STREAK개가 연속 정답이면 통과
+function masteryOf(questions: any[], answers: any) {
+  const m: Record<string, any> = {};
+  for (const q of questions) {
+    const o = m[srcId(q.id)] ||= { tries: 0, streak: 0, mastered: false, stopped: false, pending: 0 };
+    const a = answers?.[q.id];
+    if (!a) { o.pending++; continue; }
+    o.tries++;
+    o.streak = !a.dk && Number(a.v) === q.answer ? o.streak + 1 : 0;
+    if (o.streak >= STREAK) o.mastered = true;
+  }
+  for (const o of Object.values(m)) if (!o.mastered && o.tries >= MAX_TRIES) o.stopped = true;
+  return m;
+}
+// 아이·부모님 화면용: 원래 문제지의 몇 번 유형인지
+function masteryList(base: any, m: Record<string, any>) {
+  return Object.entries(m).map(([id, o]) => {
+    const i = base.questions.findIndex((q: any) => q.id === id), area = base.areas.find((a: any) => a.id === base.questions[i]?.area);
+    return { src: id, no: i + 1, area: area ? area.name : '', tries: o.tries, streak: o.streak, need: STREAK, mastered: o.mastered, stopped: o.stopped };
+  });
+}
+// 이 답안에서 아직 해결 못 한 유형: 원래 문제지는 틀린 문항, 다시 풀기는 통과 못 한 유형
+function unresolvedOf(row: any): string[] {
+  if (!row || !row.result) return [];
+  if (row.result.mastery) return Object.entries(row.result.mastery).filter(([, o]: any) => !o.mastered).map(([id]) => id);
+  return [...new Set((row.result.perQ || []).filter((p: any) => !p.correct).map((p: any) => srcId(p.id)))] as string[];
+}
+// 마지막으로 낸 답안(원래 문제지 또는 다시 풀기)에서 해결 못 한 유형과, 설명에 쓸 '마지막으로 틀린 문제'
 async function wrongSources(sb: any, student: string, base: any) {
-  const { data } = await sb.from('lt_attempts').select('result,status').eq('student', student).in('test_id', [base.id, base.id + RE])
+  const { data } = await sb.from('lt_attempts').select('result,status,questions').eq('student', student).in('test_id', [base.id, base.id + RE])
     .neq('status', 'in_progress').order('started_at', { ascending: false }).limit(1);
-  const last = data && data[0]; if (!last || !last.result) return [];
-  const ids = [...new Set((last.result.perQ || []).filter((p: any) => !p.correct).map((p: any) => srcId(p.id)))] as string[];
-  return ids.map((id) => base.questions.find((q: any) => q.id === id)).filter((q: any) => q && hasTwin(q.id)).slice(0, MAX_SRC);
+  const last = data && data[0]; if (!last) return [];
+  const qs = last.questions || base.questions;
+  return unresolvedOf(last).filter((id) => hasTwin(id) && base.questions.some((q: any) => q.id === id)).slice(0, MAX_SRC).map((id) => {
+    const src = base.questions.find((q: any) => q.id === id), area = base.areas.find((a: any) => a.id === src.area);
+    const ps = (last.result.perQ || []).filter((p: any) => srcId(p.id) === id && !p.correct), p = ps[ps.length - 1];
+    const q = (p && qs.find((x: any) => x.id === p.id)) || src;
+    return { src, lesson: { src: id, no: base.questions.indexOf(src) + 1, area: area ? area.name : '', text: q.text, fig: q.fig, options: q.options, answer: q.answer,
+      given: p ? p.given : null, dk: !!(p && p.dk), trap: p ? p.trap : null, explain: q.explain || '', tip: area && area.study ? area.study[1] || area.study[0] : '' } };
+  });
 }
-function buildRetryQuestions(srcs: any[]) {
-  const seed = () => crypto.getRandomValues(new Uint32Array(1))[0];
-  const rounds: any[][] = [];
-  for (let k = 0; k < TWINS_PER_Q; k++) rounds.push(srcs.map((q) => makeTwin(q, seed())).filter(Boolean));
-  return rounds.flat(); // 첫 번째 유사 문제들 → 두 번째 유사 문제들 (같은 유형이 붙어 나오지 않게)
-}
+const publicQ = (q: any) => { const { answer: _a, traps: _t, explain: _e, ...rest } = q; return rest; };
 
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'content-type, authorization, apikey', 'Access-Control-Allow-Methods': 'POST, OPTIONS' };
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...CORS, 'content-type': 'application/json' } });
@@ -116,14 +148,20 @@ function resultMessage(test: any, row: any, res: any) {
     L.push(`<b>[${g}]</b>`);
     for (const a of as) L.push(`${LV[a.level]} ${escH(a.name)} ${a.correct}/${a.total}${a.slow ? ' 🐢' : ''}`);
   }
-  if (res.priority.length) {
+  if (res.mastery) {
+    const ms = masteryList(baseOf(test.id), res.mastery);
+    L.push('');
+    L.push('<b>🔁 유형별 결과 (같은 유형 ' + STREAK + '번 연속 정답이면 통과)</b>');
+    for (const x of ms) L.push(`${x.mastered ? '✅' : '⚠️'} 원래 ${x.no}번 유형 (${escH(x.area)}) — ${x.tries}문제 ${x.mastered ? '만에 통과' : '풀고도 미해결 → 같이 봐 주세요'}`);
+  }
+  if (res.priority.length && !res.mastery) {
     L.push('');
     L.push('<b>👉 학습 순서</b>');
     res.priority.slice(0, 5).forEach((id: string, i: number) => {
       const a = test.areas.find((x: any) => x.id === id);
       L.push(`${i + 1}. ${escH(a.name)} — ${escH(a.study[0])}`);
     });
-  } else {
+  } else if (!res.mastery) {
     L.push('');
     L.push('👏 모든 영역 통과!' + (test.passMsg ? ' ' + test.passMsg : ''));
   }
@@ -144,7 +182,8 @@ async function finalizeExpired(sb: any) {
 
 async function finalize(sb: any, row: any, answers: any, qtimes: any, tabLeaves: number, status: 'submitted' | 'expired', auto = false) {
   const test = testOf(row);
-  const res = grade(test, answers, qtimes);
+  const res: any = grade(test, answers, qtimes);
+  if (row.questions) res.mastery = masteryOf(row.questions, answers);
   const submittedAt = status === 'expired' ? row.deadline_at : new Date().toISOString();
   const patch = { status, submitted_at: submittedAt, answers, qtimes, tab_leaves: tabLeaves, score: res.score, total: res.total, result: { ...res, auto } };
   // in_progress 일 때만 — 두 번 제출돼도 알림은 한 번
@@ -222,7 +261,7 @@ Deno.serve(async (req) => {
         const base = baseOf(id); if (!base || !base.practice || id.endsWith(RE)) continue;
         const rows = (data || []).filter((r: any) => r.test_id === base.id || r.test_id === base.id + RE);
         const last = rows.find((r: any) => r.status !== 'in_progress');
-        const wrong = last && last.result ? new Set((last.result.perQ || []).filter((p: any) => !p.correct).map((p: any) => srcId(p.id))).size : 0;
+        const wrong = last ? unresolvedOf(last).length : 0;
         progress[id].retry = { wrong, inProgress: rows.some((r: any) => r.test_id === base.id + RE && r.status === 'in_progress'),
           rounds: rows.filter((r: any) => r.test_id === base.id + RE && r.status !== 'in_progress').length };
       }
@@ -241,9 +280,38 @@ Deno.serve(async (req) => {
       if (!student) return json({ error: '이름이 필요해요' }, 400);
       await finalizeExpired(sb);
       const srcs = await wrongSources(sb, student, base);
-      const n = srcs.length * TWINS_PER_Q;
-      const rt = retryTest(base, []);
-      return json({ count: n, test: n ? { ...testMeta(base), id: rt.id, title: rt.title, minutes: Math.max(4, n * 2), count: n } : null });
+      return json({ count: srcs.length, streak: STREAK, title: base.title, subtitle: base.subtitle, lessons: srcs.map((x: any) => x.lesson) });
+    }
+
+    // 다시 풀기: 한 문제 바로 채점 → 정답·풀이 공개, 그 유형이 아직 통과 전이면 비슷한 문제를 하나 더 만든다
+    if (action === 'check') {
+      const row = await loadKid(sb, body.attemptId, body.kidToken);
+      if (!row || !row.questions) return json({ error: '응시 기록을 찾을 수 없어요' }, 404);
+      if (row.status !== 'in_progress') return json({ error: '이미 끝난 다시 풀기예요' }, 409);
+      const q = row.questions.find((x: any) => x.id === String(body.qid || ''));
+      if (!q) return json({ error: '문제를 찾을 수 없어요' }, 404);
+      const answers = { ...(row.answers || {}) }, qtimes = { ...(row.qtimes || {}) };
+      if (!answers[q.id]) {
+        const n = Number(body.v);
+        if (body.dk) answers[q.id] = { dk: true };
+        else if (Number.isInteger(n) && n >= 1 && n <= q.options.length) answers[q.id] = { v: n };
+        else return json({ error: '답을 골라 주세요' }, 400);
+        qtimes[q.id] = Math.min(Math.max(Math.round(Number(body.sec) || 0), 0), 3600);
+      }
+      let questions = row.questions;
+      let m = masteryOf(questions, answers);
+      const sid = srcId(q.id), o = m[sid];
+      if (!o.mastered && !o.stopped && o.pending === 0) {
+        const src = baseOf(row.test_id).questions.find((x: any) => x.id === sid);
+        const t = src && makeTwin(src, seed());
+        if (t) { questions = [...questions, t]; m = masteryOf(questions, answers); }
+      }
+      await sb.from('lt_attempts').update({ answers, qtimes, questions, saved_at: new Date().toISOString() }).eq('id', row.id).eq('status', 'in_progress');
+      const a = answers[q.id], ok = !a.dk && Number(a.v) === q.answer;
+      const trap = ok || a.dk ? null : ((q.traps || []).find((t: any) => t.a === Number(a.v)) || {}).note || null;
+      const next = questions.find((x: any) => !answers[x.id]);
+      return json({ correct: ok, given: a.dk ? null : a.v, dk: !!a.dk, answer: q.answer, explain: q.explain || '', trap, justMastered: m[sid].mastered && !o.mastered,
+        mastery: masteryList(baseOf(row.test_id), m), next: next ? publicQ(next) : null, left: questions.filter((x: any) => !answers[x.id]).length });
     }
 
     if (action === 'start') {
@@ -257,7 +325,7 @@ Deno.serve(async (req) => {
       if (isRetry) {
         const srcs = await wrongSources(sb, student, test);
         if (!srcs.length) return json({ error: '다시 풀 틀린 문제가 없어요 🎉' }, 400);
-        questions = buildRetryQuestions(srcs);
+        questions = srcs.map((x: any) => makeTwin(x.src, seed())).filter(Boolean);
         test = retryTest(test, questions);
       }
       const startedAt = new Date(now).toISOString();
@@ -276,7 +344,7 @@ Deno.serve(async (req) => {
       const test = testOf(row);
       const late = now > new Date(row.deadline_at).getTime() + GRACE_MS;
       if (row.status === 'in_progress' && action !== 'resume' && !late) {
-        const answers = cleanAnswers(test, body.answers), qtimes = cleanTimes(test, body.qtimes);
+        const answers = row.questions ? (row.answers || {}) : cleanAnswers(test, body.answers), qtimes = row.questions ? (row.qtimes || {}) : cleanTimes(test, body.qtimes);
         const tabLeaves = Math.max(row.tab_leaves || 0, Math.min(Number(body.tabLeaves) || 0, 999));
         if (action === 'save') {
           await sb.from('lt_attempts').update({ answers, qtimes, tab_leaves: tabLeaves, saved_at: new Date().toISOString() }).eq('id', row.id).eq('status', 'in_progress');
@@ -288,9 +356,11 @@ Deno.serve(async (req) => {
       }
       if (row.status === 'in_progress') {
         return json({ status: 'in_progress', startedAt: row.started_at, deadlineAt: row.deadline_at, serverNow: new Date().toISOString(), student: row.student,
-          answers: row.answers, qtimes: row.qtimes, tabLeaves: row.tab_leaves, test: testMeta(test), questions: publicQuestions(test) });
+          answers: row.answers, qtimes: row.qtimes, tabLeaves: row.tab_leaves, test: testMeta(test), questions: publicQuestions(test),
+          mastery: row.questions ? masteryList(baseOf(row.test_id), masteryOf(row.questions, row.answers)) : undefined });
       }
-      return json({ status: row.status, student: row.student, test: testMeta(test), result: kidResult(row.result, test) });
+      return json({ status: row.status, student: row.student, test: testMeta(test), result: kidResult(row.result, test),
+        mastery: row.questions && row.result && row.result.mastery ? masteryList(baseOf(row.test_id), row.result.mastery) : undefined });
     }
 
     if (action === 'report') {

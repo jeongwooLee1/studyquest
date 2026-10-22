@@ -121,6 +121,8 @@
 
   function meta(id) { return catalog.tests.find(function (t) { return t.id === id; }); }
   function link(id, name, fresh) { return 'index.html?test=' + encodeURIComponent(id) + '&n=' + encodeURIComponent(name) + '&hub=1' + (fresh ? '&new=1' : ''); }
+  // 틀린 문제 다시 풀기는 설명 → 한 문제씩 바로 채점하는 전용 화면
+  function reLink(id, name, fresh) { return 'retry.html?test=' + encodeURIComponent(id) + '&n=' + encodeURIComponent(name) + '&hub=1' + (fresh ? '&new=1' : ''); }
   function hasLocal(id, name) { var a = LT.store('lt.att.' + id + '.' + name); return !!(a && a.attemptId); }
 
   function card(item, i, name, p) {
@@ -143,8 +145,8 @@
         '<div class="acts">' + (hasLocal(item.id, name) ? '<a class="btn ghost sm" href="' + link(item.id, name) + '">결과 보기</a>' : '') +
         '<a class="btn ' + (re && (re.wrong || re.inProgress) ? 'ghost ' : '') + 'sm" href="' + link(item.id, name, true) + '">다시 풀기</a></div>';
       // 틀린 문제가 남아 있으면: 비슷한 문제로 다시 풀기
-      if (re && re.inProgress) h += '<div class="retry"><span>🔁 틀린 문제 다시 풀기 하는 중</span><a class="btn sm" href="' + link(item.id + ':re', name) + '">이어 풀기</a></div>';
-      else if (re && re.wrong) h += '<div class="retry"><span>🔁 틀린 문제 <b>' + re.wrong + '개</b> — 비슷한 문제로 다시 풀어요</span><a class="btn sm" href="' + link(item.id + ':re', name, true) + '">다시 풀기 ▶</a></div>';
+      if (re && re.inProgress) h += '<div class="retry"><span>🔁 틀린 문제 다시 풀기 하는 중</span><a class="btn sm" href="' + reLink(item.id, name) + '">이어 풀기</a></div>';
+      else if (re && re.wrong) h += '<div class="retry"><span>🔁 틀린 문제 <b>' + re.wrong + '개</b> — 설명 보고 다시 풀어요</span><a class="btn sm" href="' + reLink(item.id, name, true) + '">다시 풀기 ▶</a></div>';
     } else {
       h += '<span class="chip">아직 안 풀었어요</span><div class="acts"><a class="btn sm" href="' + link(item.id, name, true) + '">풀기 ▶</a></div>';
     }
