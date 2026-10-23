@@ -12,6 +12,7 @@
 //   avatars                         문제지 목록 이름 버튼 사진 {이름: data URI} (public.lt_avatars, 저장소에는 사진 없음)
 //   retryInfo {testId, student}     틀린 문제 다시 풀기 안내(testId 는 '<문제지 id>:re') — 해결 못 한 유형 수와 유형별 설명 카드
 //   start {testId: '<id>:re', …}    해결 못 한 유형마다 비슷한 문제(twins.ts) 1개로 시작. 만든 문제는 lt_attempts.questions 에 저장
+//   daily {key, send?}               아이별 하루 정리(부족한 점·조언·들을 강의·내일 할 일·카톡 문구)를 텔레그램으로
 //   check {attemptId, kidToken, qid, v | dk, sec}  다시 풀기 한 문제 바로 채점 → 정답·풀이, 통과 전이면 같은 유형 문제를 하나 더 붙임
 //                                   같은 유형 2번 연속 정답이면 통과. 다 끝나면 submit 으로 마감(답은 서버에 저장된 것으로 채점)
 //   start   {testId, student}       응시 시작 → attemptId, kidToken, 문제, 마감 시각
@@ -30,6 +31,7 @@ import { E4_SETS } from './tests/e4_sets.ts';
 import { GEO_E } from './tests/geo_e.ts';
 import { grade } from './grade.ts';
 import { makeTwin, hasTwin } from './twins.ts';
+import { attemptCoach, dailyCoach, PLAN } from './coach.ts';
 
 const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, GEO_E, REC_1, REC_2, REC_3, REC_4, ...UNIT_SETS, ...E4_SETS].map((t) => [t.id, t]));
 const SITE = 'https://study.blissme.ai/leveltest/';
@@ -154,14 +156,7 @@ function resultMessage(test: any, row: any, res: any) {
     L.push('<b>🔁 유형별 결과 (같은 유형 ' + STREAK + '번 연속 정답이면 통과)</b>');
     for (const x of ms) L.push(`${x.mastered ? '✅' : '⚠️'} 원래 ${x.no}번 유형 (${escH(x.area)}) — ${x.tries}문제 ${x.mastered ? '만에 통과' : '풀고도 미해결 → 같이 봐 주세요'}`);
   }
-  if (res.priority.length && !res.mastery) {
-    L.push('');
-    L.push('<b>👉 학습 순서</b>');
-    res.priority.slice(0, 5).forEach((id: string, i: number) => {
-      const a = test.areas.find((x: any) => x.id === id);
-      L.push(`${i + 1}. ${escH(a.name)} — ${escH(a.study[0])}`);
-    });
-  } else if (!res.mastery) {
+  if (!res.priority.length && !res.mastery) {
     L.push('');
     L.push('👏 모든 영역 통과!' + (test.passMsg ? ' ' + test.passMsg : ''));
   }
@@ -170,6 +165,8 @@ function resultMessage(test: any, row: any, res: any) {
     L.push('<b>🔍 오답 습관</b>');
     for (const h of res.habits.slice(0, 4)) L.push(`· ${escH(h.note)}${h.n > 1 ? ` (${h.n}번)` : ''}`);
   }
+  // 부족한 점 · 조언 · 들을 강의 · 다음 할 일 · 카톡 문구
+  L.push(attemptCoach(TESTS, baseOf(test.id), { ...row, result: res }));
   return L.join('\n');
 }
 
@@ -373,6 +370,18 @@ Deno.serve(async (req) => {
       const { data: hist } = await sb.from('lt_attempts').select('*').eq('test_id', row.test_id).eq('student', row.student).order('started_at', { ascending: false }).limit(20);
       return json({ attempt: { ...attemptSummary(row), deadlineAt: row.deadline_at, answers: row.answers, qtimes: row.qtimes }, result: row.result,
         test: { ...testMeta(test), questions: test.questions }, history: (hist || []).map(attemptSummary) });
+    }
+
+    // 매일 밤 아이별 하루 정리 (pg_cron 'lt-daily-coach' 가 부름). send:false 면 보내지 않고 글만 돌려준다
+    if (action === 'daily') {
+      const key = await getSecret(sb, 'LT_PARENT_KEY');
+      if (!key || !safeEq(body.key, key)) return json({ error: '학부모 키가 맞지 않아요' }, 403);
+      await finalizeExpired(sb);
+      const { data } = await sb.from('lt_attempts').select('test_id,student,status,started_at,score,total,result').in('student', Object.keys(PLAN))
+        .neq('status', 'in_progress').order('started_at', { ascending: true }).limit(1000);
+      const messages = dailyCoach(TESTS, data || [], new Date().toISOString());
+      if (body.send !== false) for (const m of messages) await tgSend(sb, m);
+      return json({ ok: true, messages });
     }
 
     if (action === 'list' || action === 'delete') {
