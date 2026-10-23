@@ -3,10 +3,11 @@
 // 2) 매일 밤 아이별 하루 정리 (dailyCoach, lt-api 'daily' 액션 ← pg_cron)
 
 // 아이별 진도 (hub.html STUDENTS 와 같은 순서)
-export const PLAN: Record<string, { emoji: string; sets: string[]; tests: string[] }> = {
+// wait: 학교에서 아직 안 배운 단원 — 다음 문제지로 권하지 않는다
+export const PLAN: Record<string, { emoji: string; sets: string[]; wait?: string[]; tests: string[] }> = {
   '이다연': { emoji: '🐰', sets: ['u-mix', 'u-div', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1'] },
   '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-addf', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1'] },
-  '이다희': { emoji: '🐥', sets: ['h-frac', 'h-dec', 'h-word'], tests: ['math-e4'] },
+  '이다희': { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec'], wait: ['h-dec'], tests: ['math-e4'] },
 };
 // 이 레벨테스트의 부족한 영역은 이미 문제지로 만들어져 있다
 const COVERED = ['math-m1', 'math-e4'];
@@ -41,6 +42,8 @@ const ADVICE: [RegExp, string][] = [
   [/역수|뒤집/, '÷ 분수는 나누는 수만 뒤집어서 곱하기'],
   [/배|규칙/, '수 사이에 "+몇", "×몇"을 직접 적어 보고 규칙 확인'],
 ];
+// 문제지 전에 할 것: 강의(📺) 또는 강의 없는 문제지의 약속(✏️)
+const prep = (id: string) => (LECTURES[id] || '').startsWith('강의 없이') ? '✏️ ' + LECTURES[id].replace(/^강의 없이 — /, '') : '📺 ' + (LECTURES[id] || '강의');
 const adviceOf = (note: string) => (ADVICE.find(([re]) => re.test(note)) || [, ''])[1] as string;
 
 // 문제 표기($…$, [[1|5]] 분수)를 알림용 글자로
@@ -82,7 +85,7 @@ function advices(base: any, habits: Record<string, number>, weakAreas: any[], dk
   if (dk >= 3) out.unshift(`「모르겠어요」 ${dk}문제 — 배우지 않았거나 잊은 단원이에요. 강의부터 보고 풀기`);
   return out.slice(0, 3);
 }
-const nextSet = (student: string, baseId: string) => { const p = PLAN[student]; if (!p) return null; const i = p.sets.indexOf(baseId); return i >= 0 ? p.sets[i + 1] || null : null; };
+const nextSet = (student: string, baseId: string) => { const p = PLAN[student]; if (!p) return null; const i = p.sets.indexOf(baseId); return i >= 0 ? p.sets.slice(i + 1).find((id) => !(p.wait || []).includes(id)) || null : null; };
 
 // ── 1) 문제지 결과 알림에 붙는 피드백 ──
 export function attemptCoach(TESTS: Record<string, any>, base: any, row: any): string {
@@ -104,8 +107,8 @@ export function attemptCoach(TESTS: Record<string, any>, base: any, row: any): s
     next = d.isRe ? `⚠️ 남은 유형은 아빠와 같이 풀이를 보고 → 내일 「다시 풀기」 한 번 더` : `오늘 안에 「틀린 문제 다시 풀기」 (설명 읽기 → 같은 유형 2번 연속 맞히면 통과)`;
     kidNext = d.isRe ? '남은 유형은 아빠랑 같이 보고 내일 다시 도전하자' : (lec.length ? '📺 강의 다시 한 번 보고 → ' : '') + '「다시 풀기」로 설명 읽고 다 맞힐 때까지 풀자';
   } else if (base.practice) {
-    next = nxT ? `다음 문제지 「${titleOf(nxT)}」 — 먼저 📺 ${LECTURES[nx!] || '강의'}` : '이 단계 문제지 끝! 3일 뒤 틀렸던 문제지를 다시 풀어 확인';
-    kidNext = nxT ? `다음은 「${titleOf(nxT)}」! 📺 강의 먼저 보고 풀자` : '3일 뒤에 한 번 더 풀어서 확인하자';
+    next = nxT ? `다음 문제지 「${titleOf(nxT)}」 — 먼저 ${prep(nx!)}` : '이 단계 문제지 끝! 3일 뒤 틀렸던 문제지를 다시 풀어 확인';
+    kidNext = nxT ? `다음은 「${titleOf(nxT)}」! ${prep(nx!).startsWith('📺') ? '📺 강의 먼저 보고 풀자' : prep(nx!)}` : '3일 뒤에 한 번 더 풀어서 확인하자';
   } else {
     next = d.weakAreas.length ? '부족한 영역 강의부터 → 보충 문제지는 아빠가 만들어 줄게요' : '진단 통과 👏';
     kidNext = d.weakAreas.length ? '강의부터 차근차근 보자' : '진단 통과 👏';
@@ -189,10 +192,11 @@ export function dailyCoach(TESTS: Record<string, any>, rows: any[], nowIso: stri
       if (todo.length >= 3) break;
       todo.push(`「${titleOf(TESTS[o.id])}」 틀린 문제 다시 풀기 (남은 유형 ${o.n}개)`); kidTodo.push(`「${titleOf(TESTS[o.id])}」 다시 풀기`);
     }
-    const fresh = plan.sets.find((id) => !mine.some((x) => x.test_id === id));
+    const fresh = plan.sets.find((id) => !(plan.wait || []).includes(id) && !mine.some((x) => x.test_id === id));
     if (fresh && todo.length < 3) {
-      todo.push(`📺 ${LECTURES[fresh]} → 「${titleOf(TESTS[fresh])}」 문제지`); kidTodo.push(`📺 강의 보고 「${titleOf(TESTS[fresh])}」 풀기`);
-      lec.unshift(LECTURES[fresh]);
+      const pre = prep(fresh), isLec = pre.startsWith('📺');
+      todo.push(`${pre} → 「${titleOf(TESTS[fresh])}」 문제지`); kidTodo.push(isLec ? `📺 강의 보고 「${titleOf(TESTS[fresh])}」 풀기` : `「${titleOf(TESTS[fresh])}」 풀기 (${pre})`);
+      if (isLec) lec.unshift(LECTURES[fresh]);
     }
     const untaken = plan.tests.find((id) => id !== 'math-m1' && !mine.some((x) => x.test_id === id));
     if (untaken && todo.length < 3) { todo.push(`「${titleOf(TESTS[untaken])}」 (${TESTS[untaken].minutes}분)`); kidTodo.push(`「${titleOf(TESTS[untaken])}」`); }
