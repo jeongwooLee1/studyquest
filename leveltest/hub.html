@@ -58,7 +58,7 @@
   var STUDENTS = [
     { name: '이다연', emoji: '🐰', sets: ['u-mix', 'u-div', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [GEO, MATH_M1] },
     { name: '이다혜', emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-addf', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [GEO, MATH_M1] },
-    { name: '이다희', emoji: '🐥', setsLabel: '보충 문제지', sets: ['h-frac', 'h-dec', 'h-word'], tests: [{ id: 'math-e4', when: '아빠가 말하면 풀기 · 45분' }] },
+    { name: '이다희', emoji: '🐥', setsLabel: '보충 문제지', sets: ['h-frac', 'h-word', 'h-dec'], tests: [{ id: 'math-e4', when: '아빠가 말하면 풀기 · 45분' }] },
   ];
   // 문제지를 풀기 전에 볼 EBS 강의 (EBS 초등 앱에서 교재 이름으로 검색 → 단원 이름 찾기). 단원평가·시험 문제 풀이 강의는 건너뛴다.
   var LECTURES = {
@@ -73,6 +73,8 @@
     'h-frac': '「만점왕 수학 3-2」 → 「분수」 개념 강의',
     'h-dec': '「만점왕 수학 4-2」 → 「소수의 덧셈과 뺄셈」 개념 강의',
   };
+  // 학교에서 아직 안 배운 단원 — 배운 다음에 풀기
+  var WHEN = { 'h-dec': '학교에서 4-2 「소수의 덧셈과 뺄셈」을 배운 다음에 풀어요' };
   // 강의 대신 볼 약속
   var TIPS = { 'h-word': '강의 없이 바로! 구하는 것에 밑줄 긋고, 답을 고른 뒤 문제를 한 번 더 읽어요.' };
   var PASS = 0.8; // 이 비율 이상 맞히면 ⭐ 통과
@@ -155,7 +157,7 @@
 
   function render(s, progress) {
     document.title = s.name + ' · 수학 문제지';
-    var sets = s.sets.map(function (id) { return { id: id }; });
+    var sets = s.sets.map(function (id) { return { id: id, when: WHEN[id] }; });
     var doneN = sets.filter(function (x) { return progress[x.id] && progress[x.id].done > 0; }).length;
     var h = '<div class="card"><div class="top"><h1>' + face(s) + LT.esc(s.name) + '</h1><button class="switch" id="switch">이름 바꾸기</button></div>' +
       (s.sets.length ? '<div class="sum"><b>' + (s.setsLabel || '초등 복습 문제지') + ' ' + s.sets.length + '개 중 ' + doneN + '개 완료</b>' + (doneN === s.sets.length ? ' 🎉' : '') +
