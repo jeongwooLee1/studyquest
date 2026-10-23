@@ -8,6 +8,8 @@ export const PLAN: Record<string, { emoji: string; sets: string[]; tests: string
   '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-addf', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1'] },
   '이다희': { emoji: '🐥', sets: ['h-frac', 'h-dec', 'h-word'], tests: ['math-e4'] },
 };
+// 이 레벨테스트의 부족한 영역은 이미 문제지로 만들어져 있다
+const COVERED = ['math-m1', 'math-e4'];
 // 문제지를 풀기 전에 볼 EBS 강의 (hub.html LECTURES 와 같게)
 export const LECTURES: Record<string, string> = {
   'u-mix': 'EBS 초등 「만점왕 수학 5-1」 → 「자연수의 혼합 계산」 01~03강',
@@ -165,6 +167,8 @@ export function dailyCoach(TESTS: Record<string, any>, rows: any[], nowIso: stri
       for (const a of d.weakAreas) weak.push(`${a.name}`); lec.push(...lecturesFor(T, d.weakAreas)); }
     for (const tid of plan.tests) {
       const last = mine.filter((x) => x.test_id === tid).pop(); if (!last) continue;
+      // 레벨테스트에서 나온 부족한 영역은 이미 문제지(sets)가 됐으니 푼 날만 보여 준다
+      if (COVERED.includes(tid) && kstDay(last.started_at) !== today) continue;
       const T = TESTS[tid], d = diagnose(T, last);
       const focus = d.weakAreas.filter((a: any) => ((last.result.areas || []).find((y: any) => y.id === a.id) || {}).level === 'focus');
       if (kstDay(last.started_at) === today || focus.length) {
