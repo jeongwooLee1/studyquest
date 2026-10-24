@@ -60,13 +60,14 @@ type Spec = {
   fmt?: (v: Q) => string; fill?: () => Q | Opt; count?: number;
   order?: 'asc' | 'shuffle' | 'fixed'; // asc: 값 순서(원래 문제지처럼), fixed: wrongs 순서 그대로 정답을 맨 앞에
   equivOk?: boolean; // 값이 같은 보기 허용(기약분수·가장 간단한 비 고르기)
+  signed?: boolean; // 0·음수 보기 허용(중1 정수 답)
 };
 function build(r: Rng, sp: Spec) {
   const n = sp.count || 5;
   const fmt = sp.fmt || ((v: Q) => mx(v));
   const norm = (o: Opt): Opt => ({ ...o, s: o.s ?? fmt(o.v!) });
   const correct = norm(sp.correct);
-  const ok = (o: Opt, have: Opt[]) => !(o.v && (o.v[0] <= 0 || o.v[1] <= 0)) && o.s !== correct.s && !have.some((x) => x.s === o.s) &&
+  const ok = (o: Opt, have: Opt[]) => !(o.v && !sp.signed && (o.v[0] <= 0 || o.v[1] <= 0)) && o.s !== correct.s && !have.some((x) => x.s === o.s) &&
     (sp.equivOk || !o.v || !((correct.v && eq(o.v, correct.v)) || have.some((x) => x.v && eq(x.v, o.v!))));
   // 후보: 함정(오답 습관) 보기 먼저, 그다음 채우기
   const main: Opt[] = [], extra: Opt[] = [];
@@ -1133,6 +1134,166 @@ G['gs-10'] = (r) => { // 직각삼각형을 돌린 원뿔: 모선·반지름
     fig: shape({ _O: P(0, 0), _A: P(rad, 0), _T: P(0, h), _u: P(0, -h * 0.15), _t: P(0, h * 1.15) }, [
       { k: 'seg', p: ['_u', '_t'], dash: true }, { k: 'poly', p: ['_O', '_A', '_T'], fill: true }, { k: 'right', p: ['_A', '_O', '_T'] },
       { k: 'side', p: ['_O', '_A'], label: `${rad} cm` }, { k: 'side', p: ['_T', '_O'], label: `${h} cm` }, { k: 'side', p: ['_A', '_T'], label: `${l} cm` }]) };
+};
+
+// ── 중1 문장을 식으로 · 일차방정식 활용 (다연·다혜, 작년 도농중 2학기 기말 1~6번 유형) ──
+// 답이 0·음수일 수 있어 signed 보기를 쓴다. 식 보기는 문자열(s)로 만든다.
+const mi = (n: number) => (n < 0 ? '−' + -n : String(n));
+const iF = (v: Q) => M(mi(v[0] / v[1]));
+const frs = (n: string | number, d: string | number) => `[[${n}|${d}]]`;
+// 일차식 쓰기: [[계수, 문자]…] → "3x − 2"
+function poly(terms: [number, string][]) {
+  let s = '';
+  for (const [c, v] of terms) {
+    if (c === 0) continue;
+    const a = Math.abs(c), body = v ? (a === 1 ? '' : a) + v : String(a);
+    s += s ? (c < 0 ? ' − ' : ' + ') + body : (c < 0 ? '−' : '') + body;
+  }
+  return s || '0';
+}
+const nz = (r: Rng, a: number, b: number) => { for (;;) { const x = ri(r, a, b); if (x) return x; } };
+const intQ = (n: number, d: number) => d !== 0 && n % d === 0;
+const nearZ = (r: Rng, c: number, span = 5) => () => q(c + (r() < 0.5 ? -1 : 1) * ri(r, 1, span)); // 0·음수도 채움
+
+// 문자와 식
+G['mw-1'] = (r) => { // 곱셈·나눗셈 기호 생략
+  const [x, y] = pick(r, [['x', 'y'], ['a', 'b']]);
+  if (r() < 0.5) {
+    const k = ri(r, 2, 9);
+    return build(r, { text: `${M(`${x} ÷ ${y} × ${k}`)} ${josa(k, '을', '를')} 곱셈 기호와 나눗셈 기호를 생략하여 나타낸 것은?`, correct: { s: M(frs(k + x, y)) },
+      wrongs: [{ s: M(frs(x, k + y)), note: '÷ 뒤에 오는 것을 모두 분모로 보냄 (앞에서부터 차례로 계산)' }, { s: M(`${k}${x}${y}`), note: '÷ 를 × 로 바꿔 씀' }, { s: M(frs(k + y, x)), note: '나누어지는 수와 나누는 수를 바꿈' }, { s: M(frs(x + y, k)) }],
+      order: 'shuffle', explain: `${M(`${x} ÷ ${y} × ${k} = ${x} × ${frs(1, y)} × ${k} = ${frs(k + x, y)}`)} (÷ 는 역수를 곱하기, 숫자는 문자 앞에)` });
+  }
+  const k = ri(r, 2, 9), m = ri(r, 2, 9);
+  return build(r, { text: `${M(`${x} × ${x} × ${k} − ${y} ÷ ${m}`)} ${josa(m, '을', '를')} 곱셈 기호와 나눗셈 기호를 생략하여 나타낸 것은?`, correct: { s: M(`${k}${x}^2 − ${frs(y, m)}`) },
+    wrongs: [{ s: M(`${2 * k}${x} − ${frs(y, m)}`), note: `같은 문자의 곱을 2배로 씀 (${x} × ${x} = ${x}^2)` }, { s: M(`${k}${x}^2 − ${m}${y}`), note: '÷ 를 × 로 바꿔 씀' }, { s: M(`${k}${x}^2 − ${frs(m, y)}`), note: '나누는 수를 분자로 씀' }, { s: M(`${x}^${k} − ${frs(y, m)}`), note: '곱하는 수를 지수로 씀' }],
+    order: 'shuffle', explain: `${M(`${x} × ${x} = ${x}^2`)}, 숫자는 앞으로 → ${M(`${k}${x}^2`)} / ${M(`${y} ÷ ${m} = ${frs(y, m)}`)} → ${M(`${k}${x}^2 − ${frs(y, m)}`)}` });
+};
+G['mw-2'] = (r) => { // 문장을 식으로
+  const t = pick(r, ['time', 'sale', 'digit', 'salt'] as const);
+  if (t === 'time') {
+    const v = ri(r, 3, 9) * pick(r, [1, 10]);
+    return build(r, { text: `${M('x')} km의 거리를 시속 ${v} km로 갈 때 걸리는 시간을 식으로 나타낸 것은?`, correct: { s: `${M(frs('x', v))}시간` },
+      wrongs: [{ s: `${M(`${v}x`)}시간`, note: '거리 × 속력을 함 (시간 = 거리 ÷ 속력)' }, { s: `${M(frs(v, 'x'))}시간`, note: '속력 ÷ 거리를 함' }, { s: `${M(`x + ${v}`)}시간` }, { s: `${M(`x − ${v}`)}시간` }],
+      order: 'shuffle', explain: `시간 = 거리 ÷ 속력 = ${M(`x ÷ ${v} = ${frs('x', v)}`)}(시간)` });
+  }
+  if (t === 'sale') {
+    const p = pick(r, [10, 20, 25, 30, 40, 60]), f = (n: number) => { const g = gcd(n, 100); return n === 100 ? 'a' : frs(n / g, 100 / g) + 'a'; };
+    return build(r, { text: `정가가 ${M('a')}원인 물건을 ${p}% 할인한 가격을 식으로 나타낸 것은?`, correct: { s: `${M(f(100 - p))}원` },
+      wrongs: [{ s: `${M(f(p))}원`, note: '할인한 금액만 구함 (가격 = 정가 − 할인 금액)' }, { s: `${M(`a − ${p}`)}원`, note: '%를 그대로 뺌 (a의 ' + p + '% = ' + frs(p, 100) + 'a)' }, { s: `${M(f(100 + p))}원`, note: '할인 금액을 더함' }, { s: `${M(`${100 - p}a`)}원` }],
+      order: 'shuffle', explain: `할인 금액 = ${M(`a × ${frs(p, 100)} = ${f(p)}`)} → 가격 = ${M(`a − ${f(p)} = ${f(100 - p)}`)}(원)` });
+  }
+  if (t === 'digit') {
+    return build(r, { text: `십의 자리의 숫자가 ${M('a')}, 일의 자리의 숫자가 ${M('b')}인 두 자리 자연수를 식으로 나타낸 것은?`, correct: { s: M('10a + b') },
+      wrongs: [{ s: M('ab'), note: '숫자를 나란히 씀 (ab 는 a × b)' }, { s: M('a + b'), note: '자릿값을 생각하지 않음' }, { s: M('10b + a'), note: '십의 자리와 일의 자리를 바꿈' }, { s: M('10(a + b)') }],
+      order: 'shuffle', explain: '예: 십의 자리 3, 일의 자리 7 → 37 = 10 × 3 + 7 → $10a + b$' });
+  }
+  const x = pick(r, [3, 4, 5, 6, 8, 10, 12, 15]);
+  return build(r, { text: `농도가 ${x}%인 소금물 ${M('y')} g에 들어 있는 소금의 양을 식으로 나타낸 것은?`, correct: { s: `${M(frs(x + 'y', 100))} g` },
+    wrongs: [{ s: `${M(`${x}y`)} g`, note: '100으로 나누지 않음 (x% = x/100)' }, { s: `${M(frs(x, 100))} g`, note: '소금물의 양을 곱하지 않음' }, { s: `${M(frs('100y', x))} g`, note: '분모와 분자를 바꿈' }, { s: `${M(frs('y', 100 * x))} g` }],
+    order: 'shuffle', explain: `소금의 양 = 소금물의 양 × ${M(frs('농도', 100))} = ${M(`y × ${frs(x, 100)} = ${frs(x + 'y', 100)}`)}(g)` });
+};
+G['mw-3'] = (r) => { // 항등식: 계수 비교
+  for (;;) {
+    const k = ri(r, 2, 5), b = nz(r, -5, 5), d = ri(r, -6, 6), c = k * b + d; if (c === 0) continue;
+    const a = k, ans = a + b, lhs = `ax ${c < 0 ? '−' : '+'} ${Math.abs(c)}`, rhs = `${k}(x + b)${d ? ` ${d < 0 ? '−' : '+'} ${Math.abs(d)}` : ''}`;
+    const w: Opt[] = [{ v: q(a), note: 'b의 값을 구하지 않음 (구하는 것은 a + b)' }, { v: q(a - b), note: 'a − b 를 구함' }];
+    if (intQ(c + d, k)) w.push({ v: q(a + (c + d) / k), note: '상수항을 이항할 때 부호를 바꾸지 않음' });
+    if (intQ(c - d, 1) && c - d !== b) w.push({ v: q(a + c - d), note: `b에 ${J(k, '을', '를')} 곱하는 것을 빠뜨림 (${k}(x + b) = ${k}x + ${k}b)` });
+    w.push({ v: q(a * b) });
+    return build(r, { text: `다음 등식이 ${M('x')}에 대한 항등식일 때, 상수 ${M('a')}, ${M('b')}에 대하여 ${M('a + b')}의 값은?\n${M(`${lhs} = ${rhs}`)}`, correct: { v: q(ans) }, wrongs: w,
+      fill: nearZ(r, ans, 5), fmt: iF, order: 'asc', signed: true,
+      explain: `우변을 정리: ${M(`${k}x + ${k}b${d ? (d < 0 ? ' − ' : ' + ') + Math.abs(d) : ''}`)} → x의 계수: ${M(`a = ${k}`)}, 상수항: ${M(`${mi(c)} = ${k}b${d ? (d < 0 ? ' − ' : ' + ') + Math.abs(d) : ''}`)} → ${M(`b = ${mi(b)}`)} → ${M(`a + b = ${mi(ans)}`)}` });
+  }
+};
+
+// 일차방정식의 해
+G['mw-4'] = (r) => { // 해가 주어질 때 상수
+  for (;;) {
+    const s = pick(r, [-3, -2, 2, 3, 4, 5]), b = ri(r, 1, 5), a = nz(r, -3, 7), d = nz(r, -9, 9); if (a === b) continue;
+    const c = a * s - b * s - d; if (c <= 0 || c > 30) continue;
+    const eqs = `ax − ${c} = ${poly([[b, 'x'], [d, '']])}`, w: Opt[] = [{ v: q(s), note: `해(${M('x')}의 값)를 답으로 씀` }];
+    if (intQ(b * s + d - c, s)) w.push({ v: q((b * s + d - c) / s), note: '상수항을 이항할 때 부호를 바꾸지 않음' });
+    if (s < 0 && intQ(-b * s + c + d, s)) w.push({ v: q((-b * s + c + d) / s), note: '음수를 대입할 때 부호 실수' });
+    w.push({ v: q(-a) });
+    return build(r, { text: `${M('x')}에 대한 일차방정식 ${M(eqs)} 의 해가 ${M(`x = ${mi(s)}`)} 일 때, 상수 ${M('a')}의 값은?`, correct: { v: q(a) }, wrongs: w,
+      fill: nearZ(r, a, 5), fmt: iF, order: 'asc', signed: true,
+      explain: `${M(`x = ${mi(s)}`)}${josa(Math.abs(s), '을', '를')} 대입: ${M(`${s < 0 ? `(${mi(s)})` : s}a − ${c} = ${b === 1 ? '' : b + ' × '}${s < 0 ? `(${mi(s)})` : s}${d ? (d < 0 ? ' − ' : ' + ') + Math.abs(d) : ''}`)} → ${M(`${mi(s)}a = ${mi(b * s + d + c)}`)} → ${M(`a = ${mi(a)}`)}` });
+  }
+};
+G['mw-5'] = (r) => { // 두 방정식의 해가 같을 때
+  for (;;) {
+    const p = ri(r, 2, 5), s = nz(r, -4, 6), qq = nz(r, -9, 9), rr = p * s + qq, a = nz(r, -4, 6), n = ri(r, 1, 6); if (a === n) continue;
+    const m = n * s - a * s; if (m === 0) continue;
+    const w: Opt[] = [{ v: q(s), note: `첫 번째 방정식의 해만 구하고 끝냄 (구하는 것은 ${M('a')})` }, { v: q(-a) }];
+    if (intQ(rr + qq, p)) { const s2 = (rr + qq) / p; if (s2 && intQ(n * s2 - m, s2)) w.push({ v: q((n * s2 - m) / s2), note: '첫 번째 방정식에서 이항할 때 부호를 바꾸지 않음' }); }
+    if (intQ(n * s + m, s)) w.push({ v: q((n * s + m) / s), note: `두 번째 방정식에서 ${J(Math.abs(m), '을', '를')} 이항할 때 부호 실수` });
+    return build(r, { text: `두 일차방정식 ${M(`${poly([[p, 'x'], [qq, '']])} = ${mi(rr)}`)}, ${M(`ax ${m < 0 ? '−' : '+'} ${Math.abs(m)} = ${poly([[n, 'x']])}`)} 의 해가 서로 같을 때, 상수 ${M('a')}의 값은?`, correct: { v: q(a) }, wrongs: w,
+      fill: nearZ(r, a, 5), fmt: iF, order: 'asc', signed: true,
+      explain: `첫 번째 식: ${M(`${p}x = ${mi(rr)} ${qq < 0 ? '+' : '−'} ${Math.abs(qq)} = ${mi(p * s)}`)} → ${M(`x = ${mi(s)}`)} → 두 번째 식에 대입: ${M(`${s === 1 ? '' : s === -1 ? '−' : mi(s)}a ${m < 0 ? '−' : '+'} ${Math.abs(m)} = ${mi(n * s)}`)} → ${M(`a = ${mi(a)}`)}` });
+  }
+};
+G['mw-6'] = (r) => { // 괄호가 있는 일차방정식
+  for (;;) {
+    const k = ri(r, 2, 5), a = ri(r, 1, 6), m = ri(r, 1, 6), x0 = nz(r, -5, 8); if (m === k) continue;
+    const b = k * (x0 - a) - m * x0; if (b === 0) continue;
+    const xs = (v: Q) => M(`x = ${mi(v[0] / v[1])}`), w: Opt[] = [];
+    if (intQ(b + a, k - m)) w.push({ v: q((b + a) / (k - m)), note: '괄호를 풀 때 뒤 항에 곱하지 않음' });
+    if (intQ(b - k * a, k - m)) w.push({ v: q((b - k * a) / (k - m)), note: '상수항을 이항할 때 부호를 바꾸지 않음' });
+    if (intQ(b + k * a, k + m)) w.push({ v: q((b + k * a) / (k + m)), note: 'x항을 이항할 때 부호를 바꾸지 않음' });
+    w.push({ v: q(-x0) });
+    return build(r, { text: `일차방정식 ${M(`${k}(x − ${a}) = ${poly([[m, 'x'], [b, '']])}`)} 의 해는?`, correct: { v: q(x0) }, wrongs: w,
+      fill: nearZ(r, x0, 5), fmt: xs, order: 'asc', signed: true,
+      explain: `괄호 풀기: ${M(`${k}x − ${k * a} = ${poly([[m, 'x'], [b, '']])}`)} → 이항: ${M(`${k}x − ${m === 1 ? '' : m}x = ${mi(b)} + ${k * a}`)} → ${k - m === 1 ? '' : `${M(`${poly([[k - m, 'x']])} = ${mi(b + k * a)}`)} → `}${M(`x = ${mi(x0)}`)}` });
+  }
+};
+
+// 일차방정식의 활용
+G['mw-7'] = (r) => { // 나이
+  for (;;) {
+    const P = ri(r, 33, 48), C = ri(r, 5, 14), k = pick(r, [2, 3, 4]); if ((P - k * C) <= 0 || !intQ(P - k * C, k - 1)) continue;
+    const x = (P - k * C) / (k - 1); if (x < 2 || x > 20) continue;
+    const pa = pick(r, ['어머니', '아버지']), ch = pick(r, ['아들', '딸']), w: Opt[] = [];
+    if (k > 2) w.push({ v: q(P - k * C), note: `마지막에 ${k - 1}로 나누지 않음` });
+    if (intQ(P - k * C, k)) w.push({ v: q((P - k * C) / k), note: `${pa} 나이에도 ${M('x')}년을 더해야 하는 것을 빠뜨림` });
+    w.push({ v: q(C + x), note: `구하는 것(몇 년 후) 대신 그때의 ${ch} 나이를 답함` });
+    return build(r, { text: `현재 ${pa}의 나이는 ${P}살, ${ch}의 나이는 ${C}살입니다. 몇 년 후에 ${pa}의 나이가 ${ch}의 나이의 ${k}배가 되나요?`, correct: { v: q(x) }, wrongs: w,
+      fill: nearInt(r, x, 4), fmt: unit('년 후'), order: 'asc',
+      explain: `${M('x')}년 후: ${M(`${P} + x = ${k}(${C} + x)`)} → ${M(`${P} + x = ${k * C} + ${k}x`)} → ${M(`${P - k * C} = ${k - 1 === 1 ? '' : k - 1}x`)} → ${M(`x = ${x}`)} (${x}년 후)` });
+  }
+};
+G['mw-8'] = (r) => { // 연속하는 세 수
+  const kind = pick(r, ['자연수', '짝수', '홀수'] as const), st = kind === '자연수' ? 1 : 2;
+  let m: number; do { m = ri(r, 8, 40); } while ((kind === '짝수' && m % 2) || (kind === '홀수' && m % 2 === 0));
+  const big = r() < 0.5, ans = big ? m + st : m - st, S = 3 * m;
+  return build(r, { text: `연속하는 세 ${kind}의 합이 ${S}일 때, 세 수 중 가장 <b>${big ? '큰' : '작은'}</b> 수는?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(m), note: '가운데 수를 답함 (구하는 것을 확인하지 않음)' }, { v: q(big ? m - st : m + st), note: `가장 ${big ? '작은' : '큰'} 수를 답함` }, ...(st === 2 ? [{ v: q(big ? m + 1 : m - 1), note: `연속하는 ${kind}를 1씩 차이 나게 놓음` }] : [])],
+    fill: nearInt(r, ans, 4), fmt: intF, order: 'asc',
+    explain: `가운데 수를 ${M('x')}로 놓으면 ${M(`(x − ${st}) + x + (x + ${st}) = ${S}`)} → ${M(`3x = ${S}`)}, ${M(`x = ${m}`)} → 가장 ${big ? '큰' : '작은'} 수 ${ans}` });
+};
+G['mw-9'] = (r) => { // 과부족
+  for (;;) {
+    const n = ri(r, 5, 15), a = ri(r, 3, 6), b = a + ri(r, 1, 2), p = ri(r, 1, 9), T = a * n + p, qq = b * n - T; if (qq <= 0) continue;
+    const it = pick(r, [['사탕', '개'], ['연필', '자루'], ['공책', '권']]), askN = r() < 0.6, ans = askN ? n : T, w: Opt[] = [];
+    if (intQ(Math.abs(p - qq), b - a) && p !== qq) { const n2 = Math.abs(p - qq) / (b - a); w.push({ v: q(askN ? n2 : a * n2 + p), note: '남는 수와 모자라는 수를 같은 쪽으로 계산함' }); }
+    w.push({ v: q(askN ? T : n), note: askN ? `구하는 것(학생 수) 대신 ${it[0]} 수를 답함` : `구하는 것(${it[0]} 수) 대신 학생 수를 답함` });
+    if (askN) w.push({ v: q(p + qq) }); else w.push({ v: q(b * n), note: '모자라는 수를 빼지 않음' });
+    return build(r, { text: `학생들에게 ${it[0]}${josa(it[0], '을', '를')} 한 명에게 ${a}${it[1]}씩 나누어 주면 ${p}${it[1]}${josa(it[1], '이', '가')} 남고, ${b}${it[1]}씩 나누어 주면 ${qq}${it[1]}${josa(it[1], '이', '가')} 모자랍니다. ${askN ? '학생은 몇 명인가요?' : `${it[0]}${josa(it[0], '은', '는')} 모두 몇 ${it[1]}인가요?`}`,
+      correct: { v: q(ans) }, wrongs: w, fill: nearInt(r, ans, 4), fmt: unit(askN ? '명' : it[1]), order: 'asc',
+      explain: `학생 수를 ${M('x')}명이라 하면 ${it[0]} 수는 같으므로 ${M(`${a}x + ${p} = ${b}x − ${qq}`)} → ${b - a === 1 ? M(`x = ${n}`) : `${M(`${p + qq} = ${b - a}x`)} → ${M(`x = ${n}`)}`}${askN ? '' : ` → ${it[0]} ${a} × ${n} + ${p} = ${T}${it[1]}`}` });
+  }
+};
+G['mw-10'] = (r) => { // 갈 때·올 때 속력이 다른 왕복
+  for (;;) {
+    const [v1, v2] = shuffle(r, [2, 3, 4, 5, 6]).slice(0, 2).sort((x, y) => x - y), d = ri(r, 1, 12), Tm = (60 * d * (v1 + v2)) / (v1 * v2);
+    if (!Number.isInteger(Tm) || Tm % 5 || Tm < 40 || Tm > 300) continue;
+    const h = Math.floor(Tm / 60), mn = Tm % 60, Ts = `${h ? h + '시간' : ''}${h && mn ? ' ' : ''}${mn ? mn + '분' : ''}`, w: Opt[] = [{ v: q(2 * d), note: '편도 거리 대신 왕복 거리를 답함' }];
+    if (mn >= 10 && h) { const wrongT = q(h * 100 + mn, 100), dd = div(mul(wrongT, q(v1 * v2)), q(v1 + v2)); if (q(dd[0] * 100, dd[1])[1] === 1) w.push({ v: dd, note: `${h}시간 ${mn}분을 ${h}.${mn}시간으로 바꿈 (${mn}분 = ${M(frs(mn, 60))}시간)` }); }
+    const Tq = q(Tm, 60), TT = Tq[1] === 1 ? String(Tq[0]) : frs(Tq[0], Tq[1]), L = lcm(lcm(v1, v2), Tq[1]), lo = Math.max(1, d - 3), fillD = () => q(lo + ri(r, 0, 6));
+    return build(r, { text: `집에서 도서관까지 갈 때는 시속 ${v1} km로, 올 때는 같은 길을 시속 ${v2} km로 걸었더니 왕복하는 데 모두 ${Ts}이 걸렸습니다. 집에서 도서관까지의 거리는?`, correct: { v: q(d) }, wrongs: w,
+      fill: fillD, fmt: decU(' km'), order: 'asc',
+      explain: `거리를 ${M('x')} km라 하면 시간 = 거리 ÷ 속력: ${M(`${frs('x', v1)} + ${frs('x', v2)} = ${TT}`)}${mn ? `(${Ts} = ${M(TT)}시간)` : ''} → 양변에 ${L} 곱하기: ${M(`${L / v1}x + ${L / v2}x = ${Tm * L / 60}`)} → ${M(`${L / v1 + L / v2}x = ${Tm * L / 60}`)} → ${M(`x = ${d}`)} km` });
+  }
 };
 
 // 고정 문항: 생성기를 정해진 seed 로 돌려 문제지의 원래 문항을 만든다(같은 코드면 항상 같은 문제)

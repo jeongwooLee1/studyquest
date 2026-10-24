@@ -5,9 +5,9 @@
 // 아이별 진도 (hub.html STUDENTS 와 같은 순서)
 // wait: 학교에서 아직 안 배운 단원 — 다음 문제지로 권하지 않는다
 export const PLAN: Record<string, { emoji: string; sets: string[]; wait?: string[]; tests: string[] }> = {
-  '이다연': { emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'g-solid', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'kor-m1-v5-1', 'kor-m1-v5-2', 'kor-m1-v5-3', 'kor-m1-v5-4', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
-  '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'g-solid', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'eng-m1-past', 'eng-m1-modal', 'eng-m1-inf', 'eng-m1-comp', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
-  '이다희': { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec', 'kor-e4-read'], tests: ['math-e4', 'eng-e4-diag', 'kor-e4-diag'] },
+  '이다연': { emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'kor-m1-v5-1', 'kor-m1-v5-2', 'kor-m1-v5-3', 'kor-m1-v5-4', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
+  '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'eng-m1-past', 'eng-m1-modal', 'eng-m1-inf', 'eng-m1-comp', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
+  '이다희': { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec', 'kor-e4-read', 'eng-e4-v1'], tests: ['math-e4', 'eng-e4-diag', 'kor-e4-diag'] },
 };
 // 이 레벨테스트의 부족한 영역은 이미 문제지로 만들어져 있다
 const COVERED = ['math-m1', 'math-e4'];
@@ -34,6 +34,8 @@ export const LECTURES: Record<string, string> = {
   'sci-n40': 'EBS 중학 「뉴런 과학1」 40강 (마찰력)',
   'sci-n41': 'EBS 중학 「뉴런 과학1」 41강 (부력)',
   'eng-m1-modal': 'EBS 중학 프리미엄 중1 영어 문법 「조동사」·「미래 시제」 강의',
+  'm-eq-word': 'EBS 중학 「뉴런 수학1(상)」 → 「문자와 식」, 「일차방정식의 활용」 강의',
+  'eng-e4-v1': 'EBS 초등 「초등 영어 4학년」 단어 복습 — 학교·가족',
   'g-solid': 'EBS 초등 「만점왕 수학 6-1」 「각기둥과 각뿔」·「직육면체의 부피와 겉넓이」, 6-2 「원기둥, 원뿔, 구」 개념 강의',
   'eng-m1-inf': 'EBS 중학 프리미엄 중1 영어 문법 「to부정사」·「동명사」 강의',
   'eng-m1-comp': 'EBS 중학 프리미엄 중1 영어 문법 「비교급·최상급」 강의',
@@ -65,6 +67,8 @@ const ADVICE: [RegExp, string][] = [
   [/지름|반지름|원주율/, '지름·반지름부터 표시: 둘레 = 지름 × 3.14, 넓이 = 반지름 × 반지름 × 3.14'],
   [/꼭지각|밑각|각의|각도|°/, '모르는 각은 그림에 직접 표시하고, 삼각형 180° · 사각형 360° 식으로 쓰기'],
   [/2로 나누지|둘레의 반|÷ ?2/, '삼각형·사다리꼴·마름모 넓이와 대각선 개수는 마지막에 ÷ 2'],
+  [/이항/, '이항하면 부호가 바뀜 — 옮긴 항에 동그라미 치고 부호부터 바꾸기'],
+  [/대입/, '음수는 괄호에 넣어 대입: a × (−2)'],
   [/역수|뒤집/, '÷ 분수는 나누는 수만 뒤집어서 곱하기'],
   [/배|규칙/, '수 사이에 "+몇", "×몇"을 직접 적어 보고 규칙 확인'],
 ];
