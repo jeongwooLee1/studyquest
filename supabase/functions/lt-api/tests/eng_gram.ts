@@ -3,9 +3,10 @@
 //   eng-m1-modal 조동사·미래 확인(10): can·may · will·be going to · must·have to·should · 조동사 문장 형태
 //   eng-m1-inf   to부정사·동명사 확인(10): want to · enjoy -ing·전치사 뒤 · 둘 다/주어 자리 · ~하기 위해·~할
 //   eng-m1-comp  비교급·최상급 확인(10): 비교급 만들기 · 불규칙 · 최상급 · as ~ as·비교 문장 이해
+//   eng-m1-pres  현재시제 기초 확인(10): be동사 · 3인칭 단수 · do/does 부정·의문 · 현재진행 (기초 보강용)
 // 다시 풀기용 변형 문항은 ENG_VARIANTS[원래 문항 id] 에 3개씩(문항 객체 밖에 두어 정답이 페이지로 나가지 않게, sci_gas.ts 와 같은 방식).
 // 변형 문항 형식: { text, options, answer, traps?, explain } — 원래 문항과 같은 개념·같은 함정 문구, 보기 5개.
-// 표기: 줄바꿈 \n, 강조 <b>…</b>. '$'는 쓰지 않는다. 문항 id 는 세트마다 접두어(과거 'ep-', 조동사 'em-', to부정사 'ei-', 비교 'ec-').
+// 표기: 줄바꿈 \n, 강조 <b>…</b>. '$'는 쓰지 않는다. 문항 id 는 세트마다 접두어(과거 'ep-', 조동사 'em-', to부정사 'ei-', 비교 'ec-', 현재 'er-').
 
 const G = '문법';
 const set = (id: string, title: string, subtitle: string, minutes: number, practice: boolean, areas: any[], questions: any[]) => ({
@@ -300,7 +301,83 @@ export const ENG_M1_COMP = set('eng-m1-comp', '비교급·최상급 확인', '�
     explain: '지호가 민수보다 크다 = 민수가 지호보다 작다 → shorter.' },
 ]);
 
-export const ENG_GRAM_SETS = [ENG_M1_PAST, ENG_M1_MODAL, ENG_M1_INF, ENG_M1_COMP];
+// ── 현재시제 기초 ──
+const N_BE = 'be동사를 주어에 맞추지 않음 (I am / He·She·It is / You·We·They are)';
+const N_BENEG = 'be동사 부정은 be동사 뒤에 not (isn\'t, aren\'t)';
+const N_BEDO = 'be동사 문장에 do / does를 씀';
+const N_S = '주어가 3인칭 단수(He·She·It·한 사람)인데 동사에 -s를 붙이지 않음';
+const N_ES = '-s, -sh, -ch, -x, -o로 끝나면 -es (watches, goes)';
+const N_IES = '자음+y로 끝나면 y를 i로 고치고 -es (study → studies)';
+const N_VYS = '모음+y로 끝나면 그대로 -s (play → plays)';
+const N_HAS = 'have의 3인칭 단수는 has';
+const N_BEV2 = '현재 습관을 말하는데 be동사와 일반동사를 함께 씀';
+const N_DOES = '3인칭 단수 주어의 부정·의문은 does (doesn\'t / Does ~?)';
+const N_DOESV = 'does / doesn\'t 뒤에 동사원형을 쓰지 않음';
+const N_DOWHO = '주어에 맞춰 Do(I·you·복수) / Does(3인칭 단수)를 고르지 않음';
+const N_BEQ2 = '일반동사 문장의 의문문에 be동사를 씀';
+const N_PRESQ = '대답이 do / does(현재)인데 과거 Did로 물음';
+const N_PROG = '지금 하고 있는 일(now, Look!, Listen!)은 be동사 + -ing';
+const N_PROGBE = '현재진행형에서 be동사를 빠뜨리거나 주어에 맞추지 않음';
+const N_ING_E = 'e로 끝나면 e를 빼고 -ing (make → making)';
+const N_ING_DBL = '「짧은 모음+자음 하나」로 끝나면 자음을 한 번 더 쓰고 -ing (run → running)';
+
+const A_BEP = { id: 'n1', group: G, name: 'be동사 현재', unit: '중1 「be동사」',
+  why: '영어 문장의 뼈대예요. 주어에 맞는 am/is/are와 부정·의문 만들기가 모든 문법의 출발점이에요.',
+  study: ['EBS 중학 프리미엄 중1 영어 문법 「be동사」 강의', 'I am / He·She·It is / You·We·They are 표를 보고 내 가족 소개 문장 5개'] };
+const A_3S = { id: 'n2', group: G, name: '일반동사 3인칭 단수', unit: '중1 「일반동사의 현재형」',
+  why: '-s / -es / -ies 붙이기는 서술형에서 가장 많이 감점되는 곳이에요.',
+  study: ['EBS 중학 프리미엄 중1 영어 문법 「일반동사」 강의', 'plays, watches, goes, studies, has — 다섯 가지 모양으로 동사 3개씩 써 보기'] };
+const A_DOES = { id: 'n3', group: G, name: 'do / does 부정·의문', unit: '중1 「일반동사의 부정문·의문문」',
+  why: 'doesn\'t 뒤에 -s를 또 붙이는 실수가 어법 문제 단골이에요.',
+  study: ['EBS 중학 프리미엄 중1 영어 문법 「일반동사의 부정문·의문문」 강의', 'He doesn\'t like ~. / Does she play ~? — does가 -s를 가져가면 뒤 동사는 원형'] };
+const A_PROG = { id: 'n4', group: G, name: '현재진행형', unit: '중1 「현재진행형」',
+  why: 'now·Look! 같은 신호를 보고 be동사 + -ing를 고르는 문제가 자주 나와요.',
+  study: ['EBS 중학 프리미엄 중1 영어 문법 「현재진행형」 강의', 'making, running, swimming, sitting 처럼 -ing 철자 규칙 정리'] };
+
+export const ENG_M1_PRES = set('eng-m1-pres', '현재시제 기초 확인', '중1 영어 문법 · be동사 · 3인칭 단수 · does · 현재진행', 12, true,
+  [A_BEP, A_3S, A_DOES, A_PROG], [
+  { id: 'er-1', area: 'n1', text: '빈칸에 들어갈 말로 알맞은 것은?\nMy friends ______ in the music room.',
+    options: ['are', 'is', 'am', 'be', 'does'], answer: 1,
+    traps: [{ a: 2, note: N_BE }, { a: 3, note: N_BE }, { a: 5, note: N_BEDO }],
+    explain: 'My friends(복수) → are.' },
+  { id: 'er-2', area: 'n1', text: '다음 문장을 의문문으로 바르게 바꾼 것은?\nShe is from Canada.',
+    options: ['Does she from Canada?', 'Is she from Canada?', 'Do she is from Canada?', 'She is from Canada?', 'Are she from Canada?'], answer: 2,
+    traps: [{ a: 1, note: N_BEDO }, { a: 3, note: N_BEDO }, { a: 5, note: N_BE }],
+    explain: 'be동사 의문문은 be동사를 주어 앞으로 → Is she from Canada?' },
+  { id: 'er-3', area: 'n2', text: '다음 중 동사의 3인칭 단수형이 바르게 짝지어진 것은?',
+    options: ['watch – watchs', 'study – studys', 'have – haves', 'go – goes', 'play – plaies'], answer: 4,
+    traps: [{ a: 1, note: N_ES }, { a: 2, note: N_IES }, { a: 3, note: N_HAS }, { a: 5, note: N_VYS }],
+    explain: 'go → goes(-o는 -es). ① watches ② studies ③ has ⑤ plays' },
+  { id: 'er-4', area: 'n2', text: '빈칸에 들어갈 말로 알맞은 것은?\nMy mom ______ coffee every morning.',
+    options: ['drink', 'drinkes', 'drinking', 'is drink', 'drinks'], answer: 5,
+    traps: [{ a: 1, note: N_S }, { a: 4, note: N_BEV2 }],
+    explain: 'My mom(3인칭 단수) + 매일 하는 일 → drinks.' },
+  { id: 'er-5', area: 'n2', text: '다음 중 어법상 <b>틀린</b> 문장은?',
+    options: ['He lives in Seoul.', 'My parents works at a bank.', 'She has a cat.', 'Tom and Jerry are friends.', 'The baby cries at night.'], answer: 2,
+    explain: 'My parents(복수) → work. 복수 주어에는 -s를 붙이지 않아요.' },
+  { id: 'er-6', area: 'n3', text: '다음 중 어법상 바른 문장은?',
+    options: ['He doesn\'t eat meat.', 'She don\'t like spicy food.', 'Does he plays the guitar?', 'Do your brother go to school?', 'Mina doesn\'t has a phone.'], answer: 1,
+    traps: [{ a: 2, note: N_DOES }, { a: 3, note: N_DOESV }, { a: 4, note: N_DOES }, { a: 5, note: N_DOESV }],
+    explain: 'doesn\'t + 동사원형 → He doesn\'t eat. ② doesn\'t ③ play ④ Does ⑤ have' },
+  { id: 'er-7', area: 'n3', text: '대화의 빈칸에 들어갈 말로 알맞은 것은?\nA: ______ your sister like sports?\nB: Yes, she does.',
+    options: ['Do', 'Does', 'Is', 'Are', 'Did'], answer: 2,
+    traps: [{ a: 1, note: N_DOWHO }, { a: 3, note: N_BEQ2 }, { a: 4, note: N_BEQ2 }, { a: 5, note: N_PRESQ }],
+    explain: 'your sister(3인칭 단수) + 일반동사 like → Does ~ like? 대답도 she does.' },
+  { id: 'er-8', area: 'n4', text: '빈칸에 들어갈 말로 알맞은 것은?\nBe quiet! The baby ______ now.',
+    options: ['sleeps', 'sleeping', 'are sleeping', 'is sleeping', 'slept'], answer: 4,
+    traps: [{ a: 1, note: N_PROG }, { a: 2, note: N_PROGBE }, { a: 3, note: N_PROGBE }, { a: 5, note: N_PROG }],
+    explain: 'now(지금 자고 있다) → 현재진행 is sleeping.' },
+  { id: 'er-9', area: 'n4', text: '다음 중 -ing 형태가 바르게 짝지어진 것은?',
+    options: ['make – makeing', 'run – runing', 'swim – swimming', 'come – comeing', 'sit – siting'], answer: 3,
+    traps: [{ a: 1, note: N_ING_E }, { a: 2, note: N_ING_DBL }, { a: 4, note: N_ING_E }, { a: 5, note: N_ING_DBL }],
+    explain: 'swim → swimming. ① making ② running ④ coming ⑤ sitting' },
+  { id: 'er-10', area: 'n4', text: '다음 글의 빈칸에 들어갈 말로 알맞은 것은?\n\nIt\'s Saturday afternoon. My family is at home. Dad is reading a newspaper. Mom ______ cookies in the kitchen. I am doing my homework.',
+    options: ['bake', 'bakes', 'baking', 'are baking', 'is baking'], answer: 5,
+    traps: [{ a: 1, note: N_PROG }, { a: 2, note: N_PROG }, { a: 3, note: N_PROGBE }, { a: 4, note: N_PROGBE }],
+    explain: '지금 가족이 하고 있는 일을 현재진행형으로 말하는 글 → Mom is baking.' },
+]);
+
+export const ENG_GRAM_SETS = [ENG_M1_PRES, ENG_M1_PAST, ENG_M1_MODAL, ENG_M1_INF, ENG_M1_COMP];
 
 type V = { text: string; options: string[]; answer: number; traps?: { a: number; note: string }[]; explain: string };
 export const ENG_VARIANTS: Record<string, V[]> = {
@@ -656,5 +733,85 @@ export const ENG_VARIANTS: Record<string, V[]> = {
       traps: [{ a: 2, note: N_READ }, { a: 3, note: N_THAN }, { a: 4, note: N_MORESHORT }, { a: 5, note: N_THAN }], explain: '개가 고양이보다 나이가 많다 = 고양이가 더 어리다 → younger.' },
     { text: '두 문장의 뜻이 같도록 빈칸에 알맞은 것은?\nThe bus is slower than the subway. = The subway is ______ than the bus.', options: ['slower', 'fastest', 'more fast', 'fastter', 'faster'], answer: 5,
       traps: [{ a: 1, note: N_READ }, { a: 2, note: N_THAN }, { a: 3, note: N_MORESHORT }], explain: '버스가 지하철보다 느리다 = 지하철이 더 빠르다 → faster.' },
+  ],
+  'er-1': [
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nMr. Kim ______ our English teacher.', options: ['are', 'is', 'am', 'be', 'do'], answer: 2,
+      traps: [{ a: 1, note: N_BE }, { a: 3, note: N_BE }, { a: 5, note: N_BEDO }], explain: 'Mr. Kim(한 사람) → is.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nYou and I ______ in the same class.', options: ['is', 'am', 'do', 'be', 'are'], answer: 5,
+      traps: [{ a: 1, note: N_BE }, { a: 2, note: N_BE }, { a: 3, note: N_BEDO }], explain: 'You and I(두 사람 = we) → are.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nI ______ thirteen years old.', options: ['am', 'is', 'are', 'be', 'do'], answer: 1,
+      traps: [{ a: 2, note: N_BE }, { a: 3, note: N_BE }, { a: 5, note: N_BEDO }], explain: 'I → am.' },
+  ],
+  'er-2': [
+    { text: '다음 문장을 부정문으로 바르게 바꾼 것은?\nThey are hungry.', options: ['They don\'t hungry.', 'They not are hungry.', 'They aren\'t hungry.', 'They isn\'t hungry.', 'They doesn\'t hungry.'], answer: 3,
+      traps: [{ a: 1, note: N_BEDO }, { a: 2, note: N_BENEG }, { a: 4, note: N_BE }, { a: 5, note: N_BEDO }], explain: 'are not = aren\'t → They aren\'t hungry.' },
+    { text: '다음 문장을 부정문으로 바르게 바꾼 것은?\nHe is busy now.', options: ['He doesn\'t busy now.', 'He not is busy now.', 'He aren\'t busy now.', 'He isn\'t busy now.', 'He don\'t busy now.'], answer: 4,
+      traps: [{ a: 1, note: N_BEDO }, { a: 2, note: N_BENEG }, { a: 3, note: N_BE }, { a: 5, note: N_BEDO }], explain: 'is not = isn\'t → He isn\'t busy now.' },
+    { text: '다음 문장을 의문문으로 바르게 바꾼 것은?\nYou are tired.', options: ['Are you tired?', 'Do you tired?', 'Is you tired?', 'You are tired?', 'Do you are tired?'], answer: 1,
+      traps: [{ a: 2, note: N_BEDO }, { a: 3, note: N_BE }, { a: 5, note: N_BEDO }], explain: 'be동사를 주어 앞으로 → Are you tired?' },
+  ],
+  'er-3': [
+    { text: '다음 중 동사의 3인칭 단수형이 바르게 짝지어진 것은?', options: ['fix – fixs', 'cry – crys', 'do – dos', 'try – tries', 'have – haves'], answer: 4,
+      traps: [{ a: 1, note: N_ES }, { a: 2, note: N_IES }, { a: 3, note: N_ES }, { a: 5, note: N_HAS }], explain: 'try → tries. ① fixes ② cries ③ does ⑤ has' },
+    { text: '다음 중 동사의 3인칭 단수형이 바르게 짝지어진 것은?', options: ['have – has', 'wash – washs', 'fly – flys', 'enjoy – enjoies', 'teach – teachs'], answer: 1,
+      traps: [{ a: 2, note: N_ES }, { a: 3, note: N_IES }, { a: 4, note: N_VYS }, { a: 5, note: N_ES }], explain: 'have → has. ② washes ③ flies ④ enjoys ⑤ teaches' },
+    { text: '다음 중 동사의 3인칭 단수형이 바르게 짝지어진 것은?', options: ['finish – finishs', 'buy – buies', 'carry – carrys', 'mix – mixs', 'say – says'], answer: 5,
+      traps: [{ a: 1, note: N_ES }, { a: 2, note: N_VYS }, { a: 3, note: N_IES }, { a: 4, note: N_ES }], explain: 'say → says. ① finishes ② buys ③ carries ④ mixes' },
+  ],
+  'er-4': [
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nJiho ______ his teeth after meals.', options: ['brush', 'brushs', 'brushes', 'is brush', 'brushing'], answer: 3,
+      traps: [{ a: 1, note: N_S }, { a: 2, note: N_ES }, { a: 4, note: N_BEV2 }], explain: 'Jiho(3인칭 단수), brush는 -sh → brushes.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nThe bus ______ every ten minutes.', options: ['come', 'comes', 'is come', 'comeing', 'coming'], answer: 2,
+      traps: [{ a: 1, note: N_S }, { a: 3, note: N_BEV2 }], explain: 'The bus(3인칭 단수) + 반복되는 일 → comes.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nMy sister ______ English very hard.', options: ['studys', 'study', 'is study', 'studies', 'studying'], answer: 4,
+      traps: [{ a: 1, note: N_IES }, { a: 2, note: N_S }, { a: 3, note: N_BEV2 }], explain: 'My sister(3인칭 단수), study는 자음+y → studies.' },
+  ],
+  'er-5': [
+    { text: '다음 중 어법상 <b>틀린</b> 문장은?', options: ['They plays tennis on Sundays.', 'He goes to school by bus.', 'My dog likes bones.', 'We are in the same club.', 'It rains a lot in July.'], answer: 1,
+      explain: 'They(복수) → play.' },
+    { text: '다음 중 어법상 <b>틀린</b> 문장은?', options: ['Mina watches TV after dinner.', 'He has two brothers.', 'She studies math every day.', 'The students wears uniforms.', 'I live near the park.'], answer: 4,
+      explain: 'The students(복수) → wear.' },
+    { text: '다음 중 어법상 <b>틀린</b> 문장은?', options: ['My brother fixes bikes.', 'The birds sing in the morning.', 'She does her homework at night.', 'Tom gets up early.', 'Jisu and I likes music.'], answer: 5,
+      explain: 'Jisu and I(두 사람 = 복수) → like.' },
+  ],
+  'er-6': [
+    { text: '다음 중 어법상 바른 문장은?', options: ['Does she speaks Japanese?', 'My dad don\'t drink coffee.', 'Do Tom live here?', 'Does your sister like cats?', 'He doesn\'t wants pizza.'], answer: 4,
+      traps: [{ a: 1, note: N_DOESV }, { a: 2, note: N_DOES }, { a: 3, note: N_DOES }, { a: 5, note: N_DOESV }], explain: 'Does + 주어 + 동사원형 → Does your sister like cats?' },
+    { text: '다음 중 어법상 바른 문장은?', options: ['It doesn\'t snow much in Busan.', 'Do she have a pet?', 'He don\'t know the answer.', 'Does Minho goes to bed early?', 'She doesn\'t likes math.'], answer: 1,
+      traps: [{ a: 2, note: N_DOES }, { a: 3, note: N_DOES }, { a: 4, note: N_DOESV }, { a: 5, note: N_DOESV }], explain: 'It(3인칭 단수) doesn\'t + 동사원형 → It doesn\'t snow.' },
+    { text: '다음 중 어법상 바른 문장은?', options: ['Does the bus stops here?', 'My cat don\'t like water.', 'Do he play soccer?', 'Jisu doesn\'t watches TV.', 'Does your mom work on Saturdays?'], answer: 5,
+      traps: [{ a: 1, note: N_DOESV }, { a: 2, note: N_DOES }, { a: 3, note: N_DOES }, { a: 4, note: N_DOESV }], explain: 'Does + 주어 + 동사원형 → Does your mom work …?' },
+  ],
+  'er-7': [
+    { text: '대화의 빈칸에 들어갈 말로 알맞은 것은?\nA: ______ you have a pencil?\nB: Yes, I do.', options: ['Does', 'Are', 'Do', 'Is', 'Did'], answer: 3,
+      traps: [{ a: 1, note: N_DOWHO }, { a: 2, note: N_BEQ2 }, { a: 4, note: N_BEQ2 }, { a: 5, note: N_PRESQ }], explain: 'you + 일반동사 have → Do you have …?' },
+    { text: '대화의 빈칸에 들어갈 말로 알맞은 것은?\nA: ______ Tom and Mike play baseball?\nB: No, they don\'t.', options: ['Does', 'Is', 'Are', 'Do', 'Did'], answer: 4,
+      traps: [{ a: 1, note: N_DOWHO }, { a: 2, note: N_BEQ2 }, { a: 3, note: N_BEQ2 }, { a: 5, note: N_PRESQ }], explain: 'Tom and Mike(복수) + 일반동사 → Do ~ play?' },
+    { text: '대화의 빈칸에 들어갈 말로 알맞은 것은?\nA: ______ your dad cook dinner?\nB: Yes, he does.', options: ['Does', 'Do', 'Is', 'Are', 'Did'], answer: 1,
+      traps: [{ a: 2, note: N_DOWHO }, { a: 3, note: N_BEQ2 }, { a: 4, note: N_BEQ2 }, { a: 5, note: N_PRESQ }], explain: 'your dad(3인칭 단수) + 일반동사 → Does ~ cook?' },
+  ],
+  'er-8': [
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nLook! Two cats ______ on the roof.', options: ['is running', 'run', 'are running', 'running', 'ran'], answer: 3,
+      traps: [{ a: 1, note: N_PROGBE }, { a: 2, note: N_PROG }, { a: 4, note: N_PROGBE }, { a: 5, note: N_PROG }], explain: 'Look!(지금) + Two cats(복수) → are running.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nA: Where is Dad?\nB: He ______ the car now.', options: ['washes', 'washing', 'are washing', 'washed', 'is washing'], answer: 5,
+      traps: [{ a: 1, note: N_PROG }, { a: 2, note: N_PROGBE }, { a: 3, note: N_PROGBE }, { a: 4, note: N_PROG }], explain: 'now + He → is washing.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nListen! Someone ______ the piano.', options: ['is playing', 'plays', 'playing', 'are playing', 'played'], answer: 1,
+      traps: [{ a: 2, note: N_PROG }, { a: 3, note: N_PROGBE }, { a: 4, note: N_PROGBE }, { a: 5, note: N_PROG }], explain: 'Listen!(지금 들리는 소리) + Someone(단수) → is playing.' },
+  ],
+  'er-9': [
+    { text: '다음 중 -ing 형태가 바르게 짝지어진 것은?', options: ['dance – dancing', 'write – writeing', 'get – geting', 'stop – stoping', 'ride – rideing'], answer: 1,
+      traps: [{ a: 2, note: N_ING_E }, { a: 3, note: N_ING_DBL }, { a: 4, note: N_ING_DBL }, { a: 5, note: N_ING_E }], explain: 'dance → dancing. ② writing ③ getting ④ stopping ⑤ riding' },
+    { text: '다음 중 -ing 형태가 바르게 짝지어진 것은?', options: ['take – takeing', 'begin – begining', 'cut – cuting', 'have – having', 'shop – shoping'], answer: 4,
+      traps: [{ a: 1, note: N_ING_E }, { a: 2, note: N_ING_DBL }, { a: 3, note: N_ING_DBL }, { a: 5, note: N_ING_DBL }], explain: 'have → having. ① taking ② beginning ③ cutting ⑤ shopping' },
+    { text: '다음 중 -ing 형태가 바르게 짝지어진 것은?', options: ['plan – planing', 'use – useing', 'jog – joging', 'smile – smileing', 'put – putting'], answer: 5,
+      traps: [{ a: 1, note: N_ING_DBL }, { a: 2, note: N_ING_E }, { a: 3, note: N_ING_DBL }, { a: 4, note: N_ING_E }], explain: 'put → putting. ① planning ② using ③ jogging ④ smiling' },
+  ],
+  'er-10': [
+    { text: '다음 글의 빈칸에 들어갈 말로 알맞은 것은?\n\nIt\'s 8 p.m. now. My brother is playing a game. My sister is listening to music. My parents ______ TV in the living room.', options: ['watch', 'is watching', 'watches', 'are watching', 'watching'], answer: 4,
+      traps: [{ a: 1, note: N_PROG }, { a: 2, note: N_PROGBE }, { a: 3, note: N_PROG }, { a: 5, note: N_PROGBE }], explain: '지금 하는 일 + My parents(복수) → are watching.' },
+    { text: '다음 글의 빈칸에 들어갈 말로 알맞은 것은?\n\nLook at the park! Some children are flying kites. A man is walking his dog. A girl ______ a bike.', options: ['rides', 'is riding', 'are riding', 'ride', 'riding'], answer: 2,
+      traps: [{ a: 1, note: N_PROG }, { a: 3, note: N_PROGBE }, { a: 4, note: N_PROG }, { a: 5, note: N_PROGBE }], explain: '지금 공원에서 하는 일 + A girl(단수) → is riding.' },
+    { text: '다음 글의 빈칸에 들어갈 말로 알맞은 것은?\n\nWe are at the beach now. Dad is swimming. My sister is building a sandcastle. I ______ pictures.', options: ['am taking', 'takes', 'is taking', 'taking', 'take'], answer: 1,
+      traps: [{ a: 2, note: N_PROG }, { a: 3, note: N_PROGBE }, { a: 4, note: N_PROGBE }, { a: 5, note: N_PROG }], explain: '지금 하는 일 + I → am taking.' },
   ],
 };

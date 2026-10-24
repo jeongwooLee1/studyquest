@@ -27,6 +27,7 @@
 
 | id | 문항·시간 | 영역 |
 |---|---|---|
+| eng-m1-pres | 10·12분 | be동사 2 · 3인칭 단수 3 · do/does 부정·의문 2 · 현재진행 3 (기초 보강, 다혜 우선) |
 | eng-m1-past | 10·12분 | 규칙 과거형 철자 2 · 불규칙 과거형 3 · was/were 2 · did 부정·의문 3 |
 | eng-m1-modal | 10·12분 | can·may 2 · will·be going to 2 · must·have to·should 3 · 조동사 문장 형태 3 |
 | eng-m1-inf | 10·12분 | to부정사 동사 2 · 동명사 동사·전치사 3 · 둘 다/주어 자리 2 · ~하기 위해·~할 3 |
