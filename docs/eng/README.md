@@ -22,3 +22,13 @@
 | high 「믿을 만함」 | 그 밖 |
 
 빠른 답 수는 perQ.sec < 5 와 lt_attempts.fast_guesses 중 큰 값.
+
+## 문법 문제지 (`tests/eng_gram.ts`, practice:true)
+
+| id | 문항·시간 | 영역 |
+|---|---|---|
+| eng-m1-past | 10·12분 | 규칙 과거형 철자 2 · 불규칙 과거형 3 · was/were 2 · did 부정·의문 3 |
+
+- 출판사와 상관없는 중1 성취기준 문법(과거시제는 모든 중1 교과서에 있음).
+- 다시 풀기 변형: `ENG_VARIANTS[원래 문항 id]` 3개씩(30개), 함정 문구는 원래 문항과 같은 상수 사용.
+- 통합: index.ts `VARIANTS`에 `...ENG_VARIANTS`, TESTS에 `...ENG_GRAM_SETS`, coach.ts PLAN·LECTURES에 `eng-m1-past`.
