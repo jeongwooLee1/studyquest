@@ -157,8 +157,53 @@ window.LT = (function () {
     o.push('</svg>');
     return o.join('');
   }
+  // 입체도형 겨냥도 (type:'solid' — 직육면체·각기둥·각뿔·각뿔대). 빗각 투영: 깊이는 오른쪽 위 30°, 0.5배.
+  // 면의 바깥 방향이 보는 쪽을 향하면 보이는 면, 보이는 면에 닿은 모서리는 실선, 나머지는 점선
+  function solidSVG(fig) {
+    var V = [], F = [], kind = fig.kind, i, n;
+    if (kind === 'cuboid') {
+      var a = fig.a || 1, b = fig.b || 1, c = fig.c || 1;
+      V = [[0, 0, 0], [a, 0, 0], [a, b, 0], [0, b, 0], [0, 0, c], [a, 0, c], [a, b, c], [0, b, c]];
+      F = [[0, 3, 2, 1], [4, 5, 6, 7], [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]];
+    } else if (kind === 'prism' || kind === 'pyramid' || kind === 'frustum') {
+      n = Math.max(3, Math.min(8, fig.n || 4)); var r = fig.r || 3, h = fig.h || 5, r2 = kind === 'frustum' ? (fig.r2 || r / 2) : r;
+      var base = [], top = [];
+      for (i = 0; i < n; i++) { var t = -Math.PI / 2 - Math.PI / n + 2 * Math.PI * i / n; base.push(V.length); V.push([r * Math.cos(t), r * Math.sin(t), 0]); }
+      if (kind === 'pyramid') { V.push([0, 0, h]); var ap = V.length - 1; for (i = 0; i < n; i++) F.push([base[i], base[(i + 1) % n], ap]); }
+      else {
+        for (i = 0; i < n; i++) { var t2 = -Math.PI / 2 - Math.PI / n + 2 * Math.PI * i / n; top.push(V.length); V.push([r2 * Math.cos(t2), r2 * Math.sin(t2), h]); }
+        F.push(top.slice()); for (i = 0; i < n; i++) F.push([base[i], base[(i + 1) % n], top[(i + 1) % n], top[i]]);
+      }
+      F.push(base.slice().reverse());
+    } else return '';
+    var K = 0.5, ca = Math.cos(Math.PI / 6), sa = Math.sin(Math.PI / 6), view = [-K * ca, 1, -K * sa];
+    var proj = function (p) { return [p[0] + K * ca * p[1], p[2] + K * sa * p[1]]; };
+    var vis = F.map(function (f) { // Newell 법선 · 보는 방향 < 0 이면 보임
+      var nx = 0, ny = 0, nz = 0;
+      for (var j = 0; j < f.length; j++) { var p = V[f[j]], q = V[f[(j + 1) % f.length]]; nx += (p[1] - q[1]) * (p[2] + q[2]); ny += (p[2] - q[2]) * (p[0] + q[0]); nz += (p[0] - q[0]) * (p[1] + q[1]); }
+      return nx * view[0] + ny * view[1] + nz * view[2] < -1e-9;
+    });
+    var E = {};
+    F.forEach(function (f, fi) { for (var j = 0; j < f.length; j++) { var u = f[j], w = f[(j + 1) % f.length], key = Math.min(u, w) + '-' + Math.max(u, w); E[key] = E[key] || { u: u, w: w, vis: false }; if (vis[fi]) E[key].vis = true; } });
+    var P2 = V.map(proj), xs = P2.map(function (p) { return p[0]; }), ys = P2.map(function (p) { return p[1]; });
+    var minx = Math.min.apply(null, xs), maxx = Math.max.apply(null, xs), miny = Math.min.apply(null, ys), maxy = Math.max.apply(null, ys);
+    var px = 48, py = 26, k = Math.min(190 / Math.max(maxx - minx, 1e-6), 160 / Math.max(maxy - miny, 1e-6)), W = (maxx - minx) * k + 2 * px, H = (maxy - miny) * k + 2 * py;
+    var X = function (p) { return px + (p[0] - minx) * k; }, Y = function (p) { return py + (maxy - p[1]) * k; }, f1 = function (v) { return Math.round(v * 10) / 10; };
+    var o = ['<svg class="shape" viewBox="0 0 ' + f1(W) + ' ' + f1(H) + '" width="' + f1(W) + '" role="img" aria-label="입체도형 그림">'];
+    Object.keys(E).forEach(function (key) { var e = E[key], p = P2[e.u], q = P2[e.w]; o.push('<line class="s' + (e.vis ? '' : ' d') + '" x1="' + f1(X(p)) + '" y1="' + f1(Y(p)) + '" x2="' + f1(X(q)) + '" y2="' + f1(Y(q)) + '"/>'); });
+    var L = fig.labels || {}, lab = function (p, dx, dy, t, an) { return '<text x="' + f1(X(p) + dx) + '" y="' + f1(Y(p) + dy) + '" text-anchor="' + (an || 'middle') + '" dominant-baseline="central">' + esc(String(t).replace(/\$/g, '')) + '</text>'; };
+    var mid = function (u, w) { return [(P2[u][0] + P2[w][0]) / 2, (P2[u][1] + P2[w][1]) / 2]; };
+    if (kind === 'cuboid') {
+      if (L.a) o.push(lab(mid(0, 1), 0, 13, L.a));
+      if (L.b) o.push(lab(mid(1, 2), 8, 8, L.b, 'start'));
+      if (L.c) o.push(lab(mid(0, 4), -6, 0, L.c, 'end')); // 높이는 앞쪽 왼쪽 모서리에(오른쪽은 옆면 모서리와 겹침)
+    } else if (L.h) o.push(lab([maxx, (miny + maxy) / 2], 8, 0, L.h, 'start'));
+    o.push('</svg>');
+    return o.join('');
+  }
   function figure(fig) {
     if (!fig) return '';
+    if (fig.type === 'solid') return '<div class="fig">' + solidSVG(fig) + '</div>';
     if (fig.type === 'coord') return '<div class="fig">' + coordSVG(fig) + '</div>';
     if (fig.type === 'shape') return '<div class="fig">' + shapeSVG(fig) + '</div>';
     return '';

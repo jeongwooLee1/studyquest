@@ -5,8 +5,8 @@
 // 아이별 진도 (hub.html STUDENTS 와 같은 순서)
 // wait: 학교에서 아직 안 배운 단원 — 다음 문제지로 권하지 않는다
 export const PLAN: Record<string, { emoji: string; sets: string[]; wait?: string[]; tests: string[] }> = {
-  '이다연': { emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
-  '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'eng-m1-past', 'eng-m1-modal', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
+  '이다연': { emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'g-solid', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'kor-m1-v5-1', 'kor-m1-v5-2', 'kor-m1-v5-3', 'kor-m1-v5-4', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
+  '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'g-solid', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'eng-m1-past', 'eng-m1-modal', 'eng-m1-inf', 'eng-m1-comp', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
   '이다희': { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec', 'kor-e4-read'], tests: ['math-e4', 'eng-e4-diag', 'kor-e4-diag'] },
 };
 // 이 레벨테스트의 부족한 영역은 이미 문제지로 만들어져 있다
@@ -34,6 +34,9 @@ export const LECTURES: Record<string, string> = {
   'sci-n40': 'EBS 중학 「뉴런 과학1」 40강 (마찰력)',
   'sci-n41': 'EBS 중학 「뉴런 과학1」 41강 (부력)',
   'eng-m1-modal': 'EBS 중학 프리미엄 중1 영어 문법 「조동사」·「미래 시제」 강의',
+  'g-solid': 'EBS 초등 「만점왕 수학 6-1」 「각기둥과 각뿔」·「직육면체의 부피와 겉넓이」, 6-2 「원기둥, 원뿔, 구」 개념 강의',
+  'eng-m1-inf': 'EBS 중학 프리미엄 중1 영어 문법 「to부정사」·「동명사」 강의',
+  'eng-m1-comp': 'EBS 중학 프리미엄 중1 영어 문법 「비교급·최상급」 강의',
   'eng-m1-past': 'EBS 중학 프리미엄 중1 영어 문법 「과거시제」 강의',
   'g-area': 'EBS 초등 「만점왕 수학 5-1」 → 「다각형의 둘레와 넓이」 개념 강의',
   'g-circle': 'EBS 초등 「만점왕 수학 6-2」 → 「원의 넓이」 개념 강의',
@@ -41,6 +44,10 @@ export const LECTURES: Record<string, string> = {
   'kor-m1-grammar': '강의 없이 — 품사는 「뜻·기능·형태」 세 기준으로 나눠 보기',
   'kor-m1-lit': '강의 없이 — 비유·상징·시점·갈등 개념을 예와 함께 정리하고 풀기',
   'kor-m1-read': '강의 없이 — 글을 읽고 문단마다 중심 문장에 밑줄 긋고 풀기',
+  'kor-m1-v5-1': '강의 없이 — 10분 어휘·문법 세트',
+  'kor-m1-v5-2': '강의 없이 — 10분 어휘·문법 세트',
+  'kor-m1-v5-3': '강의 없이 — 10분 어휘·문법 세트',
+  'kor-m1-v5-4': '강의 없이 — 10분 어휘·문법 세트',
   'kor-e4-read': '강의 없이 — 질문의 「아닌 것」「남은」「두 번째」에 동그라미 치고 풀기',
   'h-word': '강의 없이 — 구하는 것에 밑줄 긋고, 답을 고른 뒤 문제를 한 번 더 읽기',
 };
