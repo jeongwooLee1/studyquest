@@ -22,3 +22,12 @@
 | high 「믿을 만함」 | 그 밖 |
 
 빠른 답 수는 perQ.sec < 5 와 lt_attempts.fast_guesses 중 큰 값.
+
+## 초4 어휘 문제지 (`tests/eng_voc.ts`, practice:true)
+
+| id | 문항·시간 | 내용 |
+|---|---|---|
+| eng-e4-v1 | 10·10분 | 학교 물건·장소·과목, 가족 — 뜻 알기 4 · 영어 단어 고르기 3 · 문장·글 속 단어 3(끝까지 읽기) |
+
+- 다시 풀기 변형: `ENG_VOC_VARIANTS[원래 문항 id]` 3개씩.
+- 통합: index.ts TESTS에 `...ENG_VOC_SETS`, `VARIANTS`에 `...ENG_VOC_VARIANTS`, coach.ts 다희 PLAN·LECTURES.
