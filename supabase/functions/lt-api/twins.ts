@@ -1795,6 +1795,105 @@ G['mr-10'] = (r) => { // 트랙: 바깥쪽과 안쪽 레인 둘레 차 (기출 �
       { k: 'text', at: [0, 0], s: `직선 ${Ls} m` }]) };
 };
 
+// ── 중1 2학기 「입체도형」: 다면체·정다면체, 회전체, 기둥·뿔·구의 겉넓이와 부피 (작년 도농중 기말 16~19번 유형) ──
+const solidName = (kind: 'prism' | 'pyramid' | 'frustum', n: number) => `${koN(n)}각${kind === 'prism' ? '기둥' : kind === 'pyramid' ? '뿔' : '뿔대'}`;
+const facesOf = (kind: string, n: number) => (kind === 'pyramid' ? n + 1 : n + 2);
+G['ms-1'] = (r) => { // ○면체가 아닌 것
+  for (;;) { const F = ri(r, 5, 8), all: [string, number][] = []; // 구면체(9)는 구와 헷갈려서 뺌
+    for (const kind of ['prism', 'pyramid', 'frustum'] as const) for (let n = 3; n <= 10; n++) all.push([solidName(kind, n), facesOf(kind, n)]);
+    const yes = shuffle(r, all.filter(([, f]) => f === F)), no = shuffle(r, all.filter(([, f]) => f === F + 1 || f === F - 1)); if (!yes.length || no.length < 4) continue;
+    const c = yes[0], ws = no.slice(0, 4);
+    return build(r, { text: `다음 중 ${koN(F)}면체인 것은?`, correct: { s: c[0] }, wrongs: ws.map(([s, f]) => ({ s, note: `${s}의 면은 ${f}개 (${s.endsWith('뿔') ? 'n각뿔은 n + 1개' : 'n각기둥·n각뿔대는 n + 2개'})` })), order: 'shuffle',
+      explain: `면의 수: n각기둥·n각뿔대 n + 2개, n각뿔 n + 1개 → ${c[0]}의 면은 ${c[1]}개 (${koN(F)}면체)` }); }
+};
+G['ms-2'] = (r) => tfPick(r, ['정다면체는 정사면체, 정육면체, 정팔면체, 정십이면체, 정이십면체의 5가지뿐이다.', '정십이면체의 면의 모양은 정오각형이다.', '정팔면체의 한 꼭짓점에 모인 면은 4개이다.', '정이십면체의 면의 모양은 정삼각형이다.', '정육면체의 한 꼭짓점에 모인 면은 3개이다.'],
+  [['정다면체의 면이 될 수 있는 정다각형은 정삼각형, 정사각형, 정오각형, 정육각형이다.', '정육각형으로는 정다면체를 만들 수 없음 (한 꼭짓점에 모인 각의 합이 360°가 됨)'], ['정사면체의 모서리는 4개이다.', '정사면체의 모서리는 6개'], ['정팔면체의 꼭짓점은 8개이다.', '정팔면체의 꼭짓점은 6개'],
+   ['면의 모양이 정삼각형인 정다면체는 정사면체뿐이다.', '정팔면체·정이십면체도 면이 정삼각형'], ['정십이면체의 한 꼭짓점에 모인 면은 4개이다.', '정십이면체의 한 꼭짓점에 모인 면은 3개']], '정다면체');
+G['ms-3'] = (r) => { // 모서리 수로 각뿔대의 면 수
+  const n = ri(r, 3, 12), E = 3 * n;
+  return { ...build(r, { text: `모서리가 ${E}개인 각뿔대의 면의 개수는?`, correct: { v: q(n + 2) },
+    wrongs: [{ v: q(E / 3), note: '밑면의 변의 수만 구함 (면 = 옆면 n + 밑면 2)' }, ...(E % 2 === 0 ? [{ v: q(E / 2 + 1), note: '각뿔로 생각함 (각뿔은 모서리 2n)' }] : []), { v: q(2 * n), note: '꼭짓점의 수를 구함' }, { v: q(n + 1), note: '밑면을 1개로 셈' }],
+    fill: nearInt(r, n + 2, 3), fmt: ea, order: 'asc', explain: `n각뿔대의 모서리 3n개 → n = ${E} ÷ 3 = ${n} → 면은 ${n} + 2 = ${n + 2}개` }),
+    fig: { type: 'solid', kind: 'frustum', n: Math.min(n, 8), r: 3, r2: 1.6, h: 3 } };
+};
+G['ms-4'] = (r) => tfPick(r, ['원뿔을 회전축에 수직인 평면으로 자르면 단면은 원이다.', '구는 어떤 평면으로 잘라도 단면이 원이다.', '원기둥을 회전축을 포함하는 평면으로 자르면 단면은 직사각형이다.', '원뿔을 회전축을 포함하는 평면으로 자르면 단면은 이등변삼각형이다.', '원뿔대를 회전축을 포함하는 평면으로 자르면 단면은 사다리꼴이다.'],
+  [['원뿔을 회전축을 포함하는 평면으로 자르면 단면은 직각삼각형이다.', '이등변삼각형'], ['원기둥을 회전축에 수직인 평면으로 자르면 단면은 직사각형이다.', '원'], ['구를 회전축을 포함하는 평면으로 자르면 단면은 반원이다.', '원'],
+   ['원뿔대를 회전축에 수직인 평면으로 자르면 단면은 사다리꼴이다.', '원'], ['회전체를 회전축에 수직인 평면으로 자른 단면은 항상 서로 합동이다.', '원뿔·원뿔대는 자르는 위치에 따라 크기가 다른 원']], '회전체');
+G['ms-5'] = (r) => { // 회전축을 포함하는 단면의 넓이
+  if (r() < 0.5) { const a = ri(r, 2, 9), b = ri(r, 3, 12); if (a === b) return G['ms-5'](r); const ans = 2 * a * b;
+    return { ...build(r, { text: `가로 ${a} cm, 세로 ${b} cm인 직사각형을 세로를 회전축으로 하여 한 바퀴 돌려 만든 입체도형을 회전축을 포함하는 평면으로 자른 단면의 넓이는?`, correct: { v: q(ans) },
+      wrongs: [{ v: q(a * b), note: '돌리기 전 직사각형의 넓이를 구함 (단면은 축 양쪽으로 2배)' }, { v: q(4 * a * b), note: '가로·세로를 모두 2배 함 (세로는 축이라 그대로)' }, { v: q(2 * (2 * a + b)), note: '넓이 대신 둘레를 구함' }],
+      fill: nearInt(r, ans, 8), fmt: cm2, order: 'asc', explain: `원기둥의 단면은 가로 ${a} × 2 = ${2 * a} cm, 세로 ${b} cm인 직사각형 → ${2 * a} × ${b} = ${ans} cm²` }),
+      fig: shape({ _A: P(0, 0), _B: P(a, 0), _C: P(a, b), _D: P(0, b), _t: P(0, b + 1.5), _u: P(0, -1.5) }, [{ k: 'seg', p: ['_u', '_t'], dash: true }, { k: 'poly', p: ['_A', '_B', '_C', '_D'], fill: true }, { k: 'side', p: ['_A', '_B'], label: `${a} cm` }, { k: 'side', p: ['_D', '_A'], label: `${b} cm` }]) }; }
+  let rad: number, h: number; do { rad = ri(r, 2, 9); h = ri(r, 3, 12); } while (rad === h); const ans = rad * h;
+  return { ...build(r, { text: `직각을 낀 두 변이 ${rad} cm, ${h} cm인 직각삼각형을 ${h} cm인 변을 회전축으로 하여 한 바퀴 돌려 만든 입체도형을 회전축을 포함하는 평면으로 자른 단면의 넓이는?`, correct: { v: q(ans) },
+    wrongs: [...((rad * h) % 2 === 0 ? [{ v: q(rad * h / 2), note: '돌리기 전 직각삼각형의 넓이를 구함 (단면은 그 2배인 이등변삼각형)' }] : []), { v: q(2 * rad * h), note: '÷ 2를 빠뜨림 (삼각형 넓이)' }, { v: q(4 * rad * h) }],
+    fill: nearInt(r, ans, 6), fmt: cm2, order: 'asc', explain: `원뿔의 단면은 밑변 ${rad} × 2 = ${2 * rad} cm, 높이 ${h} cm인 이등변삼각형 → ${2 * rad} × ${h} ÷ 2 = ${ans} cm²` }),
+    fig: shape({ _O: P(0, 0), _A: P(rad, 0), _T: P(0, h), _u: P(0, -h * 0.15), _t: P(0, h * 1.15) }, [{ k: 'seg', p: ['_u', '_t'], dash: true }, { k: 'poly', p: ['_O', '_A', '_T'], fill: true }, { k: 'right', p: ['_A', '_O', '_T'] }, { k: 'side', p: ['_O', '_A'], label: `${rad} cm` }, { k: 'side', p: ['_T', '_O'], label: `${h} cm` }]) };
+};
+// 겉넓이와 부피 (π)
+G['ms-6'] = (r) => { // 원기둥의 겉넓이
+  const rad = ri(r, 2, 8), h = ri(r, 3, 12), ans = pv(q(2 * rad * rad + 2 * rad * h));
+  return { ...buildPi(r, { text: `밑면의 반지름의 길이가 ${rad} cm, 높이가 ${h} cm인 원기둥의 겉넓이는?`, correct: ans,
+    wrongs: [{ v: pv(q(rad * rad + 2 * rad * h)), note: '밑면을 하나만 더함 (밑면은 2개)' }, { v: pv(q(2 * rad * h)), note: '옆넓이만 구함' }, { v: pv(q(rad * rad * h)), note: '겉넓이 대신 부피를 구함' }, { v: pv(q(2 * rad * rad + rad * h)), note: '옆면의 가로를 πr로 계산함 (2πr)' }],
+    unitS: ' cm²', fill: nearPv(r, ans), explain: `밑넓이 π × ${rad}² = ${rad * rad}π, 두 개 → ${2 * rad * rad}π / 옆넓이 = 2π × ${rad} × ${h} = ${2 * rad * h}π → 겉넓이 ${M(piStr(ans))} cm²` }),
+    fig: { type: 'solid', kind: 'cylinder', r: rad, h, labels: { r: `${rad} cm`, h: `${h} cm` }, show: ['r'] } };
+};
+G['ms-7'] = (r) => { // 기둥의 부피
+  if (r() < 0.5) { const rad = ri(r, 2, 8), h = ri(r, 3, 12), ans = pv(q(rad * rad * h));
+    return { ...buildPi(r, { text: `밑면의 반지름의 길이가 ${rad} cm, 높이가 ${h} cm인 원기둥의 부피는?`, correct: ans,
+      wrongs: [{ v: pv(q(2 * rad * h)), note: '부피 대신 옆넓이를 구함' }, { v: pv(q(rad * rad * h, 3)), note: '뿔처럼 ⅓을 곱함' }, { v: pv(q(2 * rad * rad * h)), note: '밑넓이를 2πr²으로 계산함' }, { v: pv(q(rad * h)) }],
+      unitS: ' cm³', fill: nearPv(r, ans), explain: `기둥의 부피 = 밑넓이 × 높이 = π × ${rad}² × ${h} = ${M(piStr(ans))} cm³` }),
+      fig: { type: 'solid', kind: 'cylinder', r: rad, h, labels: { r: `${rad} cm`, h: `${h} cm` }, show: ['r'] } }; }
+  const a = ri(r, 3, 10), b = ri(r, 2, 8), h = ri(r, 3, 12), V = a * b * h / 2; if (!Number.isInteger(V)) return G['ms-7'](r);
+  return { ...build(r, { text: `밑면이 밑변 ${a} cm, 높이 ${b} cm인 삼각형이고, 기둥의 높이가 ${h} cm인 삼각기둥의 부피는?`, correct: { v: q(V) },
+    wrongs: [{ v: q(a * b * h), note: '밑면 삼각형의 넓이에서 ÷ 2를 빠뜨림' }, { v: q(V / 3 === Math.round(V / 3) ? V / 3 : V + 3), note: '뿔처럼 ⅓을 곱함' }],
+    fill: nearInt(r, V, 10), fmt: cm3, order: 'asc', explain: `밑넓이 ${a} × ${b} ÷ 2 = ${a * b / 2} cm² → 부피 = ${a * b / 2} × ${h} = ${V} cm³` }),
+    fig: { type: 'solid', kind: 'prism', n: 3, r: 3, h: 4 } };
+};
+G['ms-8'] = (r) => { // 뿔의 부피
+  if (r() < 0.5) { for (;;) { const a = ri(r, 2, 9), h = ri(r, 3, 12); if ((a * a * h) % 3) continue; const V = a * a * h / 3;
+    return { ...build(r, { text: `밑면이 한 변의 길이가 ${a} cm인 정사각형이고 높이가 ${h} cm인 사각뿔의 부피는?`, correct: { v: q(V) },
+      wrongs: [{ v: q(a * a * h), note: '⅓을 곱하지 않음 (뿔의 부피 = ⅓ × 밑넓이 × 높이)' }, ...((a * a * h) % 2 === 0 ? [{ v: q(a * a * h / 2), note: '½을 곱함' }] : []), { v: q(a * a + h) }],
+      fill: nearInt(r, V, 10), fmt: cm3, order: 'asc', explain: `뿔의 부피 = ${M('[[1|3]]')} × 밑넓이 × 높이 = ${M('[[1|3]]')} × ${a * a} × ${h} = ${V} cm³` }),
+      fig: { type: 'solid', kind: 'pyramid', n: 4, r: 3, h: 4, labels: { h: `${h} cm` }, show: ['h'] } }; } }
+  const rad = ri(r, 2, 9), h = ri(r, 3, 12), ans = pv(q(rad * rad * h, 3));
+  return { ...buildPi(r, { text: `밑면의 반지름의 길이가 ${rad} cm, 높이가 ${h} cm인 원뿔의 부피는?`, correct: ans,
+    wrongs: [{ v: pv(q(rad * rad * h)), note: '⅓을 곱하지 않음 (원기둥의 부피를 구함)' }, { v: pv(q(2 * rad * h, 3)), note: '밑넓이를 2πr로 계산함' }, { v: pv(q(rad * h * h, 3)), note: '반지름과 높이를 바꿈' }],
+    unitS: ' cm³', fill: nearPv(r, ans), explain: `원뿔의 부피 = ${M('[[1|3]]')} × π × ${rad}² × ${h} = ${M(piStr(ans))} cm³` }),
+    fig: { type: 'solid', kind: 'cone', r: rad, h, labels: { r: `${rad} cm`, h: `${h} cm` }, show: ['h', 'r'] } };
+};
+G['ms-9'] = (r) => { // 구·반구
+  const rad = ri(r, 2, 9), ask = pick(r, ['구의 겉넓이', '구의 부피', '반구의 겉넓이'] as const);
+  if (ask === '구의 부피') { const ans = pv(q(4 * rad ** 3, 3));
+    return { ...buildPi(r, { text: `반지름의 길이가 ${rad} cm인 구의 부피는?`, correct: ans,
+      wrongs: [{ v: pv(q(4 * rad * rad)), note: '부피 대신 겉넓이를 구함' }, { v: pv(q(rad ** 3 * 4)), note: '⅓을 곱하지 않음 (구의 부피 = ⁴⁄₃πr³)' }, { v: pv(q(2 * rad ** 3, 3)), note: '반구의 부피를 구함' }],
+      unitS: ' cm³', fill: nearPv(r, ans), explain: `구의 부피 = ${M('[[4|3]]πr^3')} = ${M(`[[4|3]] × π × ${rad}^3`)} = ${M(piStr(ans))} cm³` }), fig: { type: 'solid', kind: 'sphere', r: rad, labels: { r: `${rad} cm` }, show: ['r'] } }; }
+  if (ask === '구의 겉넓이') { const ans = pv(q(4 * rad * rad));
+    return { ...buildPi(r, { text: `반지름의 길이가 ${rad} cm인 구의 겉넓이는?`, correct: ans,
+      wrongs: [{ v: pv(q(rad * rad)), note: '원의 넓이(πr²)를 구함 (구의 겉넓이 = 4πr²)' }, { v: pv(q(2 * rad * rad)), note: '반구의 곡면만 구함' }, { v: pv(q(4 * rad ** 3, 3)), note: '겉넓이 대신 부피를 구함' }],
+      unitS: ' cm²', fill: nearPv(r, ans), explain: `구의 겉넓이 = 4πr² = 4 × π × ${rad}² = ${M(piStr(ans))} cm²` }), fig: { type: 'solid', kind: 'sphere', r: rad, labels: { r: `${rad} cm` }, show: ['r'] } }; }
+  const ans = pv(q(3 * rad * rad));
+  return { ...buildPi(r, { text: `반지름의 길이가 ${rad} cm인 반구의 겉넓이는?`, correct: ans,
+    wrongs: [{ v: pv(q(2 * rad * rad)), note: '곡면만 구함 (평평한 밑면 πr²도 더해야 함)' }, { v: pv(q(4 * rad * rad)), note: '구 전체의 겉넓이를 구함' }, { v: pv(q(5 * rad * rad)), note: '구 겉넓이에 밑면을 더함' }],
+    unitS: ' cm²', fill: nearPv(r, ans), explain: `반구 = 곡면(구 겉넓이의 반) 2π × ${rad}² + 밑면 π × ${rad}² = ${2 * rad * rad}π + ${rad * rad}π = ${M(piStr(ans))} cm²` }),
+    fig: { type: 'solid', kind: 'hemisphere', r: rad, labels: { r: `${rad} cm` }, show: ['r'] } };
+};
+G['ms-10'] = (r) => { // 직각삼각형을 돌린 원뿔의 겉넓이·부피 (기출 19번)
+  const [x, y, z] = pick(r, [[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 6, 10], [4, 3, 5], [9, 12, 15]]), [rad, h] = r() < 0.5 ? [x, y] : [y, x], l = z, vol = r() < 0.5;
+  const fig = shape({ _O: P(0, 0), _A: P(rad, 0), _T: P(0, h), _u: P(0, -h * 0.15), _t: P(0, h * 1.15) }, [{ k: 'seg', p: ['_u', '_t'], dash: true }, { k: 'poly', p: ['_O', '_A', '_T'], fill: true }, { k: 'right', p: ['_A', '_O', '_T'] },
+    { k: 'side', p: ['_O', '_A'], label: `${rad} cm` }, { k: 'side', p: ['_T', '_O'], label: `${h} cm` }, { k: 'side', p: ['_A', '_T'], label: `${l} cm` }]);
+  const head = `직각을 낀 두 변이 ${rad} cm, ${h} cm이고 빗변이 ${l} cm인 직각삼각형을 ${h} cm인 변을 회전축으로 하여 한 바퀴 돌려 만든 입체도형의`;
+  if (vol) { const ans = pv(q(rad * rad * h, 3));
+    return { ...buildPi(r, { text: `${head} 부피는?`, correct: ans,
+      wrongs: [{ v: pv(q(rad * rad * h)), note: '⅓을 곱하지 않음' }, { v: pv(q(h * h * rad, 3)), note: '반지름과 높이를 바꿈 (축이 높이, 다른 변이 반지름)' }, { v: pv(q(rad * rad * l, 3)), note: '높이 대신 빗변(모선)을 씀' }],
+      unitS: ' cm³', fill: nearPv(r, ans), explain: `밑면의 반지름 ${rad} cm, 높이 ${h} cm인 원뿔 → ${M('[[1|3]]')} × π × ${rad}² × ${h} = ${M(piStr(ans))} cm³` }), fig }; }
+  const ans = pv(q(rad * rad + rad * l));
+  return { ...buildPi(r, { text: `${head} 겉넓이는?`, correct: ans,
+    wrongs: [{ v: pv(q(rad * l)), note: '옆넓이만 구함 (밑넓이 πr²도 더함)' }, { v: pv(q(rad * rad + rad * h)), note: '옆넓이에 모선 대신 높이를 씀 (옆넓이 = πrl)' }, { v: pv(q(h * h + h * l)), note: '반지름과 높이를 바꿈' }, { v: pv(q(rad * rad + 2 * rad * l)), note: '옆넓이를 2πrl로 계산함' }],
+    unitS: ' cm²', fill: nearPv(r, ans), explain: `밑면의 반지름 ${rad} cm, 모선 ${l} cm인 원뿔 → 밑넓이 π × ${rad}² = ${rad * rad}π, 옆넓이 π × ${rad} × ${l} = ${rad * l}π → ${M(piStr(ans))} cm²` }), fig };
+};
+
 // 고정 문항: 생성기를 정해진 seed 로 돌려 문제지의 원래 문항을 만든다(같은 코드면 항상 같은 문제)
 export function makeFixed(id: string, area: string, seed: number) {
   const { _vals, ...rest } = G[id](makeRng(seed)) as any; void _vals;
