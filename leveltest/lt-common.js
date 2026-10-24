@@ -215,7 +215,8 @@ window.LT = (function () {
   // 원기둥·원뿔·구·반구: 밑면은 납작한 타원(세로 0.35배), 뒤쪽 반은 점선
   function roundSVG(fig) {
     var r = fig.r || 3, h = fig.h || 5, kind = fig.kind, e = 0.35, L = fig.labels || {}, show = fig.show || [];
-    var top = kind === 'sphere' ? r : kind === 'hemisphere' ? r : h, bot = kind === 'sphere' ? -r : -r * e;
+    // 원기둥은 윗면 타원이 높이 위로 r·e 만큼 올라감
+    var top = kind === 'sphere' ? r : kind === 'hemisphere' ? r : kind === 'cylinder' ? h + r * e : h, bot = kind === 'sphere' ? -r : -r * e;
     var k = Math.min(180 / (2 * r), 160 / (top - bot)), px = 52, py = 30, W = 2 * r * k + 2 * px, H = (top - bot) * k + 2 * py;
     var X = function (x) { return px + (x + r) * k; }, Y = function (y) { return py + (top - y) * k; }, f1 = function (v) { return Math.round(v * 10) / 10; };
     var R = r * k, RY = r * e * k;
