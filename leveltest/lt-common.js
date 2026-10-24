@@ -20,7 +20,8 @@ window.LT = (function () {
 
   // 수식 구간: 영문 한 글자 → 기울임, [[a|b]] → 분수, ^2 → 위첨자
   function math(p) {
-    var h = esc(p).replace(/[A-Za-z]+/g, function (w) { return w.length === 1 && /[a-z]/.test(w) ? '<i>' + w + '</i>' : w; });
+    // 문자 한 개, 또는 xy·ab 처럼 문자끼리 곱한 것은 기울임 (cm 같은 단위는 그대로)
+    var h = esc(p).replace(/[A-Za-z]+/g, function (w) { return (w.length === 1 && /[a-z]/.test(w)) || /^[abcxyz]{2,3}$/.test(w) ? '<i>' + w + '</i>' : w; });
     h = h.replace(/\[\[(.+?)\|(.+?)\]\]/g, '<span class="fr"><span class="nu">$1</span><span class="de">$2</span></span>');
     h = h.replace(/\^(\d+|<i>[a-z]<\/i>)/g, '<sup>$1</sup>');
     return h;
