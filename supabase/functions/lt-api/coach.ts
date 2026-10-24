@@ -5,12 +5,14 @@
 // 아이별 진도 (hub.html STUDENTS 와 같은 순서)
 // wait: 학교에서 아직 안 배운 단원 — 다음 문제지로 권하지 않는다
 export const PLAN: Record<string, { emoji: string; sets: string[]; wait?: string[]; tests: string[] }> = {
-  '이다연': { emoji: '🐰', sets: ['u-mix', 'u-div', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
-  '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-addf', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
-  '이다희': { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec'], tests: ['math-e4', 'eng-e4-diag', 'kor-e4-diag'] },
+  '이다연': { emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
+  '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
+  '이다희': { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec', 'kor-e4-read'], tests: ['math-e4', 'eng-e4-diag', 'kor-e4-diag'] },
 };
 // 이 레벨테스트의 부족한 영역은 이미 문제지로 만들어져 있다
 const COVERED = ['math-m1', 'math-e4'];
+// 하루 정리의 '내일 할 일' 최대 개수 (다시 풀기 2 + 과목별 새 문제지 + 진단)
+const MAX_TODO = 5;
 // 문제지를 풀기 전에 볼 EBS 강의 (hub.html LECTURES 와 같게)
 export const LECTURES: Record<string, string> = {
   'u-mix': 'EBS 초등 「만점왕 수학 5-1」 → 「자연수의 혼합 계산」 01~03강',
@@ -25,6 +27,13 @@ export const LECTURES: Record<string, string> = {
   'h-dec': 'EBS 초등 「만점왕 수학 4-2」 → 「소수의 덧셈과 뺄셈」 개념 강의',
   'sci-n50': 'EBS 중학 「뉴런 과학1」 50강 (기체의 압력과 부피)',
   'sci-n54': 'EBS 중학 「뉴런 과학1」 54강 (기체의 온도와 부피)',
+  'g-area': 'EBS 초등 「만점왕 수학 5-1」 → 「다각형의 둘레와 넓이」 개념 강의',
+  'g-circle': 'EBS 초등 「만점왕 수학 6-2」 → 「원의 넓이」 개념 강의',
+  'u-red-cmp': 'EBS 초등 「만점왕 수학 5-1」 → 「약분과 통분」 분수의 크기 비교 강의',
+  'kor-m1-grammar': '강의 없이 — 품사는 「뜻·기능·형태」 세 기준으로 나눠 보기',
+  'kor-m1-lit': '강의 없이 — 비유·상징·시점·갈등 개념을 예와 함께 정리하고 풀기',
+  'kor-m1-read': '강의 없이 — 글을 읽고 문단마다 중심 문장에 밑줄 긋고 풀기',
+  'kor-e4-read': '강의 없이 — 질문의 「아닌 것」「남은」「두 번째」에 동그라미 치고 풀기',
   'h-word': '강의 없이 — 구하는 것에 밑줄 긋고, 답을 고른 뒤 문제를 한 번 더 읽기',
 };
 // 오답 습관 → 다음에 할 행동
@@ -193,17 +202,22 @@ export function dailyCoach(TESTS: Record<string, any>, rows: any[], nowIso: stri
     // 내일 할 일 (최대 3개)
     const todo: string[] = [], kidTodo: string[] = [];
     for (const o of open) {
-      if (todo.length >= 3) break;
+      if (todo.length >= 2) break;
       todo.push(`「${titleOf(TESTS[o.id])}」 틀린 문제 다시 풀기 (남은 유형 ${o.n}개)`); kidTodo.push(`「${titleOf(TESTS[o.id])}」 다시 풀기`);
     }
-    const fresh = plan.sets.find((id) => !(plan.wait || []).includes(id) && !mine.some((x) => x.test_id === id));
-    if (fresh && todo.length < 3) {
+    // 과목마다 아직 안 푼 다음 문제지 하나씩 (wait 은 빼고)
+    const subj = (id: string) => (/^kor-/.test(id) ? '국어' : /^eng-/.test(id) ? '영어' : /^sci-/.test(id) ? '과학' : '수학');
+    const seen = new Set<string>();
+    for (const fresh of plan.sets.filter((id) => !(plan.wait || []).includes(id) && TESTS[id] && !mine.some((x) => x.test_id === id))) {
+      if (todo.length >= MAX_TODO || seen.has(subj(fresh))) continue; seen.add(subj(fresh));
       const pre = prep(fresh), isLec = pre.startsWith('📺');
       todo.push(`${pre} → 「${titleOf(TESTS[fresh])}」 문제지`); kidTodo.push(isLec ? `📺 강의 보고 「${titleOf(TESTS[fresh])}」 풀기` : `「${titleOf(TESTS[fresh])}」 풀기 (${pre})`);
       if (isLec) lec.unshift(LECTURES[fresh]);
     }
-    const untaken = plan.tests.find((id) => id !== 'math-m1' && !mine.some((x) => x.test_id === id));
-    if (untaken && todo.length < 3) { todo.push(`「${titleOf(TESTS[untaken])}」 (${TESTS[untaken].minutes}분)`); kidTodo.push(`「${titleOf(TESTS[untaken])}」`); }
+    for (const untaken of plan.tests.filter((id) => id !== 'math-m1' && TESTS[id] && !mine.some((x) => x.test_id === id)).slice(0, 2)) {
+      if (todo.length >= MAX_TODO) break;
+      todo.push(`「${titleOf(TESTS[untaken])}」 (${TESTS[untaken].minutes}분)`); kidTodo.push(`「${titleOf(TESTS[untaken])}」`);
+    }
     const lecs = uniq(lec).slice(0, 4);
     if (lecs.length) L.push('', '<b>📺 들을 강의</b>', ...lecs.map((x) => '· ' + esc(x)));
     if (todo.length) L.push('', '<b>✅ 내일 할 일</b>', ...todo.map((x, i) => `${i + 1}. ${esc(x)}`));

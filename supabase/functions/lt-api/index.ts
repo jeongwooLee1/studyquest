@@ -35,9 +35,14 @@ import { grade } from './grade.ts';
 import { makeTwin, hasTwin, makeRng } from './twins.ts';
 import { KOR_M1_DIAG, KOR_E4_DIAG } from './tests/kor_diag.ts';
 import { SCI_GAS_SETS, SCI_TWINS } from './tests/sci_gas.ts';
+import { KOR_M1_GRAMMAR, KOR_GRAMMAR_TWINS } from './tests/kor_m1_grammar.ts';
+import { KOR_E4_READ, KOR_READ_TWINS } from './tests/kor_e4_read.ts';
+import { KOR_M1_LIT, KOR_LIT_TWINS } from './tests/kor_m1_lit.ts';
+import { KOR_M1_READ, KOR_READ_M1_TWINS } from './tests/kor_m1_read.ts';
+import { GEO_SETS } from './tests/geo_sets.ts';
 import { attemptCoach, dailyCoach, PLAN } from './coach.ts';
 
-const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, GEO_E, REC_1, REC_2, REC_3, REC_4, ...UNIT_SETS, ...E4_SETS, ...ENG_DIAG, KOR_M1_DIAG, KOR_E4_DIAG, ...SCI_GAS_SETS].map((t) => [t.id, t]));
+const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, GEO_E, REC_1, REC_2, REC_3, REC_4, ...UNIT_SETS, ...E4_SETS, ...ENG_DIAG, KOR_M1_DIAG, KOR_E4_DIAG, ...SCI_GAS_SETS, KOR_M1_GRAMMAR, KOR_E4_READ, KOR_M1_LIT, KOR_M1_READ, ...GEO_SETS].map((t) => [t.id, t]));
 const SITE = 'https://study.blissme.ai/leveltest/';
 const GRACE_MS = 2 * 60 * 1000; // 마감 후 네트워크 지연 허용
 
@@ -107,15 +112,15 @@ async function wrongSources(sb: any, student: string, base: any) {
   });
 }
 // 다시 풀기 문제 만들기: 수학은 twins.ts 생성기, 국어·영어·과학은 과목 파일의 변형 문항(<과목>_VARIANTS[원래 문항 id])
-const VARIANTS: Record<string, any[]> = { ...SCI_TWINS };
+const VARIANTS: Record<string, any[]> = { ...SCI_TWINS, ...KOR_GRAMMAR_TWINS, ...KOR_READ_TWINS, ...KOR_LIT_TWINS, ...KOR_READ_M1_TWINS };
 const canTwin = (id: string) => hasTwin(id) || !!VARIANTS[id]?.length;
 function twinOf(src: any, sd: number, used: string[] = []) {
   if (hasTwin(src.id)) return makeTwin(src, sd);
   const vs = VARIANTS[src.id]; if (!vs?.length) return null;
   const n = used.filter((id) => srcId(id) === src.id).length, k = n % vs.length, v = vs[k];
-  // 변형을 다 쓰고 다시 낼 때만 보기 순서를 섞는다(같은 문제를 같은 자리로 외워 고르지 않게)
+  // 변형을 다 쓰고 다시 낼 때만 보기 순서를 섞는다(같은 문제를 같은 자리로 외워 고르지 않게). keepOrder 보기(1개~5개처럼 순서가 있는 것)는 그대로
   const idx = v.options.map((_: any, i: number) => i);
-  if (n >= vs.length) { const r = makeRng(sd); for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; } }
+  if (n >= vs.length && !v.keepOrder) { const r = makeRng(sd); for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; } }
   const pos = (a: number) => idx.indexOf(a - 1) + 1;
   return { id: `${src.id}~v${k}-${sd.toString(36)}`, src: src.id, area: src.area, type: 'choice', text: v.text, fig: v.fig, options: idx.map((i: number) => v.options[i]),
     answer: pos(v.answer), traps: (v.traps || []).map((t: any) => ({ ...t, a: pos(t.a) })), explain: v.explain || '' };
