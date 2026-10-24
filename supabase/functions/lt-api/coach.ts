@@ -6,7 +6,7 @@
 // wait: 학교에서 아직 안 배운 단원 — 다음 문제지로 권하지 않는다
 export const PLAN: Record<string, { emoji: string; sets: string[]; wait?: string[]; tests: string[] }> = {
   '이다연': { emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
-  '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
+  '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'eng-m1-past', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
   '이다희': { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec', 'kor-e4-read'], tests: ['math-e4', 'eng-e4-diag', 'kor-e4-diag'] },
 };
 // 이 레벨테스트의 부족한 영역은 이미 문제지로 만들어져 있다
@@ -27,6 +27,7 @@ export const LECTURES: Record<string, string> = {
   'h-dec': 'EBS 초등 「만점왕 수학 4-2」 → 「소수의 덧셈과 뺄셈」 개념 강의',
   'sci-n50': 'EBS 중학 「뉴런 과학1」 50강 (기체의 압력과 부피)',
   'sci-n54': 'EBS 중학 「뉴런 과학1」 54강 (기체의 온도와 부피)',
+  'eng-m1-past': 'EBS 중학 프리미엄 중1 영어 문법 「과거시제」 강의',
   'g-area': 'EBS 초등 「만점왕 수학 5-1」 → 「다각형의 둘레와 넓이」 개념 강의',
   'g-circle': 'EBS 초등 「만점왕 수학 6-2」 → 「원의 넓이」 개념 강의',
   'u-red-cmp': 'EBS 초등 「만점왕 수학 5-1」 → 「약분과 통분」 분수의 크기 비교 강의',
