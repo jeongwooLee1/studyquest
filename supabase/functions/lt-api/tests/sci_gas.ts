@@ -5,6 +5,9 @@
 // 다시 풀기용 비슷한 문제는 SCI_TWINS[원래 문항 id] 에 2개씩 둔다(과학은 twins.ts 생성기가 없음).
 // 문항 객체에 넣지 않은 까닭: publicQ 가 answer·traps·explain 만 빼므로 문항 안에 두면 변형 문항의 정답이 페이지로 나간다.
 // 변형 문항 형식: { text, options, answer, traps?, explain } — 원래 문항과 같은 개념·같은 함정, 보기 수 5개.
+// 변형 문항의 보기 순서는 mixTwins 로 섞는다. 문제지 본문은 이미 배포되어 응시 기록(답 번호)과 맞추려고 그대로 둔다.
+
+import { mixTwins } from './sci_common.ts';
 
 const G = '중1';
 const set = (id: string, title: string, subtitle: string, minutes: number, practice: boolean, areas: any[], questions: any[]) => ({
@@ -167,7 +170,8 @@ export const SCI_N54 = set('sci-n54', '온도와 부피 (샤를 법칙)', '중1 
 export const SCI_GAS_SETS = [SCI_GAS_DIAG, SCI_N50, SCI_N54];
 
 // ── 다시 풀기용 비슷한 문제: 원래 문항 id → 변형 문항 2개 ──
-export const SCI_TWINS: Record<string, { text: string; options: string[]; answer: number; traps?: { a: number; note: string }[]; explain: string }[]> = {
+type V = { text: string; options: string[]; answer: number; traps?: { a: number; note: string }[]; explain: string };
+export const SCI_TWINS: Record<string, V[]> = mixTwins<V>({
   'sgd-1': [
     { text: '기체의 압력에 대한 설명으로 옳은 것은?',
       options: ['기체 입자가 멈춰 있을 때 생긴다', '기체 입자의 크기가 클수록 생긴다', '기체 입자가 용기 벽에 부딪치며 벽을 미는 힘 때문에 생긴다',
@@ -464,4 +468,4 @@ export const SCI_TWINS: Record<string, { text: string; options: string[]; answer
         '찌그러진 탁구공을 뜨거운 물에 넣으면 펴진다', '여름철 자동차 타이어가 팽팽해진다'], answer: 3,
       explain: '귀가 먹먹한 것은 바깥 기압이 낮아져서예요(보일 법칙). 나머지 넷은 온도가 변하는 샤를 법칙이에요.' },
   ],
-};
+});
