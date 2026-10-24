@@ -13,7 +13,7 @@
 | sci-n41 | 부력 | 41강 확인 | 8 | true | 12분 |
 
 파일 (`supabase/functions/lt-api/tests/`)
-- `sci_gas.ts` — `SCI_GAS_SETS`(기체 3종), `SCI_TWINS`(문항당 변형 2개)
+- `sci_gas.ts` — `SCI_GAS_SETS`(기체 3종), `SCI_TWINS`(문항당 변형 3개)
 - `sci_force.ts` — `SCI_FORCE_SETS`(힘 5종), `SCI_FORCE_TWINS`(문항당 변형 3개)
 - `sci_gas_unit.ts` — `SCI_GAS_UNIT`(기체 종합 20), `SCI_GAS_UNIT_TWINS`(문항당 변형 3개)
 - `sci_common.ts` — 보기 섞기(`mixOptions`, `mixTwins`)
@@ -35,7 +35,7 @@
 
 ## 다시 풀기용 비슷한 문제 (SCI_TWINS)
 - 과학은 숫자만 바꾸는 생성기(twins.ts)가 맞지 않아, 원래 문항마다 사람이 쓴 변형 문항을 둔다.
-- 형식: `SCI_TWINS[원래 문항 id] = [{ text, options, answer, traps?, explain }, …]` — 문항마다 2개, 보기 5개, answer는 1부터.
+- 형식: `SCI_TWINS[원래 문항 id] = [{ text, options, answer, traps?, explain }, …]` — 문항마다 3개, 보기 5개, answer는 1부터.
 - 문항 객체 안에 넣지 않은 까닭: `publicQ`는 answer·traps·explain만 빼므로 문항 안의 변형 문항 정답이 페이지로 나간다.
 - 같은 개념·같은 함정을 다른 상황(다른 숫자·다른 생활 예)으로 묻는다.
 - 보기 순서: 손으로 쓰면 정답이 2·3번에 몰려서 `mixOptions`로 문항 id에 따라 정해진 순서로 섞는다. 숫자 보기·ㄱㄴㄷ 묶음 보기·순서 있는 보기는 그대로 두고 변형 문항에 `keepOrder: true`를 붙인다(twinOf가 다시 섞지 않게). 이미 배포된 기체 문제지 본문은 응시 기록과 맞추려고 섞지 않았다.
