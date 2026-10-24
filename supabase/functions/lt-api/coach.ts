@@ -5,9 +5,9 @@
 // 아이별 진도 (hub.html STUDENTS 와 같은 순서)
 // wait: 학교에서 아직 안 배운 단원 — 다음 문제지로 권하지 않는다
 export const PLAN: Record<string, { emoji: string; sets: string[]; wait?: string[]; tests: string[] }> = {
-  '이다연': { emoji: '🐰', sets: ['u-mix', 'u-div', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1'] },
-  '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-addf', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1'] },
-  '이다희': { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec'], wait: ['h-dec'], tests: ['math-e4'] },
+  '이다연': { emoji: '🐰', sets: ['u-mix', 'u-div', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag'] },
+  '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-addf', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag'] },
+  '이다희': { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec'], tests: ['math-e4', 'eng-e4-diag'] },
 };
 // 이 레벨테스트의 부족한 영역은 이미 문제지로 만들어져 있다
 const COVERED = ['math-m1', 'math-e4'];
