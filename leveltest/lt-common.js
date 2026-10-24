@@ -212,8 +212,38 @@ window.LT = (function () {
     o.push('</svg>');
     return o.join('');
   }
+  // 원기둥·원뿔·구·반구: 밑면은 납작한 타원(세로 0.35배), 뒤쪽 반은 점선
+  function roundSVG(fig) {
+    var r = fig.r || 3, h = fig.h || 5, kind = fig.kind, e = 0.35, L = fig.labels || {}, show = fig.show || [];
+    var top = kind === 'sphere' ? r : kind === 'hemisphere' ? r : h, bot = kind === 'sphere' ? -r : -r * e;
+    var k = Math.min(180 / (2 * r), 160 / (top - bot)), px = 52, py = 26, W = 2 * r * k + 2 * px, H = (top - bot) * k + 2 * py;
+    var X = function (x) { return px + (x + r) * k; }, Y = function (y) { return py + (top - y) * k; }, f1 = function (v) { return Math.round(v * 10) / 10; };
+    var R = r * k, RY = r * e * k;
+    // y=yc 높이의 타원 반쪽: front=true 이면 앞쪽(아래 반)
+    var half = function (yc, front, dash) { var y = Y(yc); return '<path class="s' + (dash ? ' d' : '') + '" d="M' + f1(X(-r)) + ' ' + f1(y) + ' A' + f1(R) + ' ' + f1(RY) + ' 0 0 ' + (front ? 0 : 1) + ' ' + f1(X(r)) + ' ' + f1(y) + '"/>'; };
+    var line = function (x1, y1, x2, y2, dash) { return '<line class="s' + (dash ? ' d' : '') + '" x1="' + f1(X(x1)) + '" y1="' + f1(Y(y1)) + '" x2="' + f1(X(x2)) + '" y2="' + f1(Y(y2)) + '"/>'; };
+    var lab = function (x, y, t, an, dx, dy) { return '<text x="' + f1(X(x) + (dx || 0)) + '" y="' + f1(Y(y) + (dy || 0)) + '" text-anchor="' + (an || 'middle') + '" dominant-baseline="central">' + esc(String(t).replace(/\$/g, '')) + '</text>'; };
+    var o = ['<svg class="shape" viewBox="0 0 ' + f1(W) + ' ' + f1(H) + '" width="' + f1(W) + '" role="img" aria-label="입체도형 그림">'];
+    if (kind === 'cylinder') {
+      o.push(half(0, true, false), half(0, false, true), half(h, true, false), half(h, false, false), line(-r, 0, -r, h), line(r, 0, r, h));
+      if (L.h || show.indexOf('h') >= 0) { if (show.indexOf('h') >= 0) o.push(line(0, 0, 0, h, true)); if (L.h) o.push(lab(r, h / 2, L.h, 'start', 7)); }
+    } else if (kind === 'cone') {
+      o.push(half(0, true, false), half(0, false, true), line(-r, 0, 0, h), line(r, 0, 0, h));
+      if (show.indexOf('h') >= 0 || L.h) { o.push(line(0, 0, 0, h, true)); if (L.h) o.push(lab(0, h / 2, L.h, 'start', 5)); }
+      if (L.l) o.push(lab(r / 2, h / 2, L.l, 'start', 8));
+    } else if (kind === 'sphere') {
+      o.push('<circle class="s" cx="' + f1(X(0)) + '" cy="' + f1(Y(0)) + '" r="' + f1(R) + '"/>', half(0, true, false), half(0, false, true));
+    } else if (kind === 'hemisphere') {
+      o.push('<path class="s" d="M' + f1(X(-r)) + ' ' + f1(Y(0)) + ' A' + f1(R) + ' ' + f1(R) + ' 0 0 1 ' + f1(X(r)) + ' ' + f1(Y(0)) + '"/>', half(0, true, false), half(0, false, true));
+    } else return '';
+    if (L.r || show.indexOf('r') >= 0) { o.push(line(0, 0, r, 0, true), '<circle class="dot" cx="' + f1(X(0)) + '" cy="' + f1(Y(0)) + '" r="2.4"/>'); if (L.r) o.push(lab(r / 2, 0, L.r, 'middle', 0, -9)); }
+    if (show.indexOf('axis') >= 0) o.push('<line class="s d" x1="' + f1(X(0)) + '" y1="' + f1(Y(top) - 14) + '" x2="' + f1(X(0)) + '" y2="' + f1(Y(bot) + 14) + '"/>');
+    o.push('</svg>');
+    return o.join('');
+  }
   function figure(fig) {
     if (!fig) return '';
+    if (fig.type === 'solid' && /^(cylinder|cone|sphere|hemisphere)$/.test(fig.kind)) return '<div class="fig">' + roundSVG(fig) + '</div>';
     if (fig.type === 'solid') return '<div class="fig">' + solidSVG(fig) + '</div>';
     if (fig.type === 'coord') return '<div class="fig">' + coordSVG(fig) + '</div>';
     if (fig.type === 'shape') return '<div class="fig">' + shapeSVG(fig) + '</div>';
