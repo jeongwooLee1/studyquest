@@ -1049,6 +1049,92 @@ G['rc-5'] = (r) => { // 대분수와 가분수
   }
 };
 
+// ── 입체도형 보충(초6): 각기둥·각뿔, 직육면체 부피·겉넓이, 원기둥·원뿔·구 ──
+// 그림은 type:'solid'(HQ 구현 예정)·'shape'. 글만으로 풀 수 있게 쓴다.
+const KO = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+const koN = (n: number) => (n >= 10 ? (n >= 20 ? KO[Math.floor(n / 10)] : '') + '십' : '') + KO[n % 10]; // 1~99
+const cm3 = unit(' cm³'), ea = unit('개');
+const PRISM_E = '각기둥과 각뿔을 헷갈림';
+G['gs-1'] = (r) => { // n각기둥의 모서리 수
+  const n = ri(r, 3, 9), name = `${koN(n)}각기둥`;
+  return { ...build(r, { text: `${name}의 모서리는 모두 몇 개인가요?`, correct: { v: q(3 * n) },
+    wrongs: [{ v: q(2 * n), note: '꼭짓점의 수를 셈 (모서리 = 밑면의 변 × 3)' }, { v: q(n + 2), note: '면의 수를 셈' }, { v: q(n), note: '한 밑면의 변만 셈 (위·아래 밑면과 옆 모서리를 모두 세야 함)' }],
+    fill: nearInt(r, 3 * n, 4), fmt: ea, order: 'asc', explain: `${name}: 위 밑면 ${n}개 + 아래 밑면 ${n}개 + 옆 모서리 ${n}개 = ${n} × 3 = ${3 * n}개` }),
+    fig: { type: 'solid', kind: 'prism', n, r: 3, h: 5 } };
+};
+G['gs-2'] = (r) => { // n각뿔의 면·꼭짓점·모서리
+  const n = ri(r, 3, 9), name = `${koN(n)}각뿔`, ask = pick(r, ['면', '꼭짓점', '모서리'] as const);
+  const ans = ask === '모서리' ? 2 * n : n + 1, prism = ask === '면' ? n + 2 : ask === '꼭짓점' ? 2 * n : 3 * n;
+  const why = ask === '면' ? `밑면 1개 + 옆면 ${n}개 = ${n + 1}개` : ask === '꼭짓점' ? `밑면의 꼭짓점 ${n}개 + 각뿔의 꼭짓점 1개 = ${n + 1}개` : `밑면의 모서리 ${n}개 + 옆 모서리 ${n}개 = ${2 * n}개`;
+  return { ...build(r, { text: `${name}의 <b>${ask}</b>${josa(ask, '은', '는')} 모두 몇 개인가요?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(prism), note: `${PRISM_E} (${koN(n)}각기둥의 ${ask} 수)` }, { v: q(n), note: '밑면만 생각함' }, ...(ask !== '모서리' ? [{ v: q(2 * n), note: '모서리 수와 헷갈림' }] : [{ v: q(n + 1), note: '면(꼭짓점)의 수와 헷갈림' }])],
+    fill: nearInt(r, ans, 4), fmt: ea, order: 'asc', explain: `${name}: ${why}` }),
+    fig: { type: 'solid', kind: 'pyramid', n, r: 3, h: 5 } };
+};
+G['gs-3'] = (r) => { // 모서리 수 → 각기둥 이름
+  const n = ri(r, 3, 10), E = 3 * n, nm = (k: number, s = '각기둥') => ({ s: `${koN(k)}${s}` });
+  return build(r, { text: `모서리가 ${E}개인 각기둥의 이름은?`, correct: nm(n),
+    wrongs: [...(E % 2 === 0 ? [{ ...nm(E / 2), note: '각뿔처럼 모서리 ÷ 2를 함 (각기둥은 모서리 = 밑면의 변 × 3)' }] : []), ...(E < 100 ? [{ ...nm(E), note: '모서리 수를 그대로 이름에 씀' }] : []), { ...nm(n, '각뿔'), note: PRISM_E }, nm(n + 1), nm(n - 1 >= 3 ? n - 1 : n + 2)],
+    order: 'shuffle', explain: `각기둥의 모서리 = 밑면의 변 × 3 → 밑면의 변 = ${E} ÷ 3 = ${n} → ${koN(n)}각기둥` });
+};
+const cuboidFig = (a: number, b: number, c: number) => ({ type: 'solid', kind: 'cuboid', a, b, c, labels: { a: `${a} cm`, b: `${b} cm`, c: `${c} cm` } });
+function abc(r: Rng) { for (;;) { const a = ri(r, 3, 12), b = ri(r, 2, 10), c = ri(r, 2, 9); if (a !== b && b !== c && a !== c) return [a, b, c]; } }
+G['gs-4'] = (r) => { // 직육면체 부피
+  const [a, b, c] = abc(r), V = a * b * c, S = 2 * (a * b + b * c + c * a);
+  return { ...build(r, { text: `가로 ${a} cm, 세로 ${b} cm, 높이 ${c} cm인 직육면체의 부피는?`, correct: { v: q(V) },
+    wrongs: [{ v: q(a * b), note: '높이를 곱하지 않음 (밑면의 넓이만 구함)' }, { v: q(S), note: '부피 대신 겉넓이를 구함' }, { v: q(a + b + c), note: '세 모서리를 더함' }],
+    fill: nearInt(r, V, 20), fmt: cm3, order: 'asc', explain: `직육면체의 부피 = 가로 × 세로 × 높이 = ${a} × ${b} × ${c} = ${V} cm³` }), fig: cuboidFig(a, b, c) };
+};
+G['gs-5'] = (r) => { // 정육면체 겉넓이
+  let a: number; do { a = ri(r, 2, 10); } while (a === 6 || a === 4);
+  return { ...build(r, { text: `한 모서리의 길이가 ${a} cm인 정육면체의 겉넓이는?`, correct: { v: q(6 * a * a) },
+    wrongs: [{ v: q(a * a * a), note: '겉넓이 대신 부피를 구함' }, { v: q(4 * a * a), note: '옆면 4개만 구함 (정육면체의 면은 6개)' }, { v: q(12 * a), note: '모서리 길이의 합을 구함' }, { v: q(a * a), note: '한 면의 넓이만 구함' }],
+    fill: nearInt(r, 6 * a * a, 20), fmt: cm2, order: 'asc', explain: `정육면체는 넓이가 같은 정사각형 6개 → ${a} × ${a} × 6 = ${6 * a * a} cm²` }), fig: { type: 'solid', kind: 'cuboid', a, b: a, c: a, labels: { a: `${a} cm` } } };
+};
+G['gs-6'] = (r) => { // 직육면체 겉넓이
+  const [a, b, c] = abc(r), half = a * b + b * c + c * a;
+  return { ...build(r, { text: `가로 ${a} cm, 세로 ${b} cm, 높이 ${c} cm인 직육면체의 겉넓이는?`, correct: { v: q(2 * half) },
+    wrongs: [{ v: q(half), note: '× 2를 빠뜨림 (마주 보는 면이 2개씩)' }, { v: q(a * b * c), note: '겉넓이 대신 부피를 구함' }, { v: q(4 * (a + b + c)), note: '모서리 길이의 합을 구함' }],
+    fill: nearInt(r, 2 * half, 20), fmt: cm2, order: 'asc', explain: `서로 다른 세 면: ${a} × ${b} = ${a * b}, ${b} × ${c} = ${b * c}, ${c} × ${a} = ${c * a} → 합 ${half} × 2 = ${2 * half} cm²` }), fig: cuboidFig(a, b, c) };
+};
+G['gs-7'] = (r) => { // 부피 → 높이
+  const [a, b, c] = abc(r), V = a * b * c;
+  return { ...build(r, { text: `부피가 ${V} cm³이고 가로가 ${a} cm, 세로가 ${b} cm인 직육면체의 높이는?`, correct: { v: q(c) },
+    wrongs: [{ v: q(b * c), note: '가로로만 나눔 (가로 × 세로로 나눠야 함)' }, { v: q(V - a * b), note: '나누지 않고 뺌' }, ...(V % (a + b) === 0 ? [{ v: q(V / (a + b)), note: '가로와 세로를 더해서 나눔' }] : [])],
+    fill: nearInt(r, c, 4), fmt: cm, order: 'asc', explain: `가로 × 세로 × 높이 = 부피 → ${a} × ${b} × □ = ${V} → □ = ${V} ÷ ${a * b} = ${c} cm` }), fig: { type: 'solid', kind: 'cuboid', a, b, c, labels: { a: `${a} cm`, b: `${b} cm`, c: '? cm' } } };
+};
+G['gs-8'] = (r) => { // 원기둥 전개도 옆면의 가로
+  const rad = ri(r, 2, 10), h = ri(r, 3, 15), w = qm(2, rad, PI), W = num(w);
+  return { ...build(r, { text: `밑면의 반지름이 ${rad} cm, 높이가 ${h} cm인 원기둥의 전개도에서 옆면(직사각형)의 가로 길이는? ${PI_T}`, correct: { v: w },
+    wrongs: [{ v: qm(rad, PI), note: '지름 대신 반지름에 원주율을 곱함 (옆면의 가로 = 밑면의 둘레)' }, { v: q(h), note: '높이를 씀 (높이는 옆면의 세로)' }, { v: qm(rad, rad, PI), note: '밑면의 둘레 대신 넓이를 구함' }],
+    fill: nearPi(r, w), fmt: dcm, order: 'asc', explain: `옆면의 가로 = 밑면의 둘레 = ${rad * 2} × 3.14 = ${dec(w)} cm (세로는 높이 ${h} cm)` }),
+    fig: shape({ _A: P(0, 0), _B: P(W, 0), _C: P(W, h), _D: P(0, h), _O1: P(W / 2, h + rad), _O2: P(W / 2, -rad), _r: P(W / 2 + rad, h + rad) }, [
+      { k: 'poly', p: ['_A', '_B', '_C', '_D'] }, { k: 'circle', c: '_O1', r: rad }, { k: 'circle', c: '_O2', r: rad }, { k: 'seg', p: ['_O1', '_r'], label: `${rad} cm` },
+      { k: 'side', p: ['_A', '_B'], label: '? cm' }, { k: 'side', p: ['_D', '_A'], label: `${h} cm` }]) };
+};
+G['gs-9'] = (r) => { // 직사각형을 돌린 원기둥
+  let a: number, b: number; do { a = ri(r, 2, 9); b = ri(r, 3, 12); } while (a === b || 2 * a === b || 2 * b === a);
+  const ask = pick(r, ['지름', '높이'] as const), ans = ask === '지름' ? 2 * a : b;
+  return { ...build(r, { text: `가로 ${a} cm, 세로 ${b} cm인 직사각형을 세로를 축으로 하여 한 바퀴 돌려 원기둥을 만들었습니다. 원기둥의 ${ask === '지름' ? '<b>밑면의 지름</b>은' : '<b>높이</b>는'} 몇 cm인가요?`, correct: { v: q(ans) },
+    wrongs: ask === '지름' ? [{ v: q(a), note: '반지름을 지름으로 씀 (축에서 떨어진 가로가 반지름)' }, { v: q(b), note: '축이 된 세로를 씀 (세로는 높이)' }, { v: q(2 * b), note: '축이 된 변을 반지름으로 봄' }]
+      : [{ v: q(a), note: '가로를 높이로 봄 (축이 된 세로가 높이)' }, { v: q(2 * a), note: '밑면의 지름과 헷갈림' }, { v: q(2 * b) }],
+    fill: nearInt(r, ans, 4), fmt: cm, order: 'asc', explain: `축(세로 ${b} cm)이 원기둥의 높이, 축에서 떨어진 가로 ${a} cm가 밑면의 반지름 → ${ask === '지름' ? `지름 ${a} × 2 = ${2 * a} cm` : `높이 ${b} cm`}` }),
+    fig: shape({ _A: P(0, 0), _B: P(a, 0), _C: P(a, b), _D: P(0, b), _t: P(0, b + 1.5), _u: P(0, -1.5) }, [
+      { k: 'seg', p: ['_u', '_t'], dash: true }, { k: 'poly', p: ['_A', '_B', '_C', '_D'], fill: true }, { k: 'side', p: ['_A', '_B'], label: `${a} cm` }, { k: 'side', p: ['_D', '_A'], label: `${b} cm` }]) };
+};
+G['gs-10'] = (r) => { // 직각삼각형을 돌린 원뿔: 모선·반지름
+  const [x, y, z] = pick(r, [[3, 4, 5], [5, 12, 13], [8, 15, 17], [7, 24, 25]]), k = z > 13 ? 1 : pick(r, [1, 2, 3]);
+  const [rad, h] = r() < 0.5 ? [x * k, y * k] : [y * k, x * k], l = z * k, ask = pick(r, ['모선의 길이', '밑면의 반지름'] as const);
+  const ans = ask === '모선의 길이' ? l : rad;
+  return { ...build(r, { text: `직각을 낀 두 변이 ${rad} cm, ${h} cm이고 빗변이 ${l} cm인 직각삼각형을 ${h} cm인 변을 축으로 하여 한 바퀴 돌려 원뿔을 만들었습니다. 원뿔의 <b>${ask}</b>${josa(ask, '은', '는')} 몇 cm인가요?`, correct: { v: q(ans) },
+    wrongs: ask === '모선의 길이' ? [{ v: q(h), note: '높이를 모선으로 봄 (모선은 꼭짓점과 밑면 둘레를 잇는 선분 = 빗변)' }, { v: q(rad), note: '밑면의 반지름을 씀' }, { v: q(2 * rad), note: '밑면의 지름을 씀' }]
+      : [{ v: q(h), note: '축이 된 변을 반지름으로 봄 (축은 원뿔의 높이)' }, { v: q(l), note: '빗변을 반지름으로 봄 (빗변은 모선)' }, { v: q(2 * rad), note: '반지름 대신 지름을 구함' }],
+    fill: nearInt(r, ans, 4), fmt: cm, order: 'asc', explain: `축 ${h} cm = 높이, 다른 변 ${rad} cm = 밑면의 반지름, 빗변 ${l} cm = 모선 → ${ask} ${ans} cm` }),
+    fig: shape({ _O: P(0, 0), _A: P(rad, 0), _T: P(0, h), _u: P(0, -h * 0.15), _t: P(0, h * 1.15) }, [
+      { k: 'seg', p: ['_u', '_t'], dash: true }, { k: 'poly', p: ['_O', '_A', '_T'], fill: true }, { k: 'right', p: ['_A', '_O', '_T'] },
+      { k: 'side', p: ['_O', '_A'], label: `${rad} cm` }, { k: 'side', p: ['_T', '_O'], label: `${h} cm` }, { k: 'side', p: ['_A', '_T'], label: `${l} cm` }]) };
+};
+
 // 고정 문항: 생성기를 정해진 seed 로 돌려 문제지의 원래 문항을 만든다(같은 코드면 항상 같은 문제)
 export function makeFixed(id: string, area: string, seed: number) {
   const { _vals, ...rest } = G[id](makeRng(seed)) as any; void _vals;
