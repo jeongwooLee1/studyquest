@@ -1385,7 +1385,7 @@ G['mb-5'] = (r) => { // 모서리와 모서리의 위치 관계
     wrongs: [...others.map((k) => ({ v: q(cnt[k]), note: `${k === '꼬인' ? '꼬인 위치에 있는' : k === '평행' ? '평행한' : '만나는'} 모서리를 셈` })), { v: q(S.edges.length - 1), note: '자기 자신만 빼고 모두 셈' }, { v: q(cnt.평행 + cnt.꼬인), note: '만나지 않는 모서리(평행 + 꼬인)를 모두 셈' }],
     fill: nearInt(r, ans, 3), fmt: ea, order: 'asc', signed: true,
     explain: `모서리 ${nm} 말고 ${S.edges.length - 1}개 중 — 한 점에서 만나는 것 ${cnt.만남}개, 평행한 것 ${cnt.평행}개, 꼬인 위치(만나지도 평행하지도 않음) ${cnt.꼬인}개 → ${ans}개` }),
-    fig: { type: 'solid', kind: n === 4 ? 'cuboid' : 'prism', n, r: 3, h: 4, a: 6, b: 3, c: 4 } };
+    fig: { type: 'solid', kind: n === 4 ? 'cuboid' : 'prism', n, r: 3, h: 4, a: 6, b: 3, c: 4, vlabels: ALPHA.slice(0, 2 * n) } };
 };
 G['mb-10'] = (r) => { // 모서리·면과 면의 위치 관계
   for (;;) {
@@ -1401,7 +1401,7 @@ G['mb-10'] = (r) => { // 모서리·면과 면의 위치 관계
       wrongs: [{ v: q(c.포함), note: '면에 포함되는 모서리를 셈' }, ...(['평행모서리', '수직모서리', '수직면'] as const).filter((k) => k !== ask).map((k) => ({ v: q(c[k]), note: `${k === '평행모서리' ? '평행한 모서리' : k === '수직모서리' ? '수직인 모서리' : '수직인 면'}를 셈` })), { v: q(c.포함 + c[ask]) }],
       fill: nearInt(r, ans, 3), fmt: ea, order: 'asc', signed: true,
       explain: `면 ${fn}에 대해 — 포함된 모서리 ${c.포함}개, 평행한 모서리(면과 만나지 않음) ${c.평행모서리}개, 수직인 모서리 ${c.수직모서리}개, 수직인 면 ${c.수직면}개 → ${ans}개` }),
-      fig: { type: 'solid', kind: n === 4 ? 'cuboid' : 'prism', n, r: 3, h: 4, a: 6, b: 3, c: 4 } };
+      fig: { type: 'solid', kind: n === 4 ? 'cuboid' : 'prism', n, r: 3, h: 4, a: 6, b: 3, c: 4, vlabels: ALPHA.slice(0, 2 * n) } };
   }
 };
 // 공간에서 직선·평면의 위치 관계 (옳은 것 / 옳지 않은 것)
