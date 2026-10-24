@@ -36,6 +36,8 @@ import { grade } from './grade.ts';
 import { makeTwin, hasTwin, makeRng } from './twins.ts';
 import { KOR_M1_DIAG, KOR_E4_DIAG } from './tests/kor_diag.ts';
 import { SCI_GAS_SETS, SCI_TWINS } from './tests/sci_gas.ts';
+import { SCI_FORCE_SETS, SCI_FORCE_TWINS } from './tests/sci_force.ts';
+import { SCI_GAS_UNIT, SCI_GAS_UNIT_TWINS } from './tests/sci_gas_unit.ts';
 import { KOR_M1_GRAMMAR, KOR_GRAMMAR_TWINS } from './tests/kor_m1_grammar.ts';
 import { KOR_E4_READ, KOR_READ_TWINS } from './tests/kor_e4_read.ts';
 import { KOR_M1_LIT, KOR_LIT_TWINS } from './tests/kor_m1_lit.ts';
@@ -43,7 +45,7 @@ import { KOR_M1_READ, KOR_READ_M1_TWINS } from './tests/kor_m1_read.ts';
 import { GEO_SETS } from './tests/geo_sets.ts';
 import { attemptCoach, dailyCoach, PLAN } from './coach.ts';
 
-const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, GEO_E, REC_1, REC_2, REC_3, REC_4, ...UNIT_SETS, ...E4_SETS, ...ENG_DIAG, ...ENG_GRAM_SETS, KOR_M1_DIAG, KOR_E4_DIAG, ...SCI_GAS_SETS, KOR_M1_GRAMMAR, KOR_E4_READ, KOR_M1_LIT, KOR_M1_READ, ...GEO_SETS].map((t) => [t.id, t]));
+const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, GEO_E, REC_1, REC_2, REC_3, REC_4, ...UNIT_SETS, ...E4_SETS, ...ENG_DIAG, ...ENG_GRAM_SETS, KOR_M1_DIAG, KOR_E4_DIAG, ...SCI_GAS_SETS, SCI_GAS_UNIT, ...SCI_FORCE_SETS, KOR_M1_GRAMMAR, KOR_E4_READ, KOR_M1_LIT, KOR_M1_READ, ...GEO_SETS].map((t) => [t.id, t]));
 const SITE = 'https://study.blissme.ai/leveltest/';
 const GRACE_MS = 2 * 60 * 1000; // 마감 후 네트워크 지연 허용
 
@@ -113,7 +115,7 @@ async function wrongSources(sb: any, student: string, base: any) {
   });
 }
 // 다시 풀기 문제 만들기: 수학은 twins.ts 생성기, 국어·영어·과학은 과목 파일의 변형 문항(<과목>_VARIANTS[원래 문항 id])
-const VARIANTS: Record<string, any[]> = { ...SCI_TWINS, ...ENG_VARIANTS, ...KOR_GRAMMAR_TWINS, ...KOR_READ_TWINS, ...KOR_LIT_TWINS, ...KOR_READ_M1_TWINS };
+const VARIANTS: Record<string, any[]> = { ...SCI_TWINS, ...SCI_FORCE_TWINS, ...SCI_GAS_UNIT_TWINS, ...ENG_VARIANTS, ...KOR_GRAMMAR_TWINS, ...KOR_READ_TWINS, ...KOR_LIT_TWINS, ...KOR_READ_M1_TWINS };
 const canTwin = (id: string) => hasTwin(id) || !!VARIANTS[id]?.length;
 function twinOf(src: any, sd: number, used: string[] = []) {
   if (hasTwin(src.id)) return makeTwin(src, sd);

@@ -1,8 +1,9 @@
 // 중1 영어 문법 문제지 — 출판사와 상관없는 2022 개정 중1 성취기준 문법. 전부 5지선다, practice:true(제출 후 정답·풀이 공개).
 //   eng-m1-past  과거시제 확인(10): 규칙 과거형 철자 · 불규칙 과거형 · was/were · did 부정·의문
+//   eng-m1-modal 조동사·미래 확인(10): can·may · will·be going to · must·have to·should · 조동사 문장 형태
 // 다시 풀기용 변형 문항은 ENG_VARIANTS[원래 문항 id] 에 3개씩(문항 객체 밖에 두어 정답이 페이지로 나가지 않게, sci_gas.ts 와 같은 방식).
 // 변형 문항 형식: { text, options, answer, traps?, explain } — 원래 문항과 같은 개념·같은 함정 문구, 보기 5개.
-// 표기: 줄바꿈 \n, 강조 <b>…</b>. '$'는 쓰지 않는다. 문항 id 는 'ep-' 로 시작.
+// 표기: 줄바꿈 \n, 강조 <b>…</b>. '$'는 쓰지 않는다. 문항 id 는 세트마다 접두어(과거 'ep-', 조동사 'em-').
 
 const G = '문법';
 const set = (id: string, title: string, subtitle: string, minutes: number, practice: boolean, areas: any[], questions: any[]) => ({
@@ -88,7 +89,78 @@ export const ENG_M1_PAST = set('eng-m1-past', '과거시제 확인', '중1 영�
     explain: 'Did로 물으면 Yes, I did. / No, I didn\'t. 로 대답해요.' },
 ]);
 
-export const ENG_GRAM_SETS = [ENG_M1_PAST];
+// ── 조동사 ──
+const N_BASE = '조동사 뒤에 동사원형을 쓰지 않음 (can swim / will go)';
+const N_CANS = '조동사에 -s를 붙임 (can·will·must·should는 주어가 바뀌어도 모양이 그대로)';
+const N_DOM = '조동사가 있는데 do/does를 함께 씀';
+const N_MNEG = '조동사 부정은 조동사 바로 뒤에 not (can\'t, won\'t, shouldn\'t)';
+const N_CANMEAN = 'can의 능력(~할 수 있다)·허락(~해도 된다) 뜻을 문맥으로 구분하지 못함';
+const N_BEGO = 'be going to의 be동사를 주어에 맞추지 않음 (I am / He is / We are)';
+const N_WILLGO = 'will과 be going to를 섞어 씀 (will going to ×)';
+const N_TIME = '미래를 나타내는 말(tomorrow, next ~)과 과거 시제를 함께 씀';
+const N_MEAN = '조동사의 뜻(해야 한다·하면 안 된다·하는 게 좋겠다)을 문맥에 맞추지 못함';
+const N_HAVE = 'have to / has to를 주어에 맞추지 않음 (He·She·단수 → has to)';
+const N_BEHAVE = 'be동사와 have to를 함께 씀';
+const N_MUSTNT = 'must not(~하면 안 된다)과 don\'t have to(~할 필요 없다)를 헷갈림';
+const N_PERM = '허락을 구할 때는 Can / May I ~? (Must는 의무)';
+
+const A_CAN = { id: 'm1', group: G, name: 'can·may (능력·허락)', unit: '중1 「조동사 can·may」',
+  why: '대화문에서 「~해도 될까요?」(허락)와 「~할 수 있다」(능력)를 구분하는 문제가 자주 나와요.',
+  study: ['EBS 중학 프리미엄 중1 영어 문법 「조동사 can·may」 강의', 'Can I ~? / May I ~? = ~해도 될까요?, I can ~ = 나는 ~할 수 있다 예문 3개씩 만들기'] };
+const A_FUT = { id: 'm2', group: G, name: '미래 (will·be going to)', unit: '중1 「미래 시제」',
+  why: 'be going to의 be동사, 미래 표현과 시제 맞추기가 어법 문제로 나와요.',
+  study: ['EBS 중학 프리미엄 중1 영어 문법 「미래 시제」 강의', 'I am / He is / We are going to + 동사원형, tomorrow·next ~ 는 미래와 함께'] };
+const A_MUST = { id: 'm3', group: G, name: 'must·have to·should (의무·충고)', unit: '중1 「조동사 must·have to·should」',
+  why: 'must not(금지)과 don\'t have to(필요 없음)의 차이가 내신 단골이에요.',
+  study: ['EBS 중학 프리미엄 중1 영어 문법 「조동사 must·have to·should」 강의', 'must not = 하면 안 된다, don\'t have to = 안 해도 된다 를 우리말 예문으로 정리'] };
+const A_MFORM = { id: 'm4', group: G, name: '조동사 문장 형태', unit: '중1 「조동사의 부정문·의문문」',
+  why: '조동사 뒤 동사원형, 부정은 조동사 뒤 not — 서술형에서 가장 많이 틀리는 곳이에요.',
+  study: ['EBS 중학 프리미엄 중1 영어 문법 「조동사」 강의', 'can·will·must·should 뒤에는 항상 동사원형, do/does를 같이 쓰지 않기'] };
+
+export const ENG_M1_MODAL = set('eng-m1-modal', '조동사·미래 확인', '중1 영어 문법 · can·will·must·should·have to', 12, true,
+  [A_CAN, A_FUT, A_MUST, A_MFORM], [
+  { id: 'em-1', area: 'm4', text: '빈칸에 들어갈 말로 알맞은 것은?\nMy sister can ______ the piano very well.',
+    options: ['plays', 'played', 'play', 'playing', 'to play'], answer: 3,
+    traps: [{ a: 1, note: N_BASE }, { a: 2, note: N_BASE }, { a: 5, note: N_BASE }],
+    explain: '조동사 can 뒤에는 동사원형 → can play.' },
+  { id: 'em-2', area: 'm4', text: '다음 중 어법상 바른 문장은?',
+    options: ['He cans swim fast.', 'She can speaks English.', 'Do you can ride a bike?', 'They will goes to the park.', 'Can you help me?'], answer: 5,
+    traps: [{ a: 1, note: N_CANS }, { a: 2, note: N_BASE }, { a: 3, note: N_DOM }, { a: 4, note: N_BASE }],
+    explain: '조동사 의문문은 조동사를 주어 앞으로 → Can you help me? ① can swim ② can speak ③ Can you ride ④ will go' },
+  { id: 'em-3', area: 'm4', text: '다음 문장을 부정문으로 바르게 바꾼 것은?\nI can swim.',
+    options: ['I don\'t can swim.', 'I can\'t swim.', 'I can swim not.', 'I not can swim.', 'I can\'t swims.'], answer: 2,
+    traps: [{ a: 1, note: N_DOM }, { a: 3, note: N_MNEG }, { a: 4, note: N_MNEG }, { a: 5, note: N_BASE }],
+    explain: '조동사 부정은 조동사 뒤에 not → cannot = can\'t + 동사원형.' },
+  { id: 'em-4', area: 'm1', text: '밑줄 친 can의 뜻으로 알맞은 것은?\n<b>Can</b> I use your phone?',
+    options: ['~할 수 있다(능력)', '~해도 된다(허락)', '~해야 한다(의무)', '~할 것이다(미래)', '~하는 게 좋겠다(충고)'], answer: 2,
+    traps: [{ a: 1, note: N_CANMEAN }],
+    explain: 'Can I ~? = ~해도 될까요?(허락을 구하는 말). 전화기를 써도 되는지 묻고 있어요.' },
+  { id: 'em-5', area: 'm2', text: '빈칸에 들어갈 말로 알맞은 것은?\nWe ______ going to visit Gyeongju next week.',
+    options: ['is', 'am', 'will', 'are', 'do'], answer: 4,
+    traps: [{ a: 1, note: N_BEGO }, { a: 2, note: N_BEGO }, { a: 3, note: N_WILLGO }],
+    explain: 'We + are going to + 동사원형 → We are going to visit.' },
+  { id: 'em-6', area: 'm2', text: '다음 중 어법상 <b>틀린</b> 문장은?',
+    options: ['She went to Busan next month.', 'I will call you tonight.', 'He is going to play tennis tomorrow.', 'They will visit us next week.', 'We are going to have a party this Saturday.'], answer: 1,
+    explain: 'next month(다음 달)는 미래 → She will go / is going to go to Busan next month.' },
+  { id: 'em-7', area: 'm3', text: '빈칸에 들어갈 말로 가장 알맞은 것은?\nYou have a bad cold. You ______ see a doctor.',
+    options: ['can\'t', 'won\'t', 'should', 'don\'t have to', 'may not'], answer: 3,
+    traps: [{ a: 4, note: N_MEAN }],
+    explain: '감기가 심하니 병원에 가 보는 게 좋겠다 → should(충고).' },
+  { id: 'em-8', area: 'm3', text: '빈칸에 들어갈 말로 알맞은 것은?\nMinho ______ finish his homework today.',
+    options: ['have to', 'has to', 'having to', 'have', 'is have to'], answer: 2,
+    traps: [{ a: 1, note: N_HAVE }, { a: 5, note: N_BEHAVE }],
+    explain: 'Minho(3인칭 단수) → has to + 동사원형.' },
+  { id: 'em-9', area: 'm3', text: '우리말과 같은 뜻이 되도록 빈칸에 알맞은 것은?\n「너는 오늘 일찍 올 필요가 없다.」\nYou ______ come early today.',
+    options: ['must not', 'can\'t', 'should', 'will', 'don\'t have to'], answer: 5,
+    traps: [{ a: 1, note: N_MUSTNT }],
+    explain: '~할 필요가 없다 = don\'t have to. must not은 「~하면 안 된다」(금지)예요.' },
+  { id: 'em-10', area: 'm1', text: '대화의 빈칸에 들어갈 말로 알맞은 것은?\nA: ______ I open the window? It\'s hot.\nB: Sure, go ahead.',
+    options: ['Can', 'Must', 'Am', 'Does', 'Was'], answer: 1,
+    traps: [{ a: 2, note: N_PERM }],
+    explain: '창문을 열어도 되는지 허락을 구함 → Can I ~? 대답 Sure, go ahead(그럼, 열어).' },
+]);
+
+export const ENG_GRAM_SETS = [ENG_M1_PAST, ENG_M1_MODAL];
 
 type V = { text: string; options: string[]; answer: number; traps?: { a: number; note: string }[]; explain: string };
 export const ENG_VARIANTS: Record<string, V[]> = {
@@ -195,5 +267,88 @@ export const ENG_VARIANTS: Record<string, V[]> = {
     { text: '질문에 대한 대답으로 알맞은 것은?\nDid Mina like the movie?', options: ['No, she didn\'t.', 'No, she wasn\'t.', 'Yes, she does.', 'Yes, she was.', 'No, she doesn\'t.'], answer: 1,
       traps: [{ a: 2, note: N_ANS }, { a: 3, note: N_ANSP }, { a: 4, note: N_ANS }, { a: 5, note: N_ANSP }],
       explain: 'Did로 물으면 did / didn\'t 로 대답 → No, she didn\'t.' },
+  ],
+  'em-1': [
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nJiho will ______ his grandparents tomorrow.', options: ['visits', 'visit', 'visited', 'visiting', 'to visit'], answer: 2,
+      traps: [{ a: 1, note: N_BASE }, { a: 3, note: N_BASE }, { a: 5, note: N_BASE }], explain: '조동사 will 뒤에는 동사원형 → will visit.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nYou should ______ more water every day.', options: ['drinks', 'drank', 'drinking', 'to drink', 'drink'], answer: 5,
+      traps: [{ a: 1, note: N_BASE }, { a: 2, note: N_BASE }, { a: 4, note: N_BASE }], explain: '조동사 should 뒤에는 동사원형 → should drink.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nWe must ______ quiet in the library.', options: ['be', 'are', 'is', 'being', 'to be'], answer: 1,
+      traps: [{ a: 2, note: N_BASE }, { a: 3, note: N_BASE }, { a: 5, note: N_BASE }], explain: '조동사 must 뒤에는 동사원형 → be동사의 원형 be → must be quiet.' },
+  ],
+  'em-2': [
+    { text: '다음 중 어법상 바른 문장은?', options: ['She wills come soon.', 'Will you open the window?', 'He will plays soccer.', 'Does she will come?', 'I will to call you.'], answer: 2,
+      traps: [{ a: 1, note: N_CANS }, { a: 3, note: N_BASE }, { a: 4, note: N_DOM }, { a: 5, note: N_BASE }],
+      explain: 'Will you ~? 가 맞아요. ① will come ③ will play ④ Will she come? ⑤ will call' },
+    { text: '다음 중 어법상 바른 문장은?', options: ['You musts wear a seat belt.', 'Do I must go now?', 'He must studies hard.', 'We must leave now.', 'She must to finish it.'], answer: 4,
+      traps: [{ a: 1, note: N_CANS }, { a: 2, note: N_DOM }, { a: 3, note: N_BASE }, { a: 5, note: N_BASE }],
+      explain: 'must + 동사원형 → We must leave now. ① must wear ② Must I go ③ must study ⑤ must finish' },
+    { text: '다음 중 어법상 바른 문장은?', options: ['He shoulds see a doctor.', 'You should goes to bed early.', 'Does he should rest?', 'She should to eat breakfast.', 'You should wear a coat.'], answer: 5,
+      traps: [{ a: 1, note: N_CANS }, { a: 2, note: N_BASE }, { a: 3, note: N_DOM }, { a: 4, note: N_BASE }],
+      explain: 'should + 동사원형 → You should wear a coat. ① should see ② should go ③ Should he rest? ④ should eat' },
+  ],
+  'em-3': [
+    { text: '다음 문장을 부정문으로 바르게 바꾼 것은?\nHe will come to the party.', options: ['He won\'t come to the party.', 'He doesn\'t will come to the party.', 'He will come not to the party.', 'He not will come to the party.', 'He won\'t comes to the party.'], answer: 1,
+      traps: [{ a: 2, note: N_DOM }, { a: 3, note: N_MNEG }, { a: 4, note: N_MNEG }, { a: 5, note: N_BASE }], explain: 'will not = won\'t + 동사원형 → He won\'t come.' },
+    { text: '다음 문장을 부정문으로 바르게 바꾼 것은?\nYou should eat fast food.', options: ['You don\'t should eat fast food.', 'You should eat not fast food.', 'You not should eat fast food.', 'You shouldn\'t eat fast food.', 'You shouldn\'t eats fast food.'], answer: 4,
+      traps: [{ a: 1, note: N_DOM }, { a: 2, note: N_MNEG }, { a: 3, note: N_MNEG }, { a: 5, note: N_BASE }], explain: 'should not = shouldn\'t + 동사원형 → You shouldn\'t eat.' },
+    { text: '다음 문장을 부정문으로 바르게 바꾼 것은?\nShe can ride a bike.', options: ['She doesn\'t can ride a bike.', 'She can ride not a bike.', 'She can\'t ride a bike.', 'She not can ride a bike.', 'She can\'t rides a bike.'], answer: 3,
+      traps: [{ a: 1, note: N_DOM }, { a: 2, note: N_MNEG }, { a: 4, note: N_MNEG }, { a: 5, note: N_BASE }], explain: 'cannot = can\'t + 동사원형 → She can\'t ride.' },
+  ],
+  'em-4': [
+    { text: '밑줄 친 can의 뜻으로 알맞은 것은?\nMy brother <b>can</b> run 100 meters in 13 seconds.', options: ['~할 수 있다(능력)', '~해도 된다(허락)', '~해야 한다(의무)', '~할 것이다(미래)', '~하는 게 좋겠다(충고)'], answer: 1,
+      traps: [{ a: 2, note: N_CANMEAN }], explain: '100 m를 13초에 달릴 수 있다 → 할 줄 아는 일 = 능력.' },
+    { text: '밑줄 친 can의 뜻으로 알맞은 것은?\nYou finished your work. You <b>can</b> go home now.', options: ['~할 수 있다(능력)', '~해도 된다(허락)', '~해야 한다(의무)', '~할 것이다(미래)', '~하는 게 좋겠다(충고)'], answer: 2,
+      traps: [{ a: 1, note: N_CANMEAN }], explain: '일을 끝냈으니 이제 집에 가도 된다 → 허락.' },
+    { text: '밑줄 친 can\'t의 뜻으로 알맞은 것은?\nPenguins are birds, but they <b>can\'t</b> fly.', options: ['~할 수 없다(능력)', '~하면 안 된다(금지)', '~할 필요 없다', '~하지 않을 것이다(미래)', '~하지 않는 게 좋겠다(충고)'], answer: 1,
+      traps: [{ a: 2, note: N_CANMEAN }], explain: '펭귄은 날 수 없다 → 능력이 없음. 「날면 안 된다」가 아니에요.' },
+  ],
+  'em-5': [
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nShe ______ going to buy a new phone tomorrow.', options: ['are', 'is', 'am', 'will', 'does'], answer: 2,
+      traps: [{ a: 1, note: N_BEGO }, { a: 3, note: N_BEGO }, { a: 4, note: N_WILLGO }], explain: 'She + is going to + 동사원형.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nI ______ going to watch a movie tonight.', options: ['is', 'are', 'will', 'am', 'do'], answer: 4,
+      traps: [{ a: 1, note: N_BEGO }, { a: 2, note: N_BEGO }, { a: 3, note: N_WILLGO }], explain: 'I + am going to + 동사원형.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nMy parents ______ going to clean the house this weekend.', options: ['is', 'am', 'will', 'do', 'are'], answer: 5,
+      traps: [{ a: 1, note: N_BEGO }, { a: 2, note: N_BEGO }, { a: 3, note: N_WILLGO }], explain: 'My parents(복수) + are going to + 동사원형.' },
+  ],
+  'em-6': [
+    { text: '다음 중 어법상 <b>틀린</b> 문장은?', options: ['It will snow tomorrow.', 'I am going to study tonight.', 'He will meet his friend tomorrow.', 'We visited the museum next Sunday.', 'She is going to bake a cake.'], answer: 4,
+      traps: [], explain: 'next Sunday(다음 일요일)는 미래 → We will visit / are going to visit the museum next Sunday.' },
+    { text: '다음 중 어법상 <b>틀린</b> 문장은?', options: ['Mina met her friend yesterday.', 'He played soccer tomorrow.', 'They are going to travel next summer.', 'I will finish it soon.', 'We will be late.'], answer: 2,
+      traps: [], explain: 'tomorrow(내일)는 미래 → He will play soccer tomorrow. ①은 yesterday라서 과거형 met이 맞아요.' },
+    { text: '다음 중 어법상 <b>틀린</b> 문장은?', options: ['My dad will cook dinner tonight.', 'I am going to read this book tomorrow.', 'She will join the club next year.', 'It is going to rain soon.', 'We watched the game next Friday.'], answer: 5,
+      traps: [], explain: 'next Friday(다음 금요일)는 미래 → We will watch the game next Friday.' },
+  ],
+  'em-7': [
+    { text: '빈칸에 들어갈 말로 가장 알맞은 것은?\nIt\'s very cold outside. You ______ wear a warm coat.', options: ['won\'t', 'should', 'don\'t have to', 'can\'t', 'may not'], answer: 2,
+      traps: [{ a: 3, note: N_MEAN }], explain: '밖이 추우니 따뜻한 코트를 입는 게 좋겠다 → should.' },
+    { text: '빈칸에 들어갈 말로 가장 알맞은 것은?\nYou ______ run in the hallway. It\'s dangerous.', options: ['should', 'will', 'must not', 'have to', 'can'], answer: 3,
+      traps: [{ a: 1, note: N_MEAN }, { a: 4, note: N_MEAN }], explain: '위험하니 복도에서 뛰면 안 된다 → must not(금지).' },
+    { text: '빈칸에 들어갈 말로 가장 알맞은 것은?\nYou look tired. You ______ go to bed early.', options: ['shouldn\'t', 'won\'t', 'can\'t', 'must not', 'should'], answer: 5,
+      traps: [{ a: 1, note: N_MEAN }, { a: 4, note: N_MEAN }], explain: '피곤해 보이니 일찍 자는 게 좋겠다 → should.' },
+  ],
+  'em-8': [
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nMy mom ______ go to work early tomorrow.', options: ['have to', 'is have to', 'has to', 'haves to', 'having to'], answer: 3,
+      traps: [{ a: 1, note: N_HAVE }, { a: 2, note: N_BEHAVE }, { a: 4, note: N_HAVE }], explain: 'My mom(3인칭 단수) → has to + 동사원형.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nWe ______ wear school uniforms.', options: ['has to', 'have to', 'are have to', 'has', 'having to'], answer: 2,
+      traps: [{ a: 1, note: N_HAVE }, { a: 3, note: N_BEHAVE }], explain: 'We(복수) → have to + 동사원형.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nTom ______ take care of his little sister.', options: ['have to', 'is have to', 'haves to', 'having to', 'has to'], answer: 5,
+      traps: [{ a: 1, note: N_HAVE }, { a: 2, note: N_BEHAVE }, { a: 3, note: N_HAVE }], explain: 'Tom(3인칭 단수) → has to + 동사원형.' },
+  ],
+  'em-9': [
+    { text: '우리말과 같은 뜻이 되도록 빈칸에 알맞은 것은?\n「여기에서 사진을 찍으면 안 된다.」\nYou ______ take pictures here.', options: ['must not', 'don\'t have to', 'have to', 'will', 'should'], answer: 1,
+      traps: [{ a: 2, note: N_MUSTNT }], explain: '~하면 안 된다 = must not. don\'t have to는 「~할 필요 없다」예요.' },
+    { text: '우리말과 같은 뜻이 되도록 빈칸에 알맞은 것은?\n「우리는 내일 학교에 갈 필요가 없다.」\nWe ______ go to school tomorrow.', options: ['must not', 'have to', 'should', 'can', 'don\'t have to'], answer: 5,
+      traps: [{ a: 1, note: N_MUSTNT }], explain: '~할 필요가 없다 = don\'t have to.' },
+    { text: '우리말과 같은 뜻이 되도록 빈칸에 알맞은 것은?\n「수업 중에 휴대폰을 사용하면 안 된다.」\nYou ______ use your phone in class.', options: ['have to', 'don\'t have to', 'must not', 'should', 'will'], answer: 3,
+      traps: [{ a: 2, note: N_MUSTNT }], explain: '~하면 안 된다 = must not.' },
+  ],
+  'em-10': [
+    { text: '대화의 빈칸에 들어갈 말로 알맞은 것은?\nA: ______ I borrow your eraser?\nB: Of course.', options: ['Must', 'May', 'Am', 'Do', 'Have'], answer: 2,
+      traps: [{ a: 1, note: N_PERM }], explain: '지우개를 빌려도 되는지 허락을 구함 → May I ~?' },
+    { text: '대화의 빈칸에 들어갈 말로 알맞은 것은?\nA: ______ I use your computer?\nB: Sorry, you can\'t. I\'m using it now.', options: ['Am', 'Must', 'Does', 'Can', 'Was'], answer: 4,
+      traps: [{ a: 2, note: N_PERM }], explain: '컴퓨터를 써도 되는지 허락을 구함 → Can I ~? 대답도 you can\'t.' },
+    { text: '대화의 빈칸에 들어갈 말로 알맞은 것은?\nA: Mom, ______ I go out and play?\nB: Yes, you may. But come back by six.', options: ['Must', 'Am', 'Did', 'Have', 'May'], answer: 5,
+      traps: [{ a: 1, note: N_PERM }], explain: '나가 놀아도 되는지 허락을 구함 → May I ~? 대답 Yes, you may.' },
   ],
 };
