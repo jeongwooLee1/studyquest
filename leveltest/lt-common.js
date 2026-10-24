@@ -168,11 +168,12 @@ window.LT = (function () {
       F = [[0, 3, 2, 1], [4, 5, 6, 7], [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]];
     } else if (kind === 'prism' || kind === 'pyramid' || kind === 'frustum') {
       n = Math.max(3, Math.min(8, fig.n || 4)); var r = fig.r || 3, h = fig.h || 5, r2 = kind === 'frustum' ? (fig.r2 || r / 2) : r;
+      var rot = n % 2 ? Math.PI / 10 : n > 4 ? Math.PI / 9 : 0; // 정면 대칭이면 앞뒤 꼭짓점이 겹쳐 보여서(홀수각형·육각 이상) 조금 돌림
       var base = [], top = [];
-      for (i = 0; i < n; i++) { var t = -Math.PI / 2 - Math.PI / n + 2 * Math.PI * i / n; base.push(V.length); V.push([r * Math.cos(t), r * Math.sin(t), 0]); }
+      for (i = 0; i < n; i++) { var t = -Math.PI / 2 - Math.PI / n + rot + 2 * Math.PI * i / n; base.push(V.length); V.push([r * Math.cos(t), r * Math.sin(t), 0]); }
       if (kind === 'pyramid') { V.push([0, 0, h]); var ap = V.length - 1; for (i = 0; i < n; i++) F.push([base[i], base[(i + 1) % n], ap]); }
       else {
-        for (i = 0; i < n; i++) { var t2 = -Math.PI / 2 - Math.PI / n + 2 * Math.PI * i / n; top.push(V.length); V.push([r2 * Math.cos(t2), r2 * Math.sin(t2), h]); }
+        for (i = 0; i < n; i++) { var t2 = -Math.PI / 2 - Math.PI / n + rot + 2 * Math.PI * i / n; top.push(V.length); V.push([r2 * Math.cos(t2), r2 * Math.sin(t2), h]); }
         F.push(top.slice()); for (i = 0; i < n; i++) F.push([base[i], base[(i + 1) % n], top[(i + 1) % n], top[i]]);
       }
       F.push(base.slice().reverse());
@@ -199,6 +200,15 @@ window.LT = (function () {
       if (L.b) o.push(lab(mid(1, 2), 8, 8, L.b, 'start'));
       if (L.c) o.push(lab(mid(0, 4), -6, 0, L.c, 'end')); // 높이는 앞쪽 왼쪽 모서리에(오른쪽은 옆면 모서리와 겹침)
     } else if (L.h) o.push(lab([maxx, (miny + maxy) / 2], 8, 0, L.h, 'start'));
+    // 꼭짓점 이름(vlabels): 꼭짓점 순서대로 한 글자씩 — 직육면체·각기둥은 밑면(앞 왼쪽부터 반시계) 다음 윗면, 각뿔은 밑면 다음 꼭대기
+    if (fig.vlabels) {
+      var cxp = 0, cyp = 0; P2.forEach(function (p) { cxp += p[0]; cyp += p[1]; }); cxp /= P2.length; cyp /= P2.length;
+      Array.from(String(fig.vlabels)).slice(0, P2.length).forEach(function (ch, vi) {
+        if (ch === ' ' || ch === '_') return;
+        var p = P2[vi], dx = X(p) - X([cxp, cyp]), dy = Y(p) - Y([cxp, cyp]), l = Math.hypot(dx, dy) || 1;
+        o.push('<text class="pn" x="' + f1(X(p) + dx / l * 11) + '" y="' + f1(Y(p) + dy / l * 11) + '" text-anchor="middle" dominant-baseline="central">' + esc(ch) + '</text>');
+      });
+    }
     o.push('</svg>');
     return o.join('');
   }

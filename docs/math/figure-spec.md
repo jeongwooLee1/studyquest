@@ -80,6 +80,8 @@ fig: { type: 'solid', kind: 'cuboid', a: 8, b: 5, c: 3, labels: { a: '8 cm', b: 
 | `hemisphere` | `r` | 반구 |
 
 - `labels`: 어떤 길이에 글자를 붙일지. 키는 `a, b, c, r, h, r2, l`(원뿔 모선). 값이 있는 것만 붙인다. `r` 은 밑면 중심에서 반지름 선분을 그려 붙임.
+- `vlabels?: 'ABCDEFGH'` — 꼭짓점 이름(한 글자씩, `_`·공백은 건너뜀). 순서: 직육면체·각기둥·각뿔대는 **밑면**(앞 왼쪽 꼭짓점부터 위에서 볼 때 반시계) 다음 **윗면**(같은 순서), 각뿔은 밑면 다음 **꼭대기**. 직육면체 밑면 순서는 앞 왼쪽 → 앞 오른쪽 → 뒤 오른쪽 → 뒤 왼쪽.
+- 구현 상태(lt-common.js): cuboid·prism·pyramid·frustum 됨, cylinder·cone·sphere·hemisphere 아직(그리지 않음).
 - `show?: ['h', 'r', 'axis']` — 높이 점선, 반지름 선, 회전축(일점쇄선)을 그림.
 
 ### 회전체·전개도
