@@ -1296,6 +1296,188 @@ G['mw-10'] = (r) => { // 갈 때·올 때 속력이 다른 왕복
   }
 };
 
+// ── 중1 2학기 「기본 도형」: 점·선·면·각, 위치 관계, 평행선의 성질 (작년 도농중 기말 7~9·12번 유형) ──
+const degF = unit('°');
+// 영문 이름 뒤 조사(마지막 글자 소리: L(엘)만 받침)
+const jL = (s: string, withB: string, without: string) => (s.endsWith('L') ? withB : without);
+// 기둥·뿔의 교점(꼭짓점)·교선(모서리)
+G['mb-1'] = (r) => {
+  const n = ri(r, 3, 8), prism = r() < 0.6, name = `${koN(n)}각${prism ? '기둥' : '뿔'}`;
+  const V = prism ? 2 * n : n + 1, E = prism ? 3 * n : 2 * n, F = prism ? n + 2 : n + 1, ans = V + E;
+  return { ...build(r, { text: `${name}에서 교점의 개수를 ${M('a')}, 교선의 개수를 ${M('b')}라 할 때, ${M('a + b')}의 값은?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(F + E), note: '교점 대신 면의 개수를 셈 (교점 = 꼭짓점)' }, { v: q(V + F), note: '교선 대신 면의 개수를 셈 (교선 = 모서리)' }, { v: q(E), note: '교선만 셈' }, { v: q(V + E + F) }],
+    fill: nearInt(r, ans, 5), fmt: intF, order: 'asc', explain: `입체도형에서 교점 = 꼭짓점 ${V}개, 교선 = 모서리 ${E}개 → ${M(`a + b = ${V} + ${E} = ${ans}`)}` }),
+    fig: { type: 'solid', kind: prism ? 'prism' : 'pyramid', n, r: 3, h: 5 } };
+};
+// 중점과 선분의 길이
+G['mb-2'] = (r) => {
+  const a = ri(r, 2, 10) * 4, ask = pick(r, ['MN', 'AN', 'AB'] as const), k = a / 4;
+  const pts = { _a: P(0, 0), _b: P(8, 0), _m: P(4, 0), _n: P(6, 0) };
+  const fig = shape(pts, [{ k: 'seg', p: ['_a', '_b'] }, { k: 'dot', p: '_a' }, { k: 'dot', p: '_m' }, { k: 'dot', p: '_n' }, { k: 'dot', p: '_b' },
+    { k: 'text', at: [0, -0.7], s: 'A' }, { k: 'text', at: [4, -0.7], s: 'M' }, { k: 'text', at: [6, -0.7], s: 'N' }, { k: 'text', at: [8, -0.7], s: 'B' }]);
+  if (ask === 'AB') return { ...build(r, { text: `점 M은 선분 AB의 중점이고, 점 N은 선분 MB의 중점입니다. ${M(`NB = ${k}`)} cm일 때, 선분 AB의 길이는?`, correct: { v: q(a) },
+    wrongs: [{ v: q(2 * k), note: '중점을 한 번만 생각함 (NB는 AB의 1/4)' }, { v: q(3 * k), note: 'AN의 길이를 구함' }, { v: q(8 * k), note: '2배를 한 번 더 함' }],
+    fill: nearInt(r, a, 6), fmt: cm, order: 'asc', explain: `${M(`MB = 2NB = ${2 * k}`)}, ${M(`AB = 2MB = ${a}`)} (cm)` }), fig };
+  const ans = ask === 'MN' ? k : 3 * k;
+  return { ...build(r, { text: `점 M은 선분 AB의 중점이고, 점 N은 선분 MB의 중점입니다. ${M(`AB = ${a}`)} cm일 때, 선분 ${ask}의 길이는?`, correct: { v: q(ans) },
+    wrongs: ask === 'MN' ? [{ v: q(2 * k), note: 'AM(또는 MB)의 길이를 구함 (MN은 MB의 절반)' }, { v: q(3 * k), note: 'AN의 길이를 구함' }, { v: q(a) }]
+      : [{ v: q(2 * k), note: 'AM의 길이만 구함 (AN = AM + MN)' }, { v: q(k), note: 'MN의 길이를 구함' }, { v: q(a) }],
+    fill: nearInt(r, ans, 5), fmt: cm, order: 'asc', explain: `${M(`AM = MB = ${a} ÷ 2 = ${2 * k}`)}, ${M(`MN = NB = ${2 * k} ÷ 2 = ${k}`)}${ask === 'AN' ? ` → ${M(`AN = AM + MN = ${2 * k} + ${k} = ${3 * k}`)}` : ''} (cm)` }), fig };
+};
+// 맞꼭지각
+const lin1 = (p: number, c: number) => `${p === 1 ? '' : p}x ${c < 0 ? '−' : '+'} ${Math.abs(c)}`;
+G['mb-3'] = (r) => {
+  for (;;) {
+    const p = ri(r, 2, 6), s = ri(r, 2, 6), x = ri(r, 8, 40), A = ri(r, 30, 150); if (p === s) continue;
+    const c1 = A - p * x, c2 = A - s * x; if (!c1 || !c2 || Math.abs(c1) > 90 || Math.abs(c2) > 90) continue;
+    const w: Opt[] = [];
+    if (intQ(180 - c1 - c2, p + s) && (180 - c1 - c2) / (p + s) > 0) w.push({ v: q((180 - c1 - c2) / (p + s)), note: '맞꼭지각을 합이 180°인 각으로 봄 (맞꼭지각은 크기가 같음)' });
+    w.push({ v: q(A), note: 'x 대신 각의 크기를 답함' });
+    if (intQ(c1 + c2, p - s) && (c1 + c2) / (p - s) > 0) w.push({ v: q((c1 + c2) / (p - s)), note: '이항할 때 부호 실수' });
+    return build(r, { text: `두 직선이 한 점에서 만날 때 생기는 맞꼭지각의 크기가 각각 ${M(`(${lin1(p, c1)})°`)}, ${M(`(${lin1(s, c2)})°`)}입니다. ${M('x')}의 값은?`, correct: { v: q(x) }, wrongs: w,
+      fill: nearInt(r, x, 6), fmt: intF, order: 'asc', explain: `맞꼭지각은 크기가 같으므로 ${M(`${lin1(p, c1)} = ${lin1(s, c2)}`)} → ${M(`${p - s > 0 ? (p - s === 1 ? '' : p - s) : '−' + (s - p === 1 ? '' : s - p)}x = ${mi(c2 - c1)}`)} → ${M(`x = ${x}`)}` });
+  }
+};
+// 평각을 나눈 세 각
+G['mb-4'] = (r) => {
+  for (;;) {
+    const a = ri(r, 5, 30), b = ri(r, 5, 30), x = (180 - a + b) / 6; if (!Number.isInteger(x) || 3 * x - b < 10) continue;
+    const w: Opt[] = [];
+    if (intQ(360 - a + b, 6)) w.push({ v: q((360 - a + b) / 6), note: '평각을 360°로 봄 (평각 = 180°)' });
+    if (intQ(90 - a + b, 6) && (90 - a + b) / 6 > 0) w.push({ v: q((90 - a + b) / 6), note: '평각을 90°로 봄' });
+    if (intQ(180 - a - b, 6) && (180 - a - b) / 6 > 0) w.push({ v: q((180 - a - b) / 6), note: `−${J(b, '을', '를')} + 로 계산함 (이항 부호 실수)` });
+    const pts: Record<string, number[]> = { O: P(0, 0), _l: P(-4, 0), _r: P(4, 0) };
+    const A2 = 2 * x, A3 = 3 * x - b, d1 = A3, d2 = A3 + A2; // 오른쪽부터 (3x − b), 2x, (x + a)
+    pts._p = P(4 * Math.cos(d1 * Math.PI / 180), 4 * Math.sin(d1 * Math.PI / 180)); pts._q = P(4 * Math.cos(d2 * Math.PI / 180), 4 * Math.sin(d2 * Math.PI / 180));
+    return { ...build(r, { text: `한 직선 위의 점 O에서 그은 두 반직선이 평각을 세 각 ${M(`(x + ${a})°`)}, ${M('2x°')}, ${M(`(3x − ${b})°`)}로 나누었습니다. ${M('x')}의 값은?`, correct: { v: q(x) }, wrongs: w,
+      fill: nearInt(r, x, 6), fmt: intF, order: 'asc', explain: `평각은 180° → ${M(`(x + ${a}) + 2x + (3x − ${b}) = 180`)} → ${M(`6x = ${180 - a + b}`)} → ${M(`x = ${x}`)}` }),
+      fig: shape(pts, [{ k: 'seg', p: ['_l', '_r'] }, { k: 'seg', p: ['O', '_p'] }, { k: 'seg', p: ['O', '_q'] },
+        { k: 'angle', p: ['_r', 'O', '_p'] }, { k: 'angle', p: ['_p', 'O', '_q'], n: 2 }, { k: 'angle', p: ['_q', 'O', '_l'] },
+        ...([[d1 / 2, `(3x−${b})°`], [(d1 + d2) / 2, '2x°'], [(d2 + 180) / 2, `(x+${a})°`]] as [number, string][]).map(([t, s]) => ({ k: 'text', at: P(3 * Math.cos(t * Math.PI / 180), 3 * Math.sin(t * Math.PI / 180) + 0.3), s }))]) };
+  }
+};
+
+// 공간에서의 위치 관계 — 기둥의 꼭짓점 좌표로 직접 센다
+type V3 = [number, number, number];
+const ALPHA = 'ABCDEFGHIJKL';
+function prismSolid(n: number) {
+  const pts: V3[] = [];
+  for (let k = 0; k < 2; k++) for (let i = 0; i < n; i++) { const t = n === 4 ? [[0, 0], [2, 0], [2, 1], [0, 1]][i] : [Math.cos(2 * Math.PI * i / n), Math.sin(2 * Math.PI * i / n)]; pts.push([t[0], t[1], k * 1.5]); }
+  const edges: [number, number][] = [];
+  for (let i = 0; i < n; i++) { edges.push([i, (i + 1) % n]); edges.push([n + i, n + (i + 1) % n]); edges.push([i, n + i]); }
+  const faces: number[][] = [Array.from({ length: n }, (_, i) => i), Array.from({ length: n }, (_, i) => n + i)];
+  for (let i = 0; i < n; i++) faces.push([i, (i + 1) % n, n + (i + 1) % n, n + i]);
+  return { pts, edges, faces, name: n === 4 ? '직육면체' : `${koN(n)}각기둥`, label: `${ALPHA.slice(0, n)}−${ALPHA.slice(n, 2 * n)}` };
+}
+const vsub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const cross = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const dot3 = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const zero3 = (a: V3) => Math.hypot(...a) < 1e-9;
+G['mb-5'] = (r) => { // 모서리와 모서리의 위치 관계
+  const n = pick(r, [3, 4, 5, 6]), S = prismSolid(n), e0 = pick(r, [S.edges[0], S.edges[2]]), d0 = vsub(S.pts[e0[1]], S.pts[e0[0]]);
+  const cnt = { 평행: 0, 만남: 0, 꼬인: 0 };
+  for (const e of S.edges) { if (e === e0) continue; const d = vsub(S.pts[e[1]], S.pts[e[0]]);
+    if (e.some((v) => e0.includes(v))) cnt.만남++; else if (zero3(cross(d, d0))) cnt.평행++; else cnt.꼬인++; }
+  const ask = pick(r, ['꼬인', '평행', '만남'] as const), ans = cnt[ask], nm = ALPHA[e0[0]] + ALPHA[e0[1]];
+  const askT = ask === '꼬인' ? '꼬인 위치에 있는' : ask === '평행' ? '평행한' : '한 점에서 만나는';
+  const others = (['꼬인', '평행', '만남'] as const).filter((k) => k !== ask);
+  return { ...build(r, { text: `${S.name} ${S.label}에서 모서리 ${nm}${jL(nm, '과', '와')} <b>${askT}</b> 모서리의 개수는?`, correct: { v: q(ans) },
+    wrongs: [...others.map((k) => ({ v: q(cnt[k]), note: `${k === '꼬인' ? '꼬인 위치에 있는' : k === '평행' ? '평행한' : '만나는'} 모서리를 셈` })), { v: q(S.edges.length - 1), note: '자기 자신만 빼고 모두 셈' }, { v: q(cnt.평행 + cnt.꼬인), note: '만나지 않는 모서리(평행 + 꼬인)를 모두 셈' }],
+    fill: nearInt(r, ans, 3), fmt: ea, order: 'asc', signed: true,
+    explain: `모서리 ${nm} 말고 ${S.edges.length - 1}개 중 — 한 점에서 만나는 것 ${cnt.만남}개, 평행한 것 ${cnt.평행}개, 꼬인 위치(만나지도 평행하지도 않음) ${cnt.꼬인}개 → ${ans}개` }),
+    fig: { type: 'solid', kind: n === 4 ? 'cuboid' : 'prism', n, r: 3, h: 4, a: 6, b: 3, c: 4 } };
+};
+G['mb-10'] = (r) => { // 모서리·면과 면의 위치 관계
+  for (;;) {
+    const n = pick(r, [3, 4, 5, 6]), S = prismSolid(n), fi = r() < 0.25 ? 0 : 2 + ri(r, 0, n - 1), F = S.faces[fi], nrm = cross(vsub(S.pts[F[1]], S.pts[F[0]]), vsub(S.pts[F[2]], S.pts[F[0]]));
+    const inPlane = (v: number) => Math.abs(dot3(vsub(S.pts[v], S.pts[F[0]]), nrm)) < 1e-9;
+    const c = { 평행모서리: 0, 수직모서리: 0, 수직면: 0, 포함: 0 };
+    for (const e of S.edges) { const d = vsub(S.pts[e[1]], S.pts[e[0]]);
+      if (inPlane(e[0]) && inPlane(e[1])) c.포함++; else if (Math.abs(dot3(d, nrm)) < 1e-9) c.평행모서리++; else if (zero3(cross(d, nrm))) c.수직모서리++; }
+    for (const g of S.faces) { if (g === F) continue; const m = cross(vsub(S.pts[g[1]], S.pts[g[0]]), vsub(S.pts[g[2]], S.pts[g[0]])); if (Math.abs(dot3(m, nrm)) < 1e-9) c.수직면++; }
+    const ask = pick(r, ['평행모서리', '수직모서리', '수직면'] as const), ans = c[ask]; if (!ans) continue;
+    const fn = F.map((v) => ALPHA[v]).join(''), askT = ask === '평행모서리' ? '평행한 모서리' : ask === '수직모서리' ? '수직인 모서리' : '수직인 면';
+    return { ...build(r, { text: `${S.name} ${S.label}에서 면 ${fn}${jL(fn, '과', '와')} <b>${askT}</b>의 개수는?`, correct: { v: q(ans) },
+      wrongs: [{ v: q(c.포함), note: '면에 포함되는 모서리를 셈' }, ...(['평행모서리', '수직모서리', '수직면'] as const).filter((k) => k !== ask).map((k) => ({ v: q(c[k]), note: `${k === '평행모서리' ? '평행한 모서리' : k === '수직모서리' ? '수직인 모서리' : '수직인 면'}를 셈` })), { v: q(c.포함 + c[ask]) }],
+      fill: nearInt(r, ans, 3), fmt: ea, order: 'asc', signed: true,
+      explain: `면 ${fn}에 대해 — 포함된 모서리 ${c.포함}개, 평행한 모서리(면과 만나지 않음) ${c.평행모서리}개, 수직인 모서리 ${c.수직모서리}개, 수직인 면 ${c.수직면}개 → ${ans}개` }),
+      fig: { type: 'solid', kind: n === 4 ? 'cuboid' : 'prism', n, r: 3, h: 4, a: 6, b: 3, c: 4 } };
+  }
+};
+// 공간에서 직선·평면의 위치 관계 (옳은 것 / 옳지 않은 것)
+const SP_T = ['한 직선에 평행한 서로 다른 두 직선은 평행하다.', '꼬인 위치에 있는 두 직선은 한 평면 위에 있지 않다.', '한 평면에 수직인 서로 다른 두 직선은 평행하다.', '한 평면 위에 있지 않은 두 직선은 꼬인 위치에 있다.', '서로 만나는 두 직선은 한 평면 위에 있다.'];
+const SP_F: [string, string][] = [['한 직선에 수직인 서로 다른 두 직선은 평행하다.', '공간에서는 한 직선에 수직인 두 직선이 만나거나 꼬인 위치일 수도 있음'], ['만나지 않는 두 직선은 항상 평행하다.', '공간에서는 꼬인 위치일 수도 있음'],
+  ['한 평면에 평행한 서로 다른 두 직선은 평행하다.', '한 평면에 평행한 두 직선은 만나거나 꼬인 위치일 수도 있음'], ['한 평면에 수직인 서로 다른 두 평면은 평행하다.', '한 평면에 수직인 두 평면은 만날 수도 있음 (직육면체의 옆면 두 개)'], ['한 직선에 평행한 서로 다른 두 평면은 평행하다.', '한 직선에 평행한 두 평면은 만날 수도 있음']];
+G['mb-6'] = (r) => {
+  const right = r() < 0.5;
+  if (right) { const t = pick(r, SP_T), fs4 = shuffle(r, SP_F).slice(0, 4);
+    return build(r, { text: '공간에서 서로 다른 직선과 평면의 위치 관계에 대한 설명으로 <b>옳은</b> 것은?', correct: { s: t }, wrongs: fs4.map(([s, why]) => ({ s, note: `옳지 않은 설명을 고름 — ${why}` })), order: 'shuffle',
+      explain: `옳은 것: ${t} / 나머지는 직육면체 모서리·면으로 반례를 찾을 수 있어요. (${fs4.map(([s, why]) => `「${s.replace(/\.$/, '')}」 → ${why}`).join('; ')})` }); }
+  const [f, why] = pick(r, SP_F), ts = shuffle(r, SP_T).slice(0, 4);
+  return build(r, { text: '공간에서 서로 다른 직선과 평면의 위치 관계에 대한 설명으로 <b>옳지 않은</b> 것은?', correct: { s: f }, wrongs: ts.map((s) => ({ s, note: '옳은 설명을 고름 (옳지 않은 것을 찾는 문제)' })), order: 'shuffle',
+    explain: `「${f.replace(/\.$/, '')}」 → ${why}. 직육면체의 모서리와 면으로 확인해 보세요.` });
+};
+
+// 평행선의 성질 — 그림: 두 평행선 l(위)·m(아래)과 이를 가로지르는 직선
+// 교점마다 각 자리 0:오른쪽 위, 1:왼쪽 위, 2:왼쪽 아래, 3:오른쪽 아래 (0·2는 a°, 1·3은 180°−a°)
+function parFig(a: number, labs: [number, number, string][]) {
+  const c = Math.cos(a * Math.PI / 180), s = Math.sin(a * Math.PI / 180), H = 4, dx = (H * c) / s; // 위아래 간격 4
+  const Pp = [dx / 2, H], Qq = [-dx / 2, 0], u = [c, s];
+  const pts: Record<string, number[]> = { _P: P(Pp[0], Pp[1]), _Q: P(Qq[0], Qq[1]), _l1: P(-4, H), _l2: P(4, H), _m1: P(-4, 0), _m2: P(4, 0),
+    _Pu: P(Pp[0] + u[0] * 1.6, Pp[1] + u[1] * 1.6), _Qd: P(Qq[0] - u[0] * 1.6, Qq[1] - u[1] * 1.6), _Pr: P(Pp[0] + 1.6, H), _Pl: P(Pp[0] - 1.6, H), _Qr: P(Qq[0] + 1.6, 0), _Ql: P(Qq[0] - 1.6, 0) };
+  const items: any[] = [{ k: 'line', p: ['_l1', '_l2'] }, { k: 'line', p: ['_m1', '_m2'] }, { k: 'line', p: ['_Qd', '_Pu'] }, { k: 'par', p: ['_l1', '_l2'] }, { k: 'par', p: ['_m1', '_m2'] },
+    { k: 'text', at: [-4.5, H], s: 'l' }, { k: 'text', at: [-4.5, 0], s: 'm' }];
+  for (const [at, pos, lab] of labs) { // at 0: 위 교점 P, 1: 아래 교점 Q
+    const O = at ? '_Q' : '_P', R = at ? '_Qr' : '_Pr', Lf = at ? '_Ql' : '_Pl', U = at ? '_P' : '_Pu', D = at ? '_Qd' : '_Q';
+    const ray = [R, U, Lf, D], half = pos % 2 ? (180 - a) / 2 : a / 2, bis = [half, a + half, 180 + half, 180 + a + half][pos] * Math.PI / 180;
+    const rr = Math.min(3, 1.3 / Math.sin(half * Math.PI / 180)), c0 = at ? Qq : Pp; // 이름표는 두 반직선에서 떨어진 이등분선 위에
+    items.push({ k: 'angle', p: [ray[pos], O, ray[(pos + 1) % 4]] }, { k: 'text', at: P(c0[0] + rr * Math.cos(bis), c0[1] + rr * Math.sin(bis)), s: lab });
+  }
+  return shape(pts, items);
+}
+const angOf = (a: number, pos: number) => (pos % 2 === 0 ? a : 180 - a);
+function relName(p1: number, p2: number) { // P의 p1 자리와 Q의 p2 자리
+  if (p1 === p2) return '동위각';
+  if ((p1 === 2 && p2 === 0) || (p1 === 3 && p2 === 1)) return '엇각';
+  if ((p1 === 2 && p2 === 1) || (p1 === 3 && p2 === 0)) return '같은 쪽 안쪽 각(합이 180°)';
+  return '';
+}
+G['mb-7'] = (r) => { // 동위각·엇각으로 각 구하기
+  const a = ri(r, 7, 16) * 5, p1 = ri(r, 0, 3), p2 = ri(r, 0, 3), g = angOf(a, p1), ans = angOf(a, p2), rel = relName(p1, p2);
+  return { ...build(r, { text: `그림에서 ${M('l')} ∥ ${M('m')}일 때, ${M('∠x')}의 크기는?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(180 - ans), note: ans === g ? '크기가 같은 각인데 180°에서 뺌 (동위각·엇각은 크기가 같음)' : '합이 180°가 되는 각인데 크기가 같다고 봄' }],
+    fill: () => q(5 * ri(r, 4, 32)), fmt: degF, order: 'asc',
+    explain: `${rel ? `주어진 각과 ∠x는 ${rel}` : '맞꼭지각과 동위각을 차례로 이용'} → ${ans === g ? `${M(`∠x = ${g}°`)} (크기가 같음)` : `${M(`∠x = 180° − ${g}° = ${ans}°`)}`}` }),
+    fig: parFig(a, [[0, p1, `${g}°`], [1, p2, 'x']]) };
+};
+G['mb-9'] = (r) => { // 평행선에서 식으로 된 두 각
+  for (;;) {
+    const p1 = pick(r, [2, 3]), same = r() < 0.5, p2 = same ? (p1 === 2 ? 0 : 1) : (p1 === 2 ? 1 : 0), a = ri(r, 7, 16) * 5, A1 = angOf(a, p1), A2 = angOf(a, p2);
+    const s1 = ri(r, 2, 5), s2 = ri(r, 2, 5), x = ri(r, 6, 30), c1 = A1 - s1 * x, c2 = A2 - s2 * x; if (s1 === s2 || !c1 || !c2 || Math.abs(c1) > 60 || Math.abs(c2) > 60) continue;
+    const e1 = `(${lin1(s1, c1)})°`, e2 = `(${lin1(s2, c2)})°`, w: Opt[] = [];
+    if (same) { if (intQ(180 - c1 - c2, s1 + s2) && (180 - c1 - c2) / (s1 + s2) > 0) w.push({ v: q((180 - c1 - c2) / (s1 + s2)), note: '엇각인데 합이 180°라고 봄 (엇각은 크기가 같음)' }); }
+    else if (intQ(c2 - c1, s1 - s2) && (c2 - c1) / (s1 - s2) > 0) w.push({ v: q((c2 - c1) / (s1 - s2)), note: '같은 쪽 안쪽 각인데 크기가 같다고 봄 (합이 180°)' });
+    w.push({ v: q(A1), note: 'x 대신 각의 크기를 답함' });
+    return { ...build(r, { text: `그림에서 ${M('l')} ∥ ${M('m')}일 때, ${M('x')}의 값은?`, correct: { v: q(x) }, wrongs: w,
+      fill: nearInt(r, x, 6), fmt: intF, order: 'asc',
+      explain: same ? `두 각은 엇각 → 크기가 같음: ${M(`${lin1(s1, c1)} = ${lin1(s2, c2)}`)} → ${M(`x = ${x}`)}` : `두 각은 같은 쪽 안쪽 각 → 합이 180°: ${M(`(${lin1(s1, c1)}) + (${lin1(s2, c2)}) = 180`)} → ${M(`x = ${x}`)}` }),
+      fig: parFig(a, [[0, p1, e1.replace(/ /g, '')], [1, p2, e2.replace(/ /g, '')]]) };
+  }
+};
+G['mb-8'] = (r) => { // 평행선 사이에서 꺾인 선
+  const a = ri(r, 5, 13) * 5; let b: number; do { b = ri(r, 5, 13) * 5; } while (b === a);
+  const x = a + b;
+  const ca = 1 / Math.tan(a * Math.PI / 180), cb = 1 / Math.tan(b * Math.PI / 180), Pp = [ca, 1], Bb = [ca - cb, 0];
+  const lo = Math.min(0, Bb[0]) - 2, hi = Math.max(Pp[0], 0) + 2;
+  return { ...build(r, { text: `그림에서 ${M('l')} ∥ ${M('m')}일 때, ${M('∠x')}의 크기는?`, correct: { v: q(x) },
+    wrongs: [{ v: q(180 - x), note: '꺾인 각의 반대쪽(180°에서 뺀 각)을 구함' }, { v: q(Math.abs(a - b)), note: '두 각의 차를 구함 (꺾인 점을 지나는 평행선을 그으면 합)' }, { v: q(360 - x) }],
+    fill: () => q(5 * ri(r, 6, 34)), fmt: degF, order: 'asc', explain: `꺾인 점을 지나고 ${M('l')}, ${M('m')}에 평행한 직선을 그으면 엇각이 생겨요 → ${M(`∠x = ${a}° + ${b}° = ${x}°`)}` }),
+    fig: shape({ _A: P(0, 2), _P: P(Pp[0], Pp[1]), _B: P(Bb[0], 0), _l1: P(lo, 2), _l2: P(hi, 2), _m1: P(lo, 0), _m2: P(hi, 0), _Ar: P(1.5, 2), _Br: P(Bb[0] + 1.5, 0) }, [
+      { k: 'line', p: ['_l1', '_l2'] }, { k: 'line', p: ['_m1', '_m2'] }, { k: 'par', p: ['_l1', '_l2'] }, { k: 'par', p: ['_m1', '_m2'] },
+      { k: 'seg', p: ['_A', '_P'] }, { k: 'seg', p: ['_P', '_B'] }, { k: 'text', at: [lo - 0.4, 2], s: 'l' }, { k: 'text', at: [lo - 0.4, 0], s: 'm' },
+      { k: 'angle', p: ['_P', '_A', '_Ar'], label: `${a}°` }, { k: 'angle', p: ['_Br', '_B', '_P'], label: `${b}°` }, { k: 'angle', p: ['_A', '_P', '_B'], label: 'x' }]) };
+};
+
 // 고정 문항: 생성기를 정해진 seed 로 돌려 문제지의 원래 문항을 만든다(같은 코드면 항상 같은 문제)
 export function makeFixed(id: string, area: string, seed: number) {
   const { _vals, ...rest } = G[id](makeRng(seed)) as any; void _vals;
