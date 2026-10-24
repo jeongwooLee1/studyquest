@@ -1385,7 +1385,7 @@ G['mb-5'] = (r) => { // 모서리와 모서리의 위치 관계
     wrongs: [...others.map((k) => ({ v: q(cnt[k]), note: `${k === '꼬인' ? '꼬인 위치에 있는' : k === '평행' ? '평행한' : '만나는'} 모서리를 셈` })), { v: q(S.edges.length - 1), note: '자기 자신만 빼고 모두 셈' }, { v: q(cnt.평행 + cnt.꼬인), note: '만나지 않는 모서리(평행 + 꼬인)를 모두 셈' }],
     fill: nearInt(r, ans, 3), fmt: ea, order: 'asc', signed: true,
     explain: `모서리 ${nm} 말고 ${S.edges.length - 1}개 중 — 한 점에서 만나는 것 ${cnt.만남}개, 평행한 것 ${cnt.평행}개, 꼬인 위치(만나지도 평행하지도 않음) ${cnt.꼬인}개 → ${ans}개` }),
-    fig: { type: 'solid', kind: n === 4 ? 'cuboid' : 'prism', n, r: 3, h: 4, a: 6, b: 3, c: 4 } };
+    fig: { type: 'solid', kind: n === 4 ? 'cuboid' : 'prism', n, r: 3, h: 4, a: 6, b: 3, c: 4, vlabels: ALPHA.slice(0, 2 * n) } };
 };
 G['mb-10'] = (r) => { // 모서리·면과 면의 위치 관계
   for (;;) {
@@ -1401,7 +1401,7 @@ G['mb-10'] = (r) => { // 모서리·면과 면의 위치 관계
       wrongs: [{ v: q(c.포함), note: '면에 포함되는 모서리를 셈' }, ...(['평행모서리', '수직모서리', '수직면'] as const).filter((k) => k !== ask).map((k) => ({ v: q(c[k]), note: `${k === '평행모서리' ? '평행한 모서리' : k === '수직모서리' ? '수직인 모서리' : '수직인 면'}를 셈` })), { v: q(c.포함 + c[ask]) }],
       fill: nearInt(r, ans, 3), fmt: ea, order: 'asc', signed: true,
       explain: `면 ${fn}에 대해 — 포함된 모서리 ${c.포함}개, 평행한 모서리(면과 만나지 않음) ${c.평행모서리}개, 수직인 모서리 ${c.수직모서리}개, 수직인 면 ${c.수직면}개 → ${ans}개` }),
-      fig: { type: 'solid', kind: n === 4 ? 'cuboid' : 'prism', n, r: 3, h: 4, a: 6, b: 3, c: 4 } };
+      fig: { type: 'solid', kind: n === 4 ? 'cuboid' : 'prism', n, r: 3, h: 4, a: 6, b: 3, c: 4, vlabels: ALPHA.slice(0, 2 * n) } };
   }
 };
 // 공간에서 직선·평면의 위치 관계 (옳은 것 / 옳지 않은 것)
@@ -1477,6 +1477,131 @@ G['mb-8'] = (r) => { // 평행선 사이에서 꺾인 선
       { k: 'seg', p: ['_A', '_P'] }, { k: 'seg', p: ['_P', '_B'] }, { k: 'text', at: [lo - 0.4, 2], s: 'l' }, { k: 'text', at: [lo - 0.4, 0], s: 'm' },
       { k: 'angle', p: ['_P', '_A', '_Ar'], label: `${a}°` }, { k: 'angle', p: ['_Br', '_B', '_P'], label: `${b}°` }, { k: 'angle', p: ['_A', '_P', '_B'], label: 'x' }]) };
 };
+
+// ── 중1 2학기 「작도와 합동」: 작도, 삼각형의 결정 조건, 합동 조건 (작년 도농중 기말 11·13번 유형) ──
+const CIRC_K = ['㉠', '㉡', '㉢', '㉣', '㉤'];
+// 옳은 것/옳지 않은 것 고르기 (참 4개 이상, 거짓 4개 이상인 목록에서)
+function tfPick(r: Rng, T: string[], F: [string, string][], topic: string) {
+  if (r() < 0.5) { const t = pick(r, T), fs4 = shuffle(r, F).slice(0, 4);
+    return build(r, { text: `${topic}에 대한 설명으로 <b>옳은</b> 것은?`, correct: { s: t }, wrongs: fs4.map(([s, why]) => ({ s, note: `옳지 않은 설명을 고름 — ${why}` })), order: 'shuffle',
+      explain: `옳은 것: ${t} / 옳지 않은 것: ${fs4.map(([s, why]) => `「${s.replace(/\.$/, '')}」(${why})`).join(', ')}` }); }
+  const [f, why] = pick(r, F), ts = shuffle(r, T).slice(0, 4);
+  return build(r, { text: `${topic}에 대한 설명으로 <b>옳지 않은</b> 것은?`, correct: { s: f }, wrongs: ts.map((s) => ({ s, note: '옳은 설명을 고름 (옳지 않은 것을 찾는 문제)' })), order: 'shuffle',
+    explain: `「${f.replace(/\.$/, '')}」 → ${why}` });
+}
+G['mc-1'] = (r) => tfPick(r, ['작도할 때는 눈금 없는 자와 컴퍼스만 사용한다.', '눈금 없는 자는 두 점을 이어 선분을 그리거나 선분을 연장할 때 쓴다.', '컴퍼스는 원을 그리거나 선분의 길이를 재어 옮길 때 쓴다.', '두 선분의 길이를 비교할 때는 컴퍼스를 쓴다.'],
+  [['선분의 길이를 잴 때는 눈금 없는 자를 쓴다.', '길이를 재어 옮기는 것은 컴퍼스'], ['각도기로 각의 크기를 재어 같은 크기의 각을 그린다.', '작도에서는 각도기를 쓰지 않음'], ['눈금 있는 자로 선분의 길이를 재어 옮긴다.', '작도에서는 눈금 없는 자만 씀'], ['컴퍼스로 두 점을 지나는 직선을 긋는다.', '직선은 눈금 없는 자로 그음']], '작도');
+// 작도 순서
+const CONS = {
+  angle: { title: '∠XOY와 크기가 같은 각을 반직선 PQ를 한 변으로 하여 작도하려고 합니다.', steps: ['점 O를 중심으로 하는 원을 그려 반직선 OX, OY와의 교점을 각각 A, B라 한다.', '점 P를 중심으로 반지름이 OA인 원을 그려 반직선 PQ와의 교점을 C라 한다.', '컴퍼스로 AB의 길이를 잰다.', '점 C를 중심으로 반지름이 AB인 원을 그려 앞에서 그린 원과의 교점을 D라 한다.', '반직선 PD를 긋는다.'], valid: [[0, 1, 2, 3, 4], [0, 2, 1, 3, 4]] },
+  seg: { title: '선분 AB와 길이가 같은 선분 PQ를 작도하려고 합니다.', steps: ['직선 l을 긋고, 그 위에 점 P를 잡는다.', '컴퍼스로 AB의 길이를 잰다.', '점 P를 중심으로 반지름이 AB인 원을 그려 직선 l과의 교점을 Q라 한다.'], valid: [[0, 1, 2], [1, 0, 2]] },
+};
+function permutations(n: number): number[][] { if (n === 1) return [[0]]; const out: number[][] = []; for (const p of permutations(n - 1)) for (let i = 0; i <= p.length; i++) out.push([...p.slice(0, i), n - 1, ...p.slice(i)]); return out; }
+G['mc-2'] = (r) => {
+  const kind = r() < 0.65 ? 'angle' : 'seg', C = CONS[kind], n = C.steps.length, lab = shuffle(r, Array.from({ length: n }, (_, i) => i)); // lab[step] = 표시 번호
+  const seq = (o: number[]) => o.map((s) => CIRC_K[lab[s]]).join(' → '), key = (o: number[]) => o.join(), valid = C.valid.map(key);
+  const why = (o: number[]) => { const at = (s: number) => o.indexOf(s);
+    if (kind === 'angle') {
+      if (at(4) !== 4) return '반직선 PD를 먼저 그음 (점 D가 아직 없음)';
+      if (at(1) < at(0) || at(2) < at(0)) return '점 A, B를 정하기 전에 OA, AB를 씀';
+      if (at(3) < at(1)) return '점 C를 정하기 전에 C를 중심으로 원을 그림';
+      return '반지름 AB를 재기 전에 원을 그림'; }
+    if (at(2) < at(1)) return '길이를 재기 전에 원을 그림';
+    return '직선과 점 P를 잡기 전에 원을 그림'; };
+  const wrong = shuffle(r, permutations(n).filter((o) => !valid.includes(key(o))));
+  const pickW = [...wrong.filter((o) => o[n - 1] === n - 1).slice(0, 3), ...wrong.filter((o) => o[n - 1] !== n - 1)].slice(0, 4);
+  const listed = Array.from({ length: n }, (_, k) => C.steps[lab.indexOf(k)]).map((s, k) => `${CIRC_K[k]} ${s}`).join('\n');
+  return build(r, { text: `${C.title} 작도 순서로 옳은 것은?\n${listed}`, correct: { s: seq(C.valid[0]) }, wrongs: pickW.map((o) => ({ s: seq(o), note: why(o) })), order: 'shuffle',
+    explain: `${C.valid[0].map((s) => `${CIRC_K[lab[s]]} ${C.steps[s].replace(/\.$/, '')}`).join(' → ')}` });
+};
+// 삼각형의 세 변
+G['mc-3'] = (r) => {
+  let a: number, b: number; do { a = ri(r, 3, 12); b = ri(r, 3, 12); } while (a === b);
+  const lo = Math.abs(a - b), hi = a + b, ans = hi - lo - 1;
+  return build(r, { text: `세 변의 길이가 ${a} cm, ${b} cm, ${M('x')} cm인 삼각형이 있습니다. 자연수 ${M('x')}의 개수는?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(ans + 2), note: `등호를 넣음 (${lo} < x < ${hi} 에서 ${lo}, ${hi}${josa(hi, '은', '는')} 안 됨)` }, { v: q(hi - 1), note: `x < ${hi} 만 생각함 (x > ${lo} 도 필요)` }, { v: q(ans + 1), note: '한쪽 끝을 넣음' }],
+    fill: nearInt(r, ans, 4), fmt: ea, order: 'asc', explain: `삼각형이 되려면 ${M(`|${a} − ${b}| < x < ${a} + ${b}`)} → ${M(`${lo} < x < ${hi}`)} → 자연수 ${lo + 1}부터 ${hi - 1}까지 ${ans}개` });
+};
+G['mc-4'] = (r) => { // 세 변이 될 수 있는/없는 것
+  const ok = () => { for (;;) { const t = [ri(r, 2, 12), ri(r, 2, 12), ri(r, 2, 12)].sort((x, y) => x - y); if (t[2] < t[0] + t[1]) return t; } };
+  const bad = (eqCase: boolean) => { for (;;) { const a = ri(r, 2, 8), b = ri(r, 2, 8), c = eqCase ? a + b : a + b + ri(r, 1, 4); return [a, b, c].sort((x, y) => x - y); } };
+  const s = (t: number[]) => `${t[0]} cm, ${t[1]} cm, ${t[2]} cm`;
+  const can = r() < 0.5, uniq = (gen: () => number[], k: number, have: string[]) => { const out: number[][] = []; for (let i = 0; out.length < k && i < 200; i++) { const t = gen(); if (!have.includes(s(t)) && !out.some((x) => s(x) === s(t))) out.push(t); } return out; };
+  const noteBad = (t: number[]) => (t[2] === t[0] + t[1] ? `가장 긴 변이 나머지 두 변의 합과 같으면 삼각형이 안 됨 (${t[0]} + ${t[1]} = ${t[2]})` : `가장 긴 변이 나머지 두 변의 합보다 김 (${t[0]} + ${t[1]} < ${t[2]})`);
+  if (can) { const c = ok(), b0 = bad(true), ws = [b0, ...uniq(() => bad(r() < 0.4), 3, [s(c), s(b0)])];
+    return build(r, { text: '다음 중 삼각형의 세 변의 길이가 될 수 <b>있는</b> 것은?', correct: { s: s(c) }, wrongs: ws.map((t) => ({ s: s(t), note: noteBad(t) })), order: 'shuffle',
+      explain: `(가장 긴 변) < (나머지 두 변의 합) 이어야 해요 → ${c[0]} + ${c[1]} = ${c[0] + c[1]} > ${c[2]} 이므로 ${s(c)}` }); }
+  const c = bad(r() < 0.6), ws = uniq(ok, 4, [s(c)]);
+  return build(r, { text: '다음 중 삼각형의 세 변의 길이가 될 수 <b>없는</b> 것은?', correct: { s: s(c) }, wrongs: ws.map((t) => ({ s: s(t), note: '삼각형이 되는 세 변을 고름' })), order: 'shuffle',
+    explain: `${s(c)} → ${noteBad(c)}` });
+};
+// 삼각형이 하나로 정해지는 조건
+// 두 변과 끼인각이 아닌 각(SSA): 각을 낀 변 c, 마주 보는 변 a, 예각 A — c·sinA < a < c 이면 삼각형이 정확히 두 개 → 하나로 정해지지 않음
+function ssa(r: Rng): [number, number, number] { for (;;) { const c = ri(r, 5, 12), A = ri(r, 6, 15) * 5, h = c * Math.sin(A * Math.PI / 180); const lo = Math.floor(h + 1e-9) + 1; if (lo < c) return [c, ri(r, lo, c - 1), A]; } } // a = c·sinA 이면 직각삼각형 하나라서 제외
+G['mc-5'] = (r) => {
+  const tri = () => { for (;;) { const t = [ri(r, 3, 10), ri(r, 3, 10), ri(r, 3, 10)]; const m = Math.max(...t); if (2 * m < t[0] + t[1] + t[2]) return t; } };
+  const ang2 = () => { for (;;) { const s = ri(r, 3, 14) * 5, t = ri(r, 3, 14) * 5; if (s + t < 170) return [s, t]; } };
+  const OK = [
+    () => { const [a, b, c] = tri(); return `AB = ${a} cm, BC = ${b} cm, CA = ${c} cm`; },
+    () => `AB = ${ri(r, 3, 10)} cm, BC = ${ri(r, 3, 10)} cm, ∠B = ${ri(r, 3, 24) * 5}°`,
+    () => { const [s, t] = ang2(); return `AB = ${ri(r, 3, 10)} cm, ∠A = ${s}°, ∠B = ${t}°`; },
+    () => { const [s, t] = ang2(); return `BC = ${ri(r, 3, 10)} cm, ∠A = ${s}°, ∠C = ${t}°`; },
+  ];
+  const NO: (() => [string, string])[] = [
+    () => { const [c, a, A] = ssa(r); return [`AB = ${c} cm, BC = ${a} cm, ∠A = ${A}°`, '∠A는 AB와 BC의 끼인각이 아님 (삼각형이 두 개 그려짐)']; },
+    () => { const [s, t] = ang2(); return [`∠A = ${s}°, ∠B = ${t}°, ∠C = ${180 - s - t}°`, '세 각만으로는 크기가 정해지지 않음']; },
+    () => { const a = ri(r, 2, 5), b = ri(r, 2, 5); return [`AB = ${a} cm, BC = ${b} cm, CA = ${a + b + ri(r, 0, 3)} cm`, '가장 긴 변이 나머지 두 변의 합보다 작지 않음']; },
+    () => { const s = ri(r, 18, 24) * 5; return [`AB = ${ri(r, 3, 10)} cm, ∠A = ${s}°, ∠B = ${ri(r, Math.ceil((180 - s) / 5), 20) * 5}°`, '두 각의 합이 180° 이상']; },
+  ];
+  if (r() < 0.5) { const c = pick(r, OK)(), ws = NO.map((f) => f());
+    return build(r, { text: '다음 중 △ABC가 하나로 정해지는 것은?', correct: { s: c }, wrongs: ws.map(([s, why]) => ({ s, note: why })), order: 'shuffle',
+      explain: `세 변(SSS), 두 변과 그 끼인각(SAS), 한 변과 그 양 끝 각(ASA, 두 각을 알면 나머지 각도 앎)이 주어지면 하나로 정해져요 → ${c}` }); }
+  const [c, why] = pick(r, NO)();
+  return build(r, { text: '다음 중 △ABC가 하나로 정해지지 <b>않는</b> 것은?', correct: { s: c }, wrongs: OK.map((f) => ({ s: f(), note: '하나로 정해지는 조건을 고름' })), order: 'shuffle',
+    explain: `${c} → ${why}` });
+};
+G['mc-6'] = (r) => { // 한 변과 한 각이 주어질 때 더 필요한 조건
+  const [X, Y, Z] = shuffle(r, ['A', 'B', 'C']), side = (p: string, q2: string) => [p, q2].sort().join(''), [a, opp, t] = ssa(r);
+  const opts = { sas: `${side(Y, Z)} = ${ri(r, 3, 10)} cm`, asa1: `∠${X} = ${ri(r, 6, Math.min(20, (175 - t) / 5)) * 5}°`, asa2: `∠${Z} = ${ri(r, 6, Math.min(20, (175 - t) / 5)) * 5}°`, ssa: `${side(X, Z)} = ${opp} cm` };
+  return build(r, { text: `△ABC에서 ${side(X, Y)} = ${a} cm, ∠${Y} = ${t}°일 때, △ABC가 하나로 정해지기 위해 더 필요한 조건이 될 수 <b>없는</b> 것은?`, correct: { s: opts.ssa },
+    wrongs: [{ s: opts.sas, note: `두 변과 그 끼인각 ∠${Y} (SAS)` }, { s: opts.asa1, note: `한 변 ${side(X, Y)}와 양 끝 각 (ASA)` }, { s: opts.asa2, note: `두 각을 알면 ∠${X}도 알 수 있어 ASA` }], count: 4, order: 'shuffle',
+    explain: `${opts.ssa}를 더하면 두 변 ${side(X, Y)}, ${side(X, Z)}와 끼인각이 아닌 ∠${Y} → 하나로 정해지지 않아요. ${side(Y, Z)}(SAS), ∠${X} 또는 ∠${Z}(ASA)는 가능` });
+};
+// 합동 조건
+G['mc-7'] = (r) => {
+  const cases: [string, string][] = [
+    ['AB = DE, BC = EF, CA = FD', 'SSS'], ['AB = DE, BC = EF, ∠B = ∠E', 'SAS'], ['AC = DF, BC = EF, ∠C = ∠F', 'SAS'], ['BC = EF, ∠B = ∠E, ∠C = ∠F', 'ASA'],
+    ['AB = DE, ∠A = ∠D, ∠C = ∠F', 'ASA'], ['AB = DE, BC = EF, ∠A = ∠D', 'NO'], ['∠A = ∠D, ∠B = ∠E, ∠C = ∠F', 'NO']];
+  const [cond, ans] = pick(r, cases), name = (k: string) => (k === 'NO' ? '합동이라고 할 수 없다' : `${k} 합동`);
+  const why: Record<string, string> = { SSS: '세 변이 각각 같음', SAS: '두 변과 그 끼인각이 같음', ASA: '한 변과 그 양 끝 각이 같음 (두 각이 같으면 나머지 각도 같음)', NO: cond.startsWith('∠') ? '세 각이 같아도 크기는 다를 수 있음' : '같은 각이 두 변의 끼인각이 아님' };
+  const order = ['SSS', 'SAS', 'ASA', 'NO'].map(name);
+  const t = build(r, { text: `△ABC와 △DEF에서 ${cond} 일 때, 두 삼각형이 합동이 되는 조건은? (꼭짓점은 A와 D, B와 E, C와 F가 대응)`, correct: { s: name(ans) },
+    wrongs: ['SSS', 'SAS', 'ASA', 'NO'].filter((k) => k !== ans).map((k) => ({ s: name(k), note: ans === 'NO' ? `${why.NO} — 합동이라고 할 수 없음` : k === 'NO' ? '합동 조건을 찾지 못함' : `${k}가 아니라 ${ans}: ${why[ans]}` })), count: 4, order: 'fixed',
+    explain: `${cond} → ${why[ans]} → ${name(ans)}` });
+  // 보기는 늘 SSS, SAS, ASA, 할 수 없다 순서로
+  const idx = order.map((o) => t.options.indexOf(o) + 1);
+  return { ...t, options: order, answer: idx.indexOf(t.answer) + 1, traps: t.traps.map((x: any) => ({ ...x, a: idx.indexOf(x.a) + 1 })), _vals: order.map(() => null) };
+};
+G['mc-8'] = (r) => { // 합동인 두 삼각형의 대응
+  const al = ri(r, 7, 16) * 5, be = ri(r, 7, 16) * 5, ga = 180 - al - be, p = ri(r, 4, 12), qq = ri(r, 4, 12), askF = r() < 0.6;
+  if (askF) return build(r, { text: `△ABC ≡ △DEF이고 ∠D = ${al}°, ∠B = ${be}°일 때, ∠F의 크기는?`, correct: { v: q(ga) },
+    wrongs: [{ v: q(180 - al), note: `∠B와 대응하는 ∠E(${be}°)를 빼지 않음` }, { v: q(180 - be), note: `∠D(=∠A)를 빼지 않음` }, { v: q(al + be), note: '나머지 각을 구하지 않고 두 각을 더함' }, { v: q(be) }],
+    fill: () => q(5 * ri(r, 4, 30)), fmt: degF, order: 'asc', explain: `대응각은 크기가 같음: ∠A = ∠D = ${al}°, ∠E = ∠B = ${be}° → ∠F = 180° − ${al}° − ${be}° = ${ga}°` });
+  return build(r, { text: `△ABC ≡ △DEF이고 AB = ${p} cm, EF = ${qq} cm일 때, BC의 길이는?`, correct: { v: q(qq) },
+    wrongs: [{ v: q(p), note: '대응변을 잘못 짝지음 (BC의 대응변은 EF)' }, { v: q(p + qq) }, { v: q(Math.abs(p - qq) || 1) }],
+    fill: nearInt(r, qq, 4), fmt: cm, order: 'asc', explain: `A↔D, B↔E, C↔F 이므로 BC의 대응변은 EF → BC = ${qq} cm` });
+};
+G['mc-9'] = (r) => { // 정삼각형 두 개와 SAS (빈칸 채우기)
+  const opt = (a: string, b: string, c: string) => ({ s: `(가) ${a}, (나) ${b}, (다) ${c}` });
+  return { ...build(r, { text: '선분 AB 위의 점 C에 대하여 AC, CB를 각각 한 변으로 하는 정삼각형 ACD, CBE를 그렸습니다. 다음은 △ACE ≡ △DCB임을 보이는 과정입니다. (가)~(다)에 알맞은 것은?\n△ACE와 △DCB에서 AC = (가), CE = CB (정삼각형의 변)\n∠ACE = 60° + ∠DCE = ∠DCB = (나)\n따라서 △ACE ≡ △DCB ( (다) 합동 )',
+    correct: opt('DC', '120°', 'SAS'),
+    wrongs: [{ ...opt('DC', '60°', 'SAS'), note: '∠ACE = 60° + 60° = 120° 를 60°로 봄' }, { ...opt('DC', '120°', 'ASA'), note: '두 변과 그 끼인각이 같으므로 SAS' }, { ...opt('CE', '120°', 'SAS'), note: 'AC와 같은 변은 같은 정삼각형 ACD의 변 DC' }, { ...opt('DC', '120°', 'SSS'), note: '세 변이 아니라 두 변과 끼인각' }],
+    order: 'shuffle', explain: 'AC = DC(정삼각형 ACD), CE = CB(정삼각형 CBE), ∠DCE = 180° − 60° − 60° = 60° 이므로 ∠ACE = ∠DCB = 120° → 두 변과 그 끼인각이 같으므로 SAS 합동' }),
+    fig: shape({ A: P(0, 0), C: P(4, 0), B: P(7, 0), D: P(2, 3.46), E: P(5.5, 2.6) }, [
+      { k: 'seg', p: ['A', 'B'] }, { k: 'poly', p: ['A', 'C', 'D'] }, { k: 'poly', p: ['C', 'B', 'E'] }, { k: 'seg', p: ['A', 'E'] }, { k: 'seg', p: ['D', 'B'] }]) };
+};
+G['mc-10'] = (r) => tfPick(r, ['합동인 두 도형의 넓이는 같다.', '둘레의 길이가 같은 두 정삼각형은 합동이다.', '한 변의 길이가 같은 두 정사각형은 합동이다.', '넓이가 같은 두 원은 합동이다.', '반지름의 길이가 같은 두 원은 합동이다.'],
+  [['넓이가 같은 두 삼각형은 합동이다.', '넓이가 같아도 모양이 다를 수 있음'], ['세 각의 크기가 각각 같은 두 삼각형은 합동이다.', '세 각이 같아도 크기가 다를 수 있음'], ['둘레의 길이가 같은 두 직사각형은 합동이다.', '가로·세로가 다를 수 있음 (예: 1×5와 2×4)'], ['넓이가 같은 두 직사각형은 합동이다.', '예: 2×6과 3×4'], ['한 변의 길이가 같은 두 마름모는 합동이다.', '각의 크기가 다를 수 있음']], '합동인 도형');
 
 // 고정 문항: 생성기를 정해진 seed 로 돌려 문제지의 원래 문항을 만든다(같은 코드면 항상 같은 문제)
 export function makeFixed(id: string, area: string, seed: number) {
