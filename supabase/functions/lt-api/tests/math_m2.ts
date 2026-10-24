@@ -92,4 +92,31 @@ export const M2_SOLID = set('m2-solid', '입체도형', '중1 2학기 「입체�
   ['ms-6', 'msc', 3], ['ms-7', 'msc', 21], ['ms-8', 'msc', 1], ['ms-9', 'msc', 9], ['ms-10', 'msc', 45],
 ]);
 
-export const MATH_M2_SETS = [M2_BASIC, M2_CONS, M2_POLY, M2_CIRC, M2_SOLID];
+export const MATH_M2_SETS_UNITS = [M2_BASIC, M2_CONS, M2_POLY, M2_CIRC, M2_SOLID];
+
+// ── 기출형 종합 모의고사 (작년 도농중 1학년 2학기 기말 순서: 1~6 문자와 식·일차방정식, 7~9·12 기본 도형, 11·13 작도와 합동, 10·14·15 평면도형, 16~19 입체도형, 20 서술형) ──
+// 단원 문제지와 같은 생성기를 다른 seed 로 돌려 만든다(같은 문제가 나오지 않음). 틀린 문제 다시 풀기도 같은 생성기.
+const FIN_AREAS = [
+  { id: 'fa', group: M1, name: '문자와 식·일차방정식', unit: '중1 「문자와 식」·「일차방정식」', why: '기말 앞쪽 1~6번이 이 단원이에요.', study: ['틀린 유형은 「문장을 식으로 · 일차방정식 활용」 문제지로 다시'] },
+  { id: 'fb', group: M1, name: '기본 도형', unit: '중1 「기본 도형」', why: '평행선의 각, 점 사이 거리, 꼬인 위치(7~9·12번)', study: ['틀린 유형은 「기본 도형」 문제지로 다시'] },
+  { id: 'fc', group: M1, name: '작도와 합동', unit: '중1 「작도와 합동」', why: '작도 순서, 합동 조건(11·13번)', study: ['틀린 유형은 「작도와 합동」 문제지로 다시'] },
+  { id: 'fd', group: M1, name: '평면도형', unit: '중1 「평면도형」', why: '대각선, 내각·외각, 부채꼴(10·14·15번)', study: ['틀린 유형은 「다각형」·「원과 부채꼴」 문제지로 다시'] },
+  { id: 'fe', group: M1, name: '입체도형', unit: '중1 「입체도형」', why: '다면체, 회전체, 겉넓이·부피(16~19번)', study: ['틀린 유형은 「입체도형」 문제지로 다시'] },
+];
+const fin = (id: string, title: string, items: [string, string, number][]) => ({
+  id, title, subtitle: '중1 2학기 기말 대비 — 작년 도농중 기출 순서 · 20문항', minutes: 60, practice: true, pace: { [M1]: 150 }, areas: FIN_AREAS,
+  questions: items.map(([qid, area, seed]) => makeFixed(qid, area, seed)),
+});
+export const M2_FINAL1 = fin('m2-final1', '기말 대비 종합 1회', [
+  ['mw-1', 'fa', 1014], ['mw-2', 'fa', 1005], ['mw-3', 'fa', 1019], ['mw-4', 'fa', 1002], ['mw-5', 'fa', 1012], ['mw-7', 'fa', 1002],
+  ['mb-7', 'fb', 1003], ['mb-8', 'fb', 1002], ['mb-2', 'fb', 1011], ['mp-2', 'fd', 1002],
+  ['mc-2', 'fc', 1002], ['mb-5', 'fb', 1011], ['mc-9', 'fc', 1001], ['mp-7', 'fd', 1002], ['mr-6', 'fd', 1010],
+  ['ms-2', 'fe', 1007], ['ms-4', 'fe', 1002], ['ms-9', 'fe', 1013], ['ms-10', 'fe', 1003], ['mr-10', 'fd', 1003],
+]);
+export const M2_FINAL2 = fin('m2-final2', '기말 대비 종합 2회', [
+  ['mw-6', 'fa', 1095], ['mw-2', 'fa', 1024], ['mw-3', 'fa', 1038], ['mw-4', 'fa', 1018], ['mw-8', 'fa', 1009], ['mw-9', 'fa', 1003],
+  ['mb-9', 'fb', 1033], ['mb-3', 'fb', 1007], ['mb-4', 'fb', 1003], ['mp-3', 'fd', 1002],
+  ['mc-5', 'fc', 1009], ['mb-10', 'fb', 1008], ['mc-7', 'fc', 1001], ['mp-9', 'fd', 1004], ['mr-7', 'fd', 1002],
+  ['ms-1', 'fe', 1007], ['ms-5', 'fe', 1836], ['ms-6', 'fe', 1002], ['ms-8', 'fe', 1021], ['gc-10', 'fd', 1004],
+]);
+export const MATH_M2_SETS = [...MATH_M2_SETS_UNITS, M2_FINAL1, M2_FINAL2];
