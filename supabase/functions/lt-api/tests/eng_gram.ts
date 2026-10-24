@@ -1,9 +1,10 @@
 // 중1 영어 문법 문제지 — 출판사와 상관없는 2022 개정 중1 성취기준 문법. 전부 5지선다, practice:true(제출 후 정답·풀이 공개).
 //   eng-m1-past  과거시제 확인(10): 규칙 과거형 철자 · 불규칙 과거형 · was/were · did 부정·의문
 //   eng-m1-modal 조동사·미래 확인(10): can·may · will·be going to · must·have to·should · 조동사 문장 형태
+//   eng-m1-inf   to부정사·동명사 확인(10): want to · enjoy -ing·전치사 뒤 · 둘 다/주어 자리 · ~하기 위해·~할
 // 다시 풀기용 변형 문항은 ENG_VARIANTS[원래 문항 id] 에 3개씩(문항 객체 밖에 두어 정답이 페이지로 나가지 않게, sci_gas.ts 와 같은 방식).
 // 변형 문항 형식: { text, options, answer, traps?, explain } — 원래 문항과 같은 개념·같은 함정 문구, 보기 5개.
-// 표기: 줄바꿈 \n, 강조 <b>…</b>. '$'는 쓰지 않는다. 문항 id 는 세트마다 접두어(과거 'ep-', 조동사 'em-').
+// 표기: 줄바꿈 \n, 강조 <b>…</b>. '$'는 쓰지 않는다. 문항 id 는 세트마다 접두어(과거 'ep-', 조동사 'em-', to부정사 'ei-').
 
 const G = '문법';
 const set = (id: string, title: string, subtitle: string, minutes: number, practice: boolean, areas: any[], questions: any[]) => ({
@@ -160,7 +161,75 @@ export const ENG_M1_MODAL = set('eng-m1-modal', '조동사·미래 확인', '중
     explain: '창문을 열어도 되는지 허락을 구함 → Can I ~? 대답 Sure, go ahead(그럼, 열어).' },
 ]);
 
-export const ENG_GRAM_SETS = [ENG_M1_PAST, ENG_M1_MODAL];
+// ── to부정사·동명사 ──
+const N_TOV = 'want·hope·plan·decide 뒤에는 to + 동사원형';
+const N_ING = 'enjoy·finish·mind·give up 뒤에는 동명사(-ing)';
+const N_TOBASE = 'to 뒤에 동사원형을 쓰지 않음 (to go / to be)';
+const N_BOTH = 'like·love·start·begin 뒤에는 to부정사·동명사 둘 다 쓸 수 있지만 동사원형은 안 됨';
+const N_SUBJ = '주어 자리에 동사원형·과거형을 씀 (Swimming / To swim is ~)';
+const N_PURP = '「~하기 위해」(목적)는 to + 동사원형';
+const N_ADJ = '「~할 (명사)」는 명사 뒤에 to + 동사원형 (something to drink)';
+const N_USE = 'to부정사의 쓰임(~하는 것 / ~하기 위해 / ~할)을 문장 속에서 구분하지 못함';
+const N_PREP = '전치사(at, for, in, about) 뒤에는 동명사(-ing)';
+const N_TENSE = '우리말의 시제(~했다)와 영어 동사의 시제를 맞추지 않음';
+
+const A_TOV = { id: 'i1', group: G, name: 'to부정사를 쓰는 동사', unit: '중1 「to부정사의 명사적 용법」',
+  why: 'want·hope·plan·decide + to부정사는 서술형 영작에 자주 나와요.',
+  study: ['EBS 중학 프리미엄 중1 영어 문법 「to부정사」 강의', 'want / hope / plan / decide + to + 동사원형 으로 내 이야기 문장 4개 쓰기'] };
+const A_GER = { id: 'i2', group: G, name: '동명사를 쓰는 동사·전치사', unit: '중1 「동명사」',
+  why: 'enjoy·finish 뒤 to부정사를 고르는 실수가 어법 문제 단골이에요.',
+  study: ['EBS 중학 프리미엄 중1 영어 문법 「동명사」 강의', 'enjoy / finish / mind / give up + -ing, 전치사(at, for, in) 뒤에도 -ing'] };
+const A_BOTHA = { id: 'i3', group: G, name: '둘 다 되는 동사·주어 자리', unit: '중1 「to부정사·동명사의 쓰임」',
+  why: 'like·start는 둘 다 되고, 문장 맨 앞 주어 자리에는 동명사를 써요.',
+  study: ['EBS 중학 프리미엄 중1 영어 문법 「동명사」 강의', 'Reading books is fun. 처럼 -ing로 시작하는 문장 3개 만들기'] };
+const A_TOUSE = { id: 'i4', group: G, name: 'to부정사 (~하기 위해 · ~할)', unit: '중1 「to부정사의 형용사적·부사적 용법」',
+  why: '독해에서 to부정사를 「~하기 위해」로 읽어야 뜻이 통하는 문장이 많아요.',
+  study: ['EBS 중학 프리미엄 중1 영어 문법 「to부정사의 형용사적·부사적 용법」 강의', 'something to drink(마실 것), went to buy(사기 위해 갔다) 예문 정리'] };
+
+export const ENG_M1_INF = set('eng-m1-inf', 'to부정사·동명사 확인', '중1 영어 문법 · want to / enjoy -ing / ~하기 위해', 12, true,
+  [A_TOV, A_GER, A_BOTHA, A_TOUSE], [
+  { id: 'ei-1', area: 'i1', text: '빈칸에 들어갈 말로 알맞은 것은?\nI hope ______ you again soon.',
+    options: ['to see', 'see', 'seeing', 'to seeing', 'saw'], answer: 1,
+    traps: [{ a: 2, note: N_TOV }, { a: 3, note: N_TOV }, { a: 4, note: N_TOBASE }, { a: 5, note: N_TOV }],
+    explain: 'hope + to + 동사원형 → hope to see.' },
+  { id: 'ei-2', area: 'i2', text: '빈칸에 들어갈 말로 알맞은 것은?\nDid you finish ______ your report?',
+    options: ['write', 'to write', 'wrote', 'to writing', 'writing'], answer: 5,
+    traps: [{ a: 1, note: N_ING }, { a: 2, note: N_ING }, { a: 4, note: N_ING }],
+    explain: 'finish + 동명사(-ing) → finish writing.' },
+  { id: 'ei-3', area: 'i2', text: '다음 중 어법상 <b>틀린</b> 문장은?',
+    options: ['I want to visit Paris.', 'She enjoys reading comics.', 'They decided to stay home.', 'He finished to clean his room.', 'We hope to win the game.'], answer: 4,
+    explain: 'finish 뒤에는 동명사 → He finished cleaning his room.' },
+  { id: 'ei-4', area: 'i3', text: '두 문장의 뜻이 같도록 빈칸에 알맞은 것은?\nI like to swim. = I like ______.',
+    options: ['swim', 'swam', 'swims', 'swimming', 'to swimming'], answer: 4,
+    traps: [{ a: 1, note: N_BOTH }, { a: 5, note: N_TOBASE }],
+    explain: 'like는 to부정사·동명사 둘 다 가능 → like to swim = like swimming.' },
+  { id: 'ei-5', area: 'i3', text: '빈칸에 들어갈 말로 알맞은 것은?\n______ English every day is important.',
+    options: ['Study', 'Studying', 'Studies', 'Studied', 'Be study'], answer: 2,
+    traps: [{ a: 1, note: N_SUBJ }, { a: 3, note: N_SUBJ }, { a: 4, note: N_SUBJ }],
+    explain: '주어 자리(~하는 것은) → 동명사 Studying. 동명사 주어는 단수 취급 → is.' },
+  { id: 'ei-6', area: 'i4', text: '우리말과 같은 뜻이 되도록 빈칸에 알맞은 것은?\n「나는 책을 빌리기 위해 도서관에 갔다.」\nI went to the library ______ a book.',
+    options: ['borrow', 'borrowing', 'for borrow', 'borrowed', 'to borrow'], answer: 5,
+    traps: [{ a: 1, note: N_PURP }, { a: 2, note: N_PURP }, { a: 3, note: N_PURP }],
+    explain: '~하기 위해 = to + 동사원형 → to borrow.' },
+  { id: 'ei-7', area: 'i4', text: '빈칸에 들어갈 말로 알맞은 것은?\nI\'m thirsty. I want something ______.',
+    options: ['drink', 'drinking', 'to drink', 'drank', 'drinks'], answer: 3,
+    traps: [{ a: 1, note: N_ADJ }, { a: 2, note: N_ADJ }],
+    explain: '마실 것 = something + to drink (명사 뒤에서 「~할」).' },
+  { id: 'ei-8', area: 'i4', text: '밑줄 친 부분의 뜻으로 알맞은 것은?\nHe saved money <b>to buy</b> a new bike.',
+    options: ['사기 위해', '사는 것을', '살', '사서 기쁜', '사지 않고'], answer: 1,
+    traps: [{ a: 2, note: N_USE }, { a: 3, note: N_USE }],
+    explain: '새 자전거를 사기 위해 돈을 모았다 → 목적(~하기 위해).' },
+  { id: 'ei-9', area: 'i2', text: '빈칸에 들어갈 말로 알맞은 것은?\nShe is good at ______ pictures.',
+    options: ['draw', 'drawing', 'to draw', 'drew', 'draws'], answer: 2,
+    traps: [{ a: 1, note: N_PREP }, { a: 3, note: N_PREP }],
+    explain: '전치사 at 뒤에는 동명사 → good at drawing(그림 그리는 것을 잘한다).' },
+  { id: 'ei-10', area: 'i1', text: '우리말을 영어로 바르게 옮긴 것은?\n「나는 매일 운동하기로 결심했다.」',
+    options: ['I decided exercising every day.', 'I decided to exercise every day.', 'I decided exercise every day.', 'I decided to exercising every day.', 'I decide to exercise every day.'], answer: 2,
+    traps: [{ a: 1, note: N_TOV }, { a: 3, note: N_TOV }, { a: 4, note: N_TOBASE }, { a: 5, note: N_TENSE }],
+    explain: 'decide + to + 동사원형, 결심했다(과거) → decided to exercise.' },
+]);
+
+export const ENG_GRAM_SETS = [ENG_M1_PAST, ENG_M1_MODAL, ENG_M1_INF];
 
 type V = { text: string; options: string[]; answer: number; traps?: { a: number; note: string }[]; explain: string };
 export const ENG_VARIANTS: Record<string, V[]> = {
@@ -350,5 +419,85 @@ export const ENG_VARIANTS: Record<string, V[]> = {
       traps: [{ a: 2, note: N_PERM }], explain: '컴퓨터를 써도 되는지 허락을 구함 → Can I ~? 대답도 you can\'t.' },
     { text: '대화의 빈칸에 들어갈 말로 알맞은 것은?\nA: Mom, ______ I go out and play?\nB: Yes, you may. But come back by six.', options: ['Must', 'Am', 'Did', 'Have', 'May'], answer: 5,
       traps: [{ a: 1, note: N_PERM }], explain: '나가 놀아도 되는지 허락을 구함 → May I ~? 대답 Yes, you may.' },
+  ],
+  'ei-1': [
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nShe decided ______ a cooking class.', options: ['take', 'taking', 'to taking', 'to take', 'took'], answer: 4,
+      traps: [{ a: 1, note: N_TOV }, { a: 2, note: N_TOV }, { a: 3, note: N_TOBASE }, { a: 5, note: N_TOV }], explain: 'decide + to + 동사원형 → decided to take.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nWe plan ______ to Jeju this winter.', options: ['travel', 'traveling', 'to travel', 'to traveling', 'traveled'], answer: 3,
+      traps: [{ a: 1, note: N_TOV }, { a: 2, note: N_TOV }, { a: 4, note: N_TOBASE }, { a: 5, note: N_TOV }], explain: 'plan + to + 동사원형 → plan to travel.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nMy brother wants ______ a famous singer.', options: ['be', 'being', 'is', 'to being', 'to be'], answer: 5,
+      traps: [{ a: 1, note: N_TOV }, { a: 2, note: N_TOV }, { a: 3, note: N_TOV }, { a: 4, note: N_TOBASE }], explain: 'want + to + 동사원형 → wants to be.' },
+  ],
+  'ei-2': [
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nMy dad enjoys ______ in the mountains.', options: ['hike', 'hiking', 'to hike', 'hiked', 'to hiking'], answer: 2,
+      traps: [{ a: 1, note: N_ING }, { a: 3, note: N_ING }, { a: 5, note: N_ING }], explain: 'enjoy + 동명사 → enjoys hiking.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nWould you mind ______ the door?', options: ['open', 'to open', 'opening', 'to opening', 'opened'], answer: 3,
+      traps: [{ a: 1, note: N_ING }, { a: 2, note: N_ING }, { a: 4, note: N_ING }], explain: 'mind + 동명사 → Would you mind opening the door?(문 좀 열어 줄래?)' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nHe gave up ______ fast food.', options: ['eating', 'eat', 'to eat', 'ate', 'to eating'], answer: 1,
+      traps: [{ a: 2, note: N_ING }, { a: 3, note: N_ING }, { a: 5, note: N_ING }], explain: 'give up + 동명사 → gave up eating(먹는 것을 그만두었다).' },
+  ],
+  'ei-3': [
+    { text: '다음 중 어법상 <b>틀린</b> 문장은?', options: ['I enjoy to play badminton.', 'She wants to learn Chinese.', 'He finished doing his homework.', 'We plan to have a party.', 'They gave up waiting for the bus.'], answer: 1,
+      explain: 'enjoy 뒤에는 동명사 → I enjoy playing badminton.' },
+    { text: '다음 중 어법상 <b>틀린</b> 문장은?', options: ['Mina hopes to be a doctor.', 'I decided learning the guitar.', 'He enjoys watching movies.', 'Did you finish eating?', 'We want to go home.'], answer: 2,
+      explain: 'decide 뒤에는 to부정사 → I decided to learn the guitar.' },
+    { text: '다음 중 어법상 <b>틀린</b> 문장은?', options: ['They plan to visit their aunt.', 'I enjoy cooking with my mom.', 'She wants buying a new bag.', 'He finished reading the book.', 'We hope to see you again.'], answer: 3,
+      explain: 'want 뒤에는 to부정사 → She wants to buy a new bag.' },
+  ],
+  'ei-4': [
+    { text: '두 문장의 뜻이 같도록 빈칸에 알맞은 것은?\nIt began to snow. = It began ______.', options: ['snow', 'snowing', 'snowed', 'to snowing', 'snows'], answer: 2,
+      traps: [{ a: 1, note: N_BOTH }, { a: 4, note: N_TOBASE }], explain: 'begin은 둘 다 가능 → began to snow = began snowing.' },
+    { text: '두 문장의 뜻이 같도록 빈칸에 알맞은 것은?\nShe loves cooking. = She loves ______.', options: ['to cook', 'cook', 'cooked', 'to cooking', 'cooks'], answer: 1,
+      traps: [{ a: 2, note: N_BOTH }, { a: 4, note: N_TOBASE }], explain: 'love는 둘 다 가능 → loves cooking = loves to cook.' },
+    { text: '두 문장의 뜻이 같도록 빈칸에 알맞은 것은?\nThey started to dance. = They started ______.', options: ['dance', 'danced', 'to dancing', 'dances', 'dancing'], answer: 5,
+      traps: [{ a: 1, note: N_BOTH }, { a: 3, note: N_TOBASE }], explain: 'start는 둘 다 가능 → started to dance = started dancing.' },
+  ],
+  'ei-5': [
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\n______ books is my hobby.', options: ['Read', 'Reads', 'Reading', 'Readed', 'Be read'], answer: 3,
+      traps: [{ a: 1, note: N_SUBJ }, { a: 2, note: N_SUBJ }, { a: 4, note: N_SUBJ }], explain: '주어 자리 → 동명사 Reading books(책 읽는 것은).' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\n______ breakfast is good for your health.', options: ['Eat', 'Eats', 'Ate', 'Eating', 'Be eat'], answer: 4,
+      traps: [{ a: 1, note: N_SUBJ }, { a: 2, note: N_SUBJ }, { a: 3, note: N_SUBJ }], explain: '주어 자리 → 동명사 Eating breakfast(아침 먹는 것은).' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\n______ in the river can be dangerous.', options: ['Swimming', 'Swim', 'Swims', 'Swam', 'Be swim'], answer: 1,
+      traps: [{ a: 2, note: N_SUBJ }, { a: 3, note: N_SUBJ }, { a: 4, note: N_SUBJ }], explain: '주어 자리 → 동명사 Swimming in the river(강에서 수영하는 것은).' },
+  ],
+  'ei-6': [
+    { text: '우리말과 같은 뜻이 되도록 빈칸에 알맞은 것은?\n「그녀는 버스를 타기 위해 일찍 일어났다.」\nShe got up early ______ the bus.', options: ['catch', 'to catch', 'catching', 'caught', 'for catch'], answer: 2,
+      traps: [{ a: 1, note: N_PURP }, { a: 3, note: N_PURP }, { a: 5, note: N_PURP }], explain: '~하기 위해 = to + 동사원형 → to catch.' },
+    { text: '우리말과 같은 뜻이 되도록 빈칸에 알맞은 것은?\n「우리는 그를 돕기 위해 거기에 갔다.」\nWe went there ______ him.', options: ['help', 'helping', 'to help', 'for help', 'helped'], answer: 3,
+      traps: [{ a: 1, note: N_PURP }, { a: 2, note: N_PURP }, { a: 4, note: N_PURP }], explain: '~하기 위해 = to + 동사원형 → to help.' },
+    { text: '우리말과 같은 뜻이 되도록 빈칸에 알맞은 것은?\n「민수는 축구를 하려고 공원에 갔다.」\nMinsu went to the park ______ soccer.', options: ['to play', 'play', 'playing', 'played', 'for play'], answer: 1,
+      traps: [{ a: 2, note: N_PURP }, { a: 3, note: N_PURP }, { a: 5, note: N_PURP }], explain: '~하려고(목적) = to + 동사원형 → to play.' },
+  ],
+  'ei-7': [
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nI have a lot of homework ______ today.', options: ['do', 'to do', 'doing', 'did', 'does'], answer: 2,
+      traps: [{ a: 1, note: N_ADJ }, { a: 3, note: N_ADJ }], explain: '오늘 할 숙제 = homework + to do.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nThere are many places ______ in Seoul.', options: ['visit', 'visiting', 'visited', 'visits', 'to visit'], answer: 5,
+      traps: [{ a: 1, note: N_ADJ }, { a: 2, note: N_ADJ }], explain: '서울에는 방문할 곳이 많다 = places + to visit.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nDo you have time ______ with me?', options: ['talk', 'talking', 'talked', 'to talk', 'talks'], answer: 4,
+      traps: [{ a: 1, note: N_ADJ }, { a: 2, note: N_ADJ }], explain: '나랑 이야기할 시간 = time + to talk.' },
+  ],
+  'ei-8': [
+    { text: '밑줄 친 부분의 뜻으로 알맞은 것은?\nI want <b>to buy</b> a new bike.', options: ['사기 위해', '사는 것을', '살', '사서 기쁜', '사지 않고'], answer: 2,
+      traps: [{ a: 1, note: N_USE }, { a: 3, note: N_USE }], explain: 'want의 목적어 → 새 자전거 사는 것을 원한다(~하는 것).' },
+    { text: '밑줄 친 부분의 뜻으로 알맞은 것은?\nI need a pen <b>to write</b> with.', options: ['쓰기 위해서는', '쓰는 것을', '(가지고) 쓸', '써서 기쁜', '쓰지 않고'], answer: 3,
+      traps: [{ a: 1, note: N_USE }, { a: 2, note: N_USE }], explain: 'a pen을 꾸밈 → (가지고) 쓸 펜이 필요하다(~할).' },
+    { text: '밑줄 친 부분의 뜻으로 알맞은 것은?\nShe went to the store <b>to get</b> some milk.', options: ['사 오기 위해', '사 오는 것을', '사 올', '사 와서 기쁜', '사 오지 않고'], answer: 1,
+      traps: [{ a: 2, note: N_USE }, { a: 3, note: N_USE }], explain: '우유를 사 오기 위해 가게에 갔다 → 목적(~하기 위해).' },
+  ],
+  'ei-9': [
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nThank you for ______ me.', options: ['help', 'to help', 'helping', 'helped', 'helps'], answer: 3,
+      traps: [{ a: 1, note: N_PREP }, { a: 2, note: N_PREP }], explain: '전치사 for 뒤에는 동명사 → Thank you for helping me.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nI\'m interested in ______ robots.', options: ['make', 'to make', 'made', 'makes', 'making'], answer: 5,
+      traps: [{ a: 1, note: N_PREP }, { a: 2, note: N_PREP }], explain: '전치사 in 뒤에는 동명사 → interested in making robots.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nHow about ______ a walk after dinner?', options: ['taking', 'take', 'to take', 'took', 'takes'], answer: 1,
+      traps: [{ a: 2, note: N_PREP }, { a: 3, note: N_PREP }], explain: 'How about 뒤에는 동명사 → How about taking a walk?(산책하는 게 어때?)' },
+  ],
+  'ei-10': [
+    { text: '우리말을 영어로 바르게 옮긴 것은?\n「그는 피아노 치는 것을 즐긴다.」', options: ['He enjoys to play the piano.', 'He enjoy playing the piano.', 'He enjoys playing the piano.', 'He enjoys play the piano.', 'He enjoys to playing the piano.'], answer: 3,
+      traps: [{ a: 1, note: N_ING }, { a: 4, note: N_ING }, { a: 5, note: N_ING }], explain: 'enjoy + 동명사, 주어 He → enjoys playing.' },
+    { text: '우리말을 영어로 바르게 옮긴 것은?\n「우리는 내년에 캐나다를 방문할 계획이다.」', options: ['We plan visiting Canada next year.', 'We plan visit Canada next year.', 'We plan to visiting Canada next year.', 'We plan to visit Canada next year.', 'We plans to visit Canada next year.'], answer: 4,
+      traps: [{ a: 1, note: N_TOV }, { a: 2, note: N_TOV }, { a: 3, note: N_TOBASE }], explain: 'plan + to + 동사원형 → plan to visit.' },
+    { text: '우리말을 영어로 바르게 옮긴 것은?\n「나는 숙제하는 것을 끝냈다.」', options: ['I finished doing my homework.', 'I finished to do my homework.', 'I finished do my homework.', 'I finish doing my homework.', 'I finished to doing my homework.'], answer: 1,
+      traps: [{ a: 2, note: N_ING }, { a: 3, note: N_ING }, { a: 4, note: N_TENSE }, { a: 5, note: N_ING }], explain: 'finish + 동명사, 끝냈다(과거) → finished doing.' },
   ],
 };
