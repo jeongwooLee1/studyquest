@@ -2059,6 +2059,106 @@ G['hq-10'] = (r) => { // 마주 보는 두 각의 합 → 다른 각
     fill: () => q(5 * ri(r, 4, 32)), fmt: degF, order: 'asc', explain: `마주 보는 두 각은 같으므로 한 각 = ${S}° ÷ 2 = ${x}° → 이웃한 각 = 180° − ${x}° = ${ans}°` });
 };
 
+// ── 다희(초4) 4-2 「꺾은선그래프」: 읽기, 변화 해석, 물결선, 알맞은 그래프 ──
+// 그래프는 shape 로 그린다: 가로 칸 2, 세로 눈금 한 칸 0.9, 가로 글자는 오전·오후를 빼고 짧게. 점은 눈금선 위(읽기 문제는 값이 정확히 읽히게).
+type GData = { title: string; unitS: string; xs: string[]; vs: number[]; step: number; base: number };
+const GTOPIC = [
+  { title: '강낭콩의 키', unitS: 'cm', xs: ['1일', '3일', '5일', '7일', '9일', '11일'], up: true },
+  { title: '교실의 온도', unitS: '°C', xs: ['오전 9시', '10시', '11시', '12시', '오후 1시', '2시'], up: false },
+  { title: '운동장에 나온 학생 수', unitS: '명', xs: ['월', '화', '수', '목', '금', '토'], up: false },
+  { title: '모은 칭찬 붙임딱지', unitS: '장', xs: ['3월', '4월', '5월', '6월', '7월', '8월'], up: true },
+];
+function gData(r: Rng, n = 5): GData {
+  const T = pick(r, GTOPIC), step = pick(r, [1, 2, 5]), vs: number[] = [];
+  let v = ri(r, 2, 6) * step + (T.up ? 0 : ri(r, 4, 8) * step);
+  for (let i = 0; i < n; i++) { vs.push(v); v += (T.up ? ri(r, 0, 4) : ri(r, -3, 3)) * step; if (v < step) v = step; }
+  if (new Set(vs).size < 4) return gData(r, n);
+  const base = Math.max(0, (Math.floor(Math.min(...vs) / step) - 1) * step);
+  return { title: T.title, unitS: T.unitS, xs: T.xs.slice(0, n), vs, step, base };
+}
+function gFig(d: GData, wavy = d.base > 0) {
+  const top = Math.max(...d.vs) + d.step, Y = (v: number) => ((v - d.base) / d.step) * 0.9, n = d.vs.length;
+  const pts: Record<string, number[]> = { _o: P(0, 0), _xe: P(2 * n, 0), _ye: P(0, Y(top) + 0.3) }, items: any[] = [{ k: 'seg', p: ['_o', '_xe'] }, { k: 'seg', p: ['_o', '_ye'] }];
+  for (let v = d.base, k = 0; v <= top; v += d.step, k++) {
+    pts['_g' + k] = P(0, Y(v)); pts['_h' + k] = P(2 * n, Y(v));
+    if (k) items.push({ k: 'seg', p: ['_g' + k, '_h' + k], dash: true });
+    const every = (top - d.base) / d.step > 10 ? 2 : 1; if (k % every === 0) items.push({ k: 'text', at: [-0.7, Y(v)], s: String(v) });
+  }
+  d.vs.forEach((v, i) => { pts['_p' + i] = P(2 * i + 1, Y(v)); items.push({ k: 'dot', p: '_p' + i }, { k: 'text', at: [2 * i + 1, -0.5], s: d.xs[i].replace(/^오[전후] /, '') }); if (i) items.push({ k: 'seg', p: ['_p' + (i - 1), '_p' + i] }); });
+  if (wavy) items.push({ k: 'text', at: [0, 0.15], s: '≈' });
+  items.push({ k: 'text', at: [n, Y(top) + 0.8], s: `${d.title}(${d.unitS})` });
+  return shape(pts, items);
+}
+const tight = (d: GData) => ['°C', '명', '장'].includes(d.unitS), uS = (d: GData) => (tight(d) ? d.unitS : ' ' + d.unitS), uJ = (d: GData, b: string, nb: string) => (d.unitS === '명' || d.unitS === '장' ? b : nb); // 단위를 읽은 소리의 받침
+const tJ = (d: GData, b: string, nb: string) => josa(d.title.slice(-1), b, nb);
+const gu = (d: GData) => unit(tight(d) ? d.unitS : ` ${d.unitS}`);
+G['hg-1'] = (r) => { // 값 읽기
+  const d = gData(r), i = ri(r, 0, d.vs.length - 1), v = d.vs[i], cells = (v - d.base) / d.step;
+  return { ...build(r, { text: `꺾은선그래프에서 ${d.xs[i]}의 ${d.title}${tJ(d, '은', '는')} 얼마인가요? (세로 눈금 한 칸은 ${d.step}${uS(d)})`, correct: { v: q(v) },
+    wrongs: [...(cells !== v ? [{ v: q(cells), note: '눈금 칸 수를 값으로 읽음 (한 칸의 크기를 곱해야 함)' }] : []), ...(i > 0 && d.vs[i - 1] !== v ? [{ v: q(d.vs[i - 1]), note: '옆 점의 값을 읽음' }] : []), ...(i < d.vs.length - 1 && d.vs[i + 1] !== v ? [{ v: q(d.vs[i + 1]), note: '옆 점의 값을 읽음' }] : [])],
+    fill: () => q(Math.max(d.step, v + (r() < 0.5 ? -1 : 1) * ri(r, 1, 5) * d.step)), fmt: gu(d), order: 'asc', explain: `${d.xs[i]}의 점은 ${d.base}에서 ${cells}칸 위 → ${d.base} + ${cells} × ${d.step} = ${v}` }), fig: gFig(d) };
+};
+// 보기를 시간 순서로 다시 놓기 (build 의 fixed 는 정답을 맨 앞에 둠)
+function timeOrder(t: any, opts: { s: string }[]) { const order = opts.map((o) => o.s).filter((s) => t.options.includes(s)), idx = order.map((o) => t.options.indexOf(o) + 1);
+  return { ...t, options: order, answer: idx.indexOf(t.answer) + 1, traps: t.traps.map((x: any) => ({ ...x, a: idx.indexOf(x.a) + 1 })), _vals: order.map(() => null) }; }
+const between = (d: GData, i: number) => `${d.xs[i]}과 ${d.xs[i + 1]} 사이`.replace(/(\S+)과 /, (m, a) => `${a}${josa(a.replace(/[^0-9가-힣]/g, '').slice(-1) || '0', '과', '와')} `);
+G['hg-2'] = (r) => { // 가장 많이 변한 때
+  for (;;) { const d = gData(r), diffs = d.vs.slice(1).map((v, i) => Math.abs(v - d.vs[i])), mx = Math.max(...diffs); if (diffs.filter((x) => x === mx).length > 1 || mx === 0) continue;
+    const i = diffs.indexOf(mx), maxPt = d.vs.indexOf(Math.max(...d.vs));
+    const opts = d.vs.slice(1).map((_, k) => ({ s: between(d, k), k }));
+    const lure = Math.min(Math.max(maxPt - 1, 0), d.vs.length - 2);
+    return { ...timeOrder(build(r, { text: `꺾은선그래프에서 ${d.title}의 변화가 가장 큰 때는 언제인가요?`, correct: { s: opts[i].s },
+      wrongs: opts.filter((o) => o.k !== i).map((o) => ({ s: o.s, note: o.k === lure ? '값이 가장 큰 때를 고름 (선이 가장 많이 기울어진 곳을 찾아야 함)' : undefined })), count: Math.min(5, d.vs.length - 1), order: 'fixed',
+      explain: `선분이 가장 많이 기울어진 곳: ${opts[i].s} (${d.vs[i]} → ${d.vs[i + 1]}, ${mx}만큼 변함)` }), opts), fig: gFig(d) }; }
+};
+G['hg-3'] = (r) => { // 두 때의 차
+  for (;;) { const d = gData(r), i = ri(r, 0, d.vs.length - 2), j = ri(r, i + 1, d.vs.length - 1), a = d.vs[i], b = d.vs[j]; if (a === b) continue; const ans = Math.abs(b - a);
+    return { ...build(r, { text: `꺾은선그래프에서 ${d.xs[i]}${josa(d.xs[i].replace(/[^0-9가-힣]/g, '').slice(-1) || '0', '과', '와')} ${d.xs[j]}의 ${d.title}의 차는 얼마인가요?`, correct: { v: q(ans) },
+      wrongs: [{ v: q(a + b), note: '차 대신 합을 구함' }, { v: q(Math.abs(b - a) / d.step === ans ? ans + d.step : Math.abs(b - a) / d.step), note: '눈금 칸 수의 차를 답함 (한 칸의 크기를 곱해야 함)' }, { v: q(Math.max(a, b)), note: '큰 쪽 값만 읽음' }],
+      fill: () => q(Math.max(d.step, ans + (r() < 0.5 ? -1 : 1) * ri(r, 1, 5) * d.step)), fmt: gu(d), order: 'asc', explain: `${d.xs[i]}: ${a}, ${d.xs[j]}: ${b} → ${Math.max(a, b)} − ${Math.min(a, b)} = ${ans}` }), fig: gFig(d) }; }
+};
+G['hg-4'] = (r) => { // 눈금 한 칸의 크기
+  const d = gData(r), k = ri(r, 3, 6), span = d.step * k;
+  return build(r, { text: `꺾은선그래프의 세로 눈금 ${k}칸이 ${span}${uS(d)}${uJ(d, '을', '를')} 나타냅니다. 세로 눈금 한 칸은 얼마를 나타내나요?`, correct: { v: q(d.step) },
+    wrongs: [{ v: q(span), note: '여러 칸의 값을 그대로 씀' }, { v: q(span * k), note: '나누지 않고 곱함' }, ...(span % 2 === 0 && span / 2 !== d.step ? [{ v: q(span / 2), note: '2로 나눔 (칸 수로 나눠야 함)' }] : [])],
+    fill: nearInt(r, d.step, 3), fmt: gu(d), order: 'asc', explain: `${span} ÷ ${k} = ${d.step}` });
+};
+G['hg-5'] = (r) => { // 중간 시각 값 예상
+  for (;;) { const d = gData(r), i = ri(r, 0, d.vs.length - 2), a = d.vs[i], b = d.vs[i + 1]; if (a === b || (a + b) % 2 || !['강낭콩의 키', '교실의 온도'].includes(d.title)) continue; const m = (a + b) / 2;
+    return { ...build(r, { text: `꺾은선그래프에서 ${d.xs[i]}${josa(d.xs[i].replace(/[^0-9가-힣]/g, '').slice(-1) || '0', '과', '와')} ${d.xs[i + 1]}의 한가운데 때의 ${d.title}${tJ(d, '은', '는')} 약 얼마였을까요?`, correct: { v: q(m) },
+      wrongs: [{ v: q(a), note: '앞의 값을 그대로 씀 (두 점을 이은 선분의 가운데를 읽음)' }, { v: q(b), note: '뒤의 값을 그대로 씀' }, { v: q(a + b), note: '두 값을 더하기만 함 (÷ 2)' }],
+      fill: () => q(Math.max(1, m + (r() < 0.5 ? -1 : 1) * ri(r, 1, 5) * d.step)), fmt: gu(d), order: 'asc', explain: `두 점을 이은 선분의 가운데 → (${a} + ${b}) ÷ 2 = ${m}` }), fig: gFig(d) }; }
+};
+G['hg-6'] = (r) => { // 줄어든 때 / 늘어난 때
+  for (;;) { const d = gData(r), dec = r() < 0.5, ok = d.vs.slice(1).map((v, i) => (dec ? v < d.vs[i] : v > d.vs[i])); if (ok.filter(Boolean).length !== 1) continue;
+    const i = ok.indexOf(true), opts = d.vs.slice(1).map((_, k) => ({ s: between(d, k), k }));
+    return { ...timeOrder(build(r, { text: `꺾은선그래프에서 ${d.title}${josa(d.title.slice(-1), '이', '가')} <b>${dec ? '줄어든' : '늘어난'}</b> 때는 언제인가요?`, correct: { s: opts[i].s },
+      wrongs: opts.filter((o) => o.k !== i).map((o) => ({ s: o.s, note: d.vs[o.k + 1] === d.vs[o.k] ? '변화가 없는 때를 고름 (선이 수평)' : `${dec ? '늘어난' : '줄어든'} 때를 고름` })), count: Math.min(5, d.vs.length - 1), order: 'fixed',
+      explain: `선이 ${dec ? '오른쪽 아래로 내려간' : '오른쪽 위로 올라간'} 곳: ${opts[i].s} (${d.vs[i]} → ${d.vs[i + 1]})` }), opts), fig: gFig(d) }; }
+};
+G['hg-7'] = (r) => { // 처음과 마지막의 차 (전체 변화)
+  for (;;) { const d = gData(r, 5); if (d.title !== '강낭콩의 키' && d.title !== '모은 칭찬 붙임딱지') continue; const a = d.vs[0], b = d.vs[d.vs.length - 1]; if (b <= a) continue; const ans = b - a, sum = d.vs.reduce((x, y) => x + y, 0);
+    return { ...build(r, { text: `꺾은선그래프에서 ${d.xs[0]}부터 ${d.xs[d.xs.length - 1]}까지 ${d.title}${josa(d.title.slice(-1), '이', '가')} 모두 얼마만큼 늘었나요?`, correct: { v: q(ans) },
+      wrongs: [{ v: q(b), note: '마지막 값을 그대로 씀 (처음 값을 빼야 함)' }, { v: q(sum), note: '모든 값을 더함' }, { v: q(d.vs[d.vs.length - 1] - d.vs[d.vs.length - 2] || ans + d.step), note: '마지막 두 때의 차만 구함' }],
+      fill: () => q(Math.max(d.step, ans + (r() < 0.5 ? -1 : 1) * ri(r, 1, 5) * d.step)), fmt: gu(d), order: 'asc', explain: `마지막 ${b} − 처음 ${a} = ${ans}` }), fig: gFig(d) }; }
+};
+G['hg-8'] = (r) => tfPick(r, ['시간에 따라 변하는 모양을 나타낼 때는 꺾은선그래프가 알맞다.', '꺾은선그래프에서 선이 많이 기울어질수록 변화가 크다.', '꺾은선그래프에서 선이 수평이면 변화가 없다.', '필요 없는 부분은 물결선으로 줄여서 나타낼 수 있다.', '여러 반의 학생 수를 비교할 때는 막대그래프가 알맞다.'],
+  [['반별 좋아하는 과일 수를 비교할 때는 꺾은선그래프가 더 알맞다.', '서로 다른 항목끼리 비교하는 것은 막대그래프가 알맞음'], ['꺾은선그래프에서 선이 짧을수록 변화가 크다.', '선이 많이 기울어질수록 변화가 큼'],
+   ['꺾은선그래프의 세로 눈금은 항상 1씩 커져야 한다.', '눈금 한 칸의 크기는 2, 5, 10 등으로 정할 수 있음'], ['물결선은 그래프의 가장 큰 값 위에 그린다.', '물결선은 0과 가장 작은 값 사이의 필요 없는 부분에 그림'], ['꺾은선그래프로는 중간 시각의 값을 예상할 수 없다.', '두 점을 이은 선으로 중간 값을 예상할 수 있음']], '꺾은선그래프');
+G['hg-9'] = (r) => { // 물결선으로 줄일 수 있는 부분
+  const lo = ri(r, 3, 9) * 10 + ri(r, 1, 6), hi = lo + ri(r, 4, 9), cut = Math.floor(lo / 10) * 10;
+  return build(r, { text: `가장 작은 값이 ${lo}, 가장 큰 값이 ${hi}인 꺾은선그래프를 그리려고 합니다. 물결선을 넣어 세로 눈금 0부터 몇까지를 줄이는 것이 가장 알맞을까요?`, correct: { v: q(cut) },
+    wrongs: [{ v: q(lo), note: '가장 작은 값까지 줄임 (그 값을 나타낼 칸이 없어짐)' }, { v: q(hi), note: '가장 큰 값까지 줄임' }, { v: q(cut - 10), note: '너무 적게 줄임 (필요 없는 칸이 남음)' }],
+    fill: () => q(cut + ri(r, -3, 3) * 5), fmt: intF, order: 'asc', explain: `가장 작은 값 ${lo}보다 작은 가장 큰 몇십인 ${cut}까지 줄이면 ${cut}부터 ${hi}까지 자세히 나타낼 수 있어요` });
+};
+G['hg-10'] = (r) => { // 다음 때 값 예상 (일정하게 늘어날 때)
+  for (;;) { const step = pick(r, [1, 2, 5]), inc = ri(r, 1, 3) * step, v0 = ri(r, 2, 6) * step, n = 5, vs = Array.from({ length: n }, (_, i) => v0 + i * inc);
+    const d: GData = { title: '강낭콩의 키', unitS: 'cm', xs: ['1일', '3일', '5일', '7일', '9일'], vs, step, base: Math.max(0, v0 - step) }, ans = vs[n - 1] + inc;
+    return { ...build(r, { text: `강낭콩의 키가 그래프처럼 일정하게 자란다면 11일에는 키가 몇 cm가 될까요?`, correct: { v: q(ans) },
+      wrongs: [{ v: q(vs[n - 1]), note: '9일의 키를 그대로 씀' }, ...(inc !== step ? [{ v: q(vs[n - 1] + step), note: '눈금 한 칸만 더함 (2일마다 늘어나는 만큼을 더해야 함)' }] : []), { v: q(ans + inc), note: '두 번 더함 (11일은 9일 다음 한 번)' }],
+      fill: () => q(Math.max(step, ans + (r() < 0.5 ? -1 : 1) * ri(r, 1, 5) * step)), fmt: unit(' cm'), order: 'asc', explain: `2일마다 ${inc} cm씩 자람 → 9일 ${vs[n - 1]} cm + ${inc} cm = ${ans} cm` }), fig: gFig(d) }; }
+};
+
 // 고정 문항: 생성기를 정해진 seed 로 돌려 문제지의 원래 문항을 만든다(같은 코드면 항상 같은 문제)
 export function makeFixed(id: string, area: string, seed: number) {
   const { _vals, ...rest } = G[id](makeRng(seed)) as any; void _vals;

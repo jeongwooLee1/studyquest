@@ -74,7 +74,7 @@
   var STUDENTS = [
     { name: '이다연', emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'm2-solid', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [GEO, MATH_M1], extra: DAYEON_EXTRA },
     { name: '이다혜', emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'm2-solid', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [GEO, MATH_M1], extra: M1_EXTRA },
-    { name: '이다희', emoji: '🐥', setsLabel: '수학 보충 문제지', sets: ['h-frac', 'h-word', 'h-dec', 'h-tri', 'h-quad'], tests: [{ id: 'math-e4', when: '아빠가 말하면 풀기 · 45분' }], extra: E4_EXTRA },
+    { name: '이다희', emoji: '🐥', setsLabel: '수학 보충 문제지', sets: ['h-frac', 'h-word', 'h-dec', 'h-tri', 'h-quad', 'h-graph'], tests: [{ id: 'math-e4', when: '아빠가 말하면 풀기 · 45분' }], extra: E4_EXTRA },
   ];
   // 문제지를 풀기 전에 볼 EBS 강의 (EBS 초등 앱에서 교재 이름으로 검색 → 단원 이름 찾기). 단원평가·시험 문제 풀이 강의는 건너뛴다.
   var LECTURES = {
@@ -88,6 +88,7 @@
     'u-prop': '「만점왕 수학 6-2」 → 「비례식과 비례배분」 개념 강의',
     'h-frac': '「만점왕 수학 3-2」 → 「분수」 개념 강의',
     'h-quad': '「만점왕 수학 4-2」 → 「사각형」 개념 강의',
+    'h-graph': '「만점왕 수학 4-2」 → 「꺾은선그래프」 개념 강의',
     'h-tri': '「만점왕 수학 4-2」 → 「삼각형」 개념 강의',
     'h-dec': '「만점왕 수학 4-2」 → 「소수의 덧셈과 뺄셈」 개념 강의',
   };
