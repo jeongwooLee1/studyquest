@@ -96,4 +96,5 @@ fig: { type: 'solid', kind: 'cuboid', a: 8, b: 5, c: 3, labels: { a: '8 cm', b: 
 
 ## 4. 이 형식을 쓰는 문제지
 - `g-area`(평면도형의 넓이), `g-circle`(원의 둘레와 넓이) — 이번 브랜치. `shape` 만 사용.
-- 다음: `g-solid`(`solid`), 중1 2학기 `m2-*`(`shape` 의 `line`·`angle`·`par`, `solid`).
+- `g-solid`(입체도형) — `solid`(cuboid·prism·pyramid) + `shape`(전개도, 돌리기 전 도형과 축).
+- 다음: 중1 2학기 `m2-*`(`shape` 의 `line`·`angle`·`par`, `solid`).
