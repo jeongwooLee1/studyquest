@@ -3,6 +3,7 @@
 // 단원마다 10문항이 되도록 문항을 더했다. rec-1~4 는 예전 링크용으로 그대로 둔다.
 
 import { REC_1, REC_2, REC_3, REC_4 } from './rec_e56.ts';
+import { makeFixed } from '../twins.ts';
 
 const E = '초등';
 
@@ -126,4 +127,13 @@ export const U_PROP = unit('u-prop', '비례식과 비례배분', '초6-2', REC_
     explain: '큰 쪽은 전체의 $[[3|5]]$ → 전체 = 27 ÷ 3 × 5 = 45 (작은 쪽 18)' },
 ]);
 
-export const UNIT_SETS = [U_MIX, U_DIV, U_RED, U_ADDF, U_FDIV, U_DDIV, U_RATIO, U_PROP];
+// 다혜: u-red 의 분수 크기 비교를 빨리 찍어서 통과(5문항 47초) → 크기 비교만 다시 확인하는 5문항. 문항은 twins.ts 생성기(rc-*)로 만든다.
+export const U_RED_CMP = {
+  id: 'u-red-cmp', title: '분수 크기 비교 다시 확인', subtitle: '초5-1 「약분과 통분」 · 천천히, 통분해서 비교', minutes: 10, practice: true, pace: { [E]: 120 },
+  areas: [{ id: 'rca', group: E, name: '분수 크기 비교', unit: '초5-1 「약분과 통분」 — 분수의 크기 비교',
+    why: '「약분과 통분」에서 크기 비교 5문제를 47초 만에 풀었어요. 통분해서 비교하는지 다시 확인해요.',
+    study: ['EBS 초등 만점왕 수학 5-1 「약분과 통분」 — 분수의 크기 비교 강의', '분모가 다르면 통분부터, 분자가 같으면 분모가 작은 쪽이 큼', '1/2 과 비교할 때는 분자 × 2 와 분모를 비교'] }],
+  questions: [['rc-1', 1], ['rc-2', 1], ['rc-3', 1], ['rc-4', 8], ['rc-5', 3]].map(([id, seed]) => makeFixed(id as string, 'rca', seed as number)),
+};
+
+export const UNIT_SETS = [U_MIX, U_DIV, U_RED, U_ADDF, U_FDIV, U_DDIV, U_RATIO, U_PROP, U_RED_CMP];
