@@ -1685,6 +1685,116 @@ G['mp-9'] = (r) => { // 외각의 합 360°로 x 구하기
       fill: nearInt(r, x, 6), fmt: intF, order: 'asc', explain: `다각형의 외각의 합은 항상 360° → ${M(`${base} + ${xe} = 360`)} → ${M(`${k === 1 ? '' : k}x = ${k * x}`)} → ${M(`x = ${x}`)}` }); }
 };
 
+// ── 중1 2학기 「원과 부채꼴」: 중심각과 호·현, 부채꼴의 호의 길이·넓이(π) (작년 도농중 기말 15번·서술형 유형) ──
+// π가 들어간 값은 [π의 계수, 상수항] 두 유리수로 다룬다. 보기는 값 순서로 놓는다.
+type PV = [Q, Q];
+const piNum = (v: PV) => num(v[0]) * Math.PI + num(v[1]);
+function piStr(v: PV) {
+  const [a, b] = v, ca = a[0] === 0 ? '' : (a[1] === 1 ? (a[0] === 1 ? '' : String(a[0])) : frs(a[0], a[1])) + 'π';
+  const cb = b[0] === 0 ? '' : b[1] === 1 ? String(b[0]) : frs(b[0], b[1]);
+  return ca && cb ? `(${ca} + ${cb})` : ca || cb || '0';
+}
+function buildPi(r: Rng, sp: { text: string; correct: PV; wrongs: { v: PV; note?: string }[]; unitS: string; explain: string; fill: () => PV }) {
+  const S = (v: PV) => `${M(piStr(v))}${sp.unitS}`, cs = S(sp.correct), have: { s: string; v: PV; note?: string }[] = [];
+  const add = (o: { v: PV; note?: string }) => { const s = S(o.v); if (o.v[0][0] >= 0 && o.v[1][0] >= 0 && piNum(o.v) > 0 && s !== cs && !have.some((h) => h.s === s) && Math.abs(piNum(o.v) - piNum(sp.correct)) > 1e-9) have.push({ s, v: o.v, note: o.note }); };
+  sp.wrongs.forEach(add); const nMain = have.length; for (let t = 0; have.length < nMain + 30 && t < 600; t++) add({ v: sp.fill() });
+  // 정답 자리를 먼저 고르고(함정 보기를 가장 많이 담는 자리 중 무작위) 위·아래 보기를 채운다 — build 의 asc 와 같은 방식
+  const c0 = piNum(sp.correct), main = have.slice(0, nMain), extra = shuffle(r, have.slice(nMain)), pool = [...main, ...extra];
+  const lo = pool.filter((o) => piNum(o.v) < c0), hi = pool.filter((o) => piNum(o.v) > c0), isMain = (o: any) => main.includes(o);
+  const feas = [0, 1, 2, 3, 4].filter((k) => lo.length >= k && hi.length >= 4 - k); if (!feas.length) throw new Error('보기 부족: ' + sp.text);
+  const kept = (k: number) => Math.min(lo.filter(isMain).length, k) + Math.min(hi.filter(isMain).length, 4 - k), best = Math.max(...feas.map(kept));
+  const k = pick(r, feas.filter((x) => kept(x) >= Math.max(1, best - 1))) ?? pick(r, feas);
+  const take = (arr: typeof have, n: number) => [...arr.filter(isMain), ...arr.filter((o) => !isMain(o))].slice(0, n);
+  const opts = [...take(lo, k), ...take(hi, 4 - k), { s: cs, v: sp.correct, note: undefined as string | undefined }].sort((x, y) => piNum(x.v) - piNum(y.v));
+  const answer = opts.findIndex((o) => o.s === cs) + 1;
+  return { text: sp.text, options: opts.map((o) => o.s), answer, traps: opts.map((o, i) => (o.note ? { a: i + 1, note: o.note } : null)).filter(Boolean), explain: sp.explain, _vals: opts.map(() => null) };
+}
+const pv = (a: Q, b: Q = q(0)): PV => [a, b];
+const nearPv = (r: Rng, v: PV) => () => pv(add(v[0], q((r() < 0.5 ? -1 : 1) * ri(r, 1, 6), v[0][1])), v[1]); // 정답과 같은 분모로
+const sector = (th: number, lab: { r?: string; t?: string; arc?: string }) => { // 그림의 중심각은 실제 크기, 반지름은 3으로 고정
+  const s0 = 90 - th / 2, s1 = s0 * Math.PI / 180, e1 = (s0 + th) * Math.PI / 180;
+  const pts = { O: P(0, 0), _A: P(3 * Math.cos(s1), 3 * Math.sin(s1)), _B: P(3 * Math.cos(e1), 3 * Math.sin(e1)), _m: P(3.6 * Math.cos((s1 + e1) / 2), 3.6 * Math.sin((s1 + e1) / 2)) };
+  const items: any[] = [{ k: 'arc', c: 'O', r: 3, from: s0, to: s0 + th, sector: true, fill: true }];
+  if (lab.r) items.push({ k: 'side', p: ['O', '_A'], label: lab.r });
+  if (lab.t) items.push({ k: 'angle', p: ['_A', 'O', '_B'], label: lab.t });
+  if (lab.arc) items.push({ k: 'text', at: '_m', s: lab.arc });
+  return shape(pts, items);
+};
+const TH = [30, 40, 45, 60, 72, 90, 120, 135, 144, 150, 210, 240, 270];
+// 중심각과 호·넓이의 비례
+G['mr-1'] = (r) => {
+  for (;;) { const a = ri(r, 2, 12) * 10, b = ri(r, 2, 12) * 10, L = ri(r, 2, 15); if (a === b || (L * b) % a) continue; const ans = L * b / a, isArc = r() < 0.5, u = isArc ? ' cm' : ' cm²', what = isArc ? '호의 길이' : '넓이';
+    return build(r, { text: `한 원에서 중심각의 크기가 ${a}°인 부채꼴의 ${what}가 ${L}${u}일 때, 중심각의 크기가 ${b}°인 부채꼴의 ${what}는?`, correct: { v: q(ans) },
+      wrongs: [...((L * a) % b === 0 ? [{ v: q(L * a / b), note: '비를 거꾸로 세움 (중심각이 크면 호·넓이도 큼)' }] : []), { v: q(L + b - a > 0 ? L + b - a : L + 1), note: '중심각의 차를 더함 (정비례는 곱하기)' }, ...(isArc ? [] : [{ v: q(ans * b / a === Math.round(ans * b / a) ? ans * b / a : ans + 2), note: '넓이를 중심각의 제곱에 비례한다고 봄' }])],
+      fill: nearInt(r, ans, 5), fmt: unit(u), order: 'asc', explain: `한 원에서 ${what}는 중심각의 크기에 정비례 → ${a}° : ${b}° = ${L} : □ → □ = ${L} × ${b} ÷ ${a} = ${ans}${u.trim() ? u : ''}` }); }
+};
+G['mr-2'] = (r) => { // 넓이로 중심각 구하기
+  for (;;) { const a = ri(r, 3, 12) * 10, S1 = ri(r, 3, 20), k = pick(r, [2, 3, 4, [1, 2], [3, 2], [5, 2]] as any[]), kr: Q = Array.isArray(k) ? q(k[0], k[1]) : q(k), S2 = mul(q(S1), kr), b = mul(q(a), kr); if (!isInt(S2) || !isInt(b) || num(b) >= 360 || num(b) === a) continue;
+    const ans = num(b), w: Opt[] = [];
+    if (isInt(div(q(a), kr))) w.push({ v: div(q(a), kr), note: '비를 거꾸로 세움' });
+    w.push({ v: q(a + num(S2) - S1 > 0 ? a + num(S2) - S1 : a + 5), note: '넓이의 차를 더함 (정비례는 곱하기)' });
+    return build(r, { text: `한 원에서 중심각의 크기가 ${a}°인 부채꼴의 넓이가 ${S1} cm²일 때, 넓이가 ${num(S2)} cm²인 부채꼴의 중심각의 크기는?`, correct: { v: q(ans) }, wrongs: w,
+      fill: () => q(5 * ri(r, 2, 60)), fmt: degF, order: 'asc', explain: `넓이는 중심각에 정비례 → ${S1} : ${num(S2)} = ${a}° : □ → □ = ${a} × ${num(S2)} ÷ ${S1} = ${ans}°` }); }
+};
+G['mr-3'] = (r) => tfPick(r, ['한 원에서 같은 크기의 중심각에 대한 호의 길이는 같다.', '한 원에서 호의 길이는 중심각의 크기에 정비례한다.', '한 원에서 부채꼴의 넓이는 중심각의 크기에 정비례한다.', '한 원에서 같은 크기의 중심각에 대한 현의 길이는 같다.', '반원은 중심각의 크기가 180°인 부채꼴이다.'],
+  [['한 원에서 현의 길이는 중심각의 크기에 정비례한다.', '중심각이 2배가 되어도 현의 길이는 2배보다 짧음'], ['한 원에서 중심각의 크기가 2배이면 부채꼴의 넓이는 4배이다.', '넓이도 중심각에 정비례 → 2배'],
+   ['한 원에서 길이가 가장 긴 현은 반지름이다.', '가장 긴 현은 지름'], ['호와 현으로 이루어진 도형을 부채꼴이라 한다.', '그것은 활꼴 (부채꼴은 두 반지름과 호로 이루어짐)'], ['중심각의 크기가 같으면 반지름이 달라도 호의 길이는 같다.', '한 원(반지름이 같은 원)에서만 같음']], '원과 부채꼴');
+// π로 나타내는 길이·넓이
+G['mr-4'] = (r) => { // 원의 둘레·넓이
+  const rad = ri(r, 2, 12), area = r() < 0.5, ans = area ? pv(q(rad * rad)) : pv(q(2 * rad));
+  return { ...buildPi(r, { text: `반지름의 길이가 ${rad} cm인 원의 ${area ? '넓이' : '둘레의 길이'}는?`, correct: ans,
+    wrongs: area ? [{ v: pv(q(2 * rad)), note: '넓이 대신 둘레를 구함 (넓이 = πr²)' }, { v: pv(q(4 * rad * rad)), note: '반지름 대신 지름을 제곱함' }, { v: pv(q(rad)), note: 'πr로 계산함' }]
+      : [{ v: pv(q(rad * rad)), note: '둘레 대신 넓이를 구함 (둘레 = 2πr)' }, { v: pv(q(rad)), note: '2를 곱하지 않음 (둘레 = 2πr)' }, { v: pv(q(4 * rad)), note: '반지름을 지름으로 보고 또 2배 함' }],
+    unitS: area ? ' cm²' : ' cm', fill: nearPv(r, ans), explain: area ? `원의 넓이 = πr² = π × ${rad}² = ${piStr(ans)} (cm²)` : `원의 둘레 = 2πr = 2 × π × ${rad} = ${piStr(ans)} (cm)` }),
+    fig: shape({ O: P(0, 0), _a: P(3, 0) }, [{ k: 'circle', c: 'O', r: 3 }, { k: 'dot', p: 'O' }, { k: 'seg', p: ['O', '_a'], label: `${rad} cm` }]) };
+};
+function secPair(r: Rng) { for (;;) { const rad = ri(r, 2, 12), th = pick(r, TH); const L = q(2 * rad * th, 360), A = q(rad * rad * th, 360); if (L[1] <= 4 && A[1] <= 4) return { rad, th, L, A }; } }
+G['mr-5'] = (r) => { // 부채꼴의 호의 길이
+  const { rad, th, L, A } = secPair(r);
+  return { ...buildPi(r, { text: `반지름의 길이가 ${rad} cm이고 중심각의 크기가 ${th}°인 부채꼴의 호의 길이는?`, correct: pv(L),
+    wrongs: [{ v: pv(A), note: '호의 길이 대신 넓이를 구함' }, { v: pv(q(rad * th, 360)), note: '2를 곱하지 않음 (호 = 2πr × 중심각/360)' }, { v: pv(q(2 * rad)), note: '원 전체의 둘레를 구함' }],
+    unitS: ' cm', fill: nearPv(r, pv(L)), explain: `호의 길이 = 2πr × ${M(frs(th, 360))} = 2 × π × ${rad} × ${M(frs(th, 360))} = ${M(piStr(pv(L)))} (cm)` }),
+    fig: sector(th, { r: `${rad} cm`, t: `${th}°` }) };
+};
+G['mr-6'] = (r) => { // 부채꼴의 넓이
+  const { rad, th, L, A } = secPair(r);
+  return { ...buildPi(r, { text: `반지름의 길이가 ${rad} cm이고 중심각의 크기가 ${th}°인 부채꼴의 넓이는?`, correct: pv(A),
+    wrongs: [{ v: pv(L), note: '넓이 대신 호의 길이를 구함' }, { v: pv(q(rad * rad)), note: '원 전체의 넓이를 구함' }, { v: pv(mul(A, q(2))), note: '2πr²으로 계산함' }, { v: pv(q(rad * rad * (360 - th), 360)), note: '나머지 부분의 넓이를 구함' }],
+    unitS: ' cm²', fill: nearPv(r, pv(A)), explain: `부채꼴의 넓이 = πr² × ${M(frs(th, 360))} = π × ${rad}² × ${M(frs(th, 360))} = ${M(piStr(pv(A)))} (cm²)` }),
+    fig: sector(th, { r: `${rad} cm`, t: `${th}°` }) };
+};
+G['mr-7'] = (r) => { // 부채꼴의 둘레
+  const { rad, th, L } = secPair(r), ans = pv(L, q(2 * rad));
+  return { ...buildPi(r, { text: `반지름의 길이가 ${rad} cm이고 중심각의 크기가 ${th}°인 부채꼴의 둘레의 길이는?`, correct: ans,
+    wrongs: [{ v: pv(L), note: '호의 길이만 구함 (둘레 = 호 + 반지름 2개)' }, { v: pv(L, q(rad)), note: '반지름을 하나만 더함' }, { v: pv(q(2 * rad), q(2 * rad)), note: '원 전체의 둘레에 반지름을 더함' }],
+    unitS: ' cm', fill: () => pv(add(L, q((r() < 0.5 ? -1 : 1) * ri(r, 1, 3))), q(2 * rad + (r() < 0.5 ? 0 : ri(r, -2, 2)))), explain: `둘레 = 호 + 반지름 × 2 = ${M(piStr(pv(L)))} + ${2 * rad} = ${M(piStr(ans))} (cm)` }),
+    fig: sector(th, { r: `${rad} cm`, t: `${th}°` }) };
+};
+G['mr-8'] = (r) => { // 반지름과 호로 넓이 (½rl)
+  const { rad, L } = secPair(r), A = mul(mul(q(rad), L), q(1, 2));
+  return { ...buildPi(r, { text: `반지름의 길이가 ${rad} cm이고 호의 길이가 ${M(piStr(pv(L)))} cm인 부채꼴의 넓이는?`, correct: pv(A),
+    wrongs: [{ v: pv(mul(q(rad), L)), note: '½을 곱하지 않음 (넓이 = ½ × 반지름 × 호)' }, { v: pv(add(L, q(0)), q(0)), note: '호의 길이를 그대로 씀' }, { v: pv(q(rad * rad)), note: '원 전체의 넓이를 구함' }],
+    unitS: ' cm²', fill: nearPv(r, pv(A)), explain: `부채꼴의 넓이 = ${M('[[1|2]]rl')} = ${M(`[[1|2]] × ${rad} × ${piStr(pv(L))}`)} = ${M(piStr(pv(A)))} (cm²)` }),
+    fig: sector(100, { r: `${rad} cm`, arc: `${piStr(pv(L)).replace(/\[\[(\d+)\|(\d+)\]\]/, '$1/$2')} cm` }) };
+};
+G['mr-9'] = (r) => { // 호의 길이로 중심각
+  const { rad, th, L } = secPair(r);
+  return { ...build(r, { text: `반지름의 길이가 ${rad} cm이고 호의 길이가 ${M(piStr(pv(L)))} cm인 부채꼴의 중심각의 크기는?`, correct: { v: q(th) },
+    wrongs: [...(isInt(q(360 * L[0], L[1] * rad)) ? [{ v: q(360 * L[0], L[1] * rad), note: '2를 빼먹고 πr로 나눔 (원 둘레는 2πr)' }] : []), ...(th * 2 < 360 ? [] : []), { v: q(Math.round(th / 2 / 5) * 5 || 5), note: '중심각을 절반으로 계산함' }],
+    fill: () => q(5 * ri(r, 4, 60)), fmt: degF, order: 'asc', explain: `2π × ${rad} × ${M(frs('x', 360))} = ${M(piStr(pv(L)))} → ${M(`x = ${th}`)}°` }),
+    fig: sector(th, { r: `${rad} cm`, t: 'x', arc: `${piStr(pv(L)).replace(/\[\[(\d+)\|(\d+)\]\]/, '$1/$2')} cm` }) };
+};
+G['mr-10'] = (r) => { // 트랙: 바깥쪽과 안쪽 레인 둘레 차 (기출 서술형)
+  const R = ri(r, 10, 30), w = ri(r, 1, 3), Ls = ri(r, 4, 10) * 10, ans = pv(q(2 * w));
+  return { ...buildPi(r, { text: `직사각형의 양쪽에 반원을 붙인 모양의 트랙이 있습니다. 직선 구간은 ${Ls} m이고, 안쪽 레인의 반원의 반지름은 ${R} m, 바깥쪽 레인의 반원의 반지름은 ${R + w} m입니다. 바깥쪽 레인을 한 바퀴 돈 거리는 안쪽 레인보다 몇 m 더 긴가요?`, correct: ans,
+    wrongs: [{ v: pv(q(w)), note: '반원 두 개가 원 하나가 됨을 놓침 (2πr)' }, { v: pv(q(2 * (R + w))), note: '바깥쪽 원의 둘레를 구함 (차이를 구해야 함)' }, { v: pv(q(2 * w), q(2 * Ls)), note: '직선 구간도 더함 (직선은 두 레인이 같음)' }, { v: pv(q(4 * w)), note: '반원을 원 하나씩으로 셈' }],
+    unitS: ' m', fill: nearPv(r, ans), explain: `직선 구간은 같으므로 반원 두 개(= 원 하나)만 비교: 2π × ${R + w} − 2π × ${R} = ${M(piStr(ans))} (m) — 반지름이 ${w} m 커지면 둘레는 2π × ${w}만큼 길어져요` }),
+    fig: shape({ _a: P(-3, -2), _b: P(3, -2), _c: P(3, 2), _d: P(-3, 2), _e: P(-3, -2.6), _f: P(3, -2.6), _g: P(3, 2.6), _h: P(-3, 2.6), _L: P(-3, 0), _R: P(3, 0) }, [
+      { k: 'seg', p: ['_a', '_b'] }, { k: 'seg', p: ['_d', '_c'] }, { k: 'seg', p: ['_e', '_f'] }, { k: 'seg', p: ['_h', '_g'] },
+      { k: 'arc', c: '_R', r: 2, from: -90, to: 90 }, { k: 'arc', c: '_L', r: 2, from: 90, to: 270 }, { k: 'arc', c: '_R', r: 2.6, from: -90, to: 90 }, { k: 'arc', c: '_L', r: 2.6, from: 90, to: 270 },
+      { k: 'text', at: [0, 0], s: `직선 ${Ls} m` }]) };
+};
+
 // 고정 문항: 생성기를 정해진 seed 로 돌려 문제지의 원래 문항을 만든다(같은 코드면 항상 같은 문제)
 export function makeFixed(id: string, area: string, seed: number) {
   const { _vals, ...rest } = G[id](makeRng(seed)) as any; void _vals;
