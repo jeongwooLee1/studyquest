@@ -1603,6 +1603,88 @@ G['mc-9'] = (r) => { // 정삼각형 두 개와 SAS (빈칸 채우기)
 G['mc-10'] = (r) => tfPick(r, ['합동인 두 도형의 넓이는 같다.', '둘레의 길이가 같은 두 정삼각형은 합동이다.', '한 변의 길이가 같은 두 정사각형은 합동이다.', '넓이가 같은 두 원은 합동이다.', '반지름의 길이가 같은 두 원은 합동이다.'],
   [['넓이가 같은 두 삼각형은 합동이다.', '넓이가 같아도 모양이 다를 수 있음'], ['세 각의 크기가 각각 같은 두 삼각형은 합동이다.', '세 각이 같아도 크기가 다를 수 있음'], ['둘레의 길이가 같은 두 직사각형은 합동이다.', '가로·세로가 다를 수 있음 (예: 1×5와 2×4)'], ['넓이가 같은 두 직사각형은 합동이다.', '예: 2×6과 3×4'], ['한 변의 길이가 같은 두 마름모는 합동이다.', '각의 크기가 다를 수 있음']], '합동인 도형');
 
+// ── 중1 2학기 「다각형」: 대각선의 개수, 삼각형의 내각·외각, 다각형의 내각·외각의 합 (작년 도농중 기말 10·14번 유형) ──
+const gon = (n: number) => `${koN(n)}각형`;
+G['mp-1'] = (r) => { // 한 꼭짓점에서 그은 대각선 수 + 나뉘는 삼각형 수
+  const n = ri(r, 5, 15), a = n - 3, b = n - 2;
+  return build(r, { text: `${gon(n)}의 한 꼭짓점에서 그을 수 있는 대각선의 개수를 ${M('a')}, 이때 생기는 삼각형의 개수를 ${M('b')}라 할 때, ${M('a + b')}의 값은?`, correct: { v: q(a + b) },
+    wrongs: [{ v: q(2 * (n - 1)), note: '대각선을 n − 1개로 셈 (자기 자신과 이웃한 두 꼭짓점은 빼야 함: n − 3)' }, { v: q(a + n - 1), note: '삼각형을 n − 1개로 셈 (n − 2개)' }, { v: q(n * (n - 3) / 2), note: '전체 대각선의 개수를 구함' }, { v: q(2 * n - 3) }],
+    fill: nearInt(r, a + b, 4), fmt: intF, order: 'asc', explain: `한 꼭짓점에서 대각선은 ${n} − 3 = ${a}개, 삼각형은 ${n} − 2 = ${b}개 → ${M(`a + b = ${a + b}`)}` });
+};
+G['mp-2'] = (r) => { // 대각선의 총수
+  const n = ri(r, 5, 16), D = n * (n - 3) / 2;
+  return build(r, { text: `${gon(n)}의 대각선의 개수는?`, correct: { v: q(D) },
+    wrongs: [{ v: q(n * (n - 3)), note: '÷ 2를 빠뜨림 (대각선 하나를 두 번 셈)' }, { v: q(n - 3), note: '한 꼭짓점에서 그은 대각선만 셈' }, ...(n % 2 === 0 ? [{ v: q(n * (n - 2) / 2), note: '한 꼭짓점에서 n − 2개로 셈' }] : [{ v: q(n * (n - 1) / 2), note: '두 꼭짓점을 잇는 선분을 모두 셈 (변도 포함)' }])],
+    fill: nearInt(r, D, 6), fmt: ea, order: 'asc', explain: `${M(`[[n(n − 3)|2]] = [[${n} × ${n - 3}|2]] = ${D}`)} (개)` });
+};
+G['mp-3'] = (r) => { // 대각선 수 → 몇 각형
+  const n = ri(r, 5, 15), D = n * (n - 3) / 2, w: Opt[] = [];
+  const m2 = (() => { for (let k = 4; k < 60; k++) if (k * (k - 3) === D) return k; return 0; })(); if (m2 && m2 !== n) w.push({ s: gon(m2), note: '÷ 2를 빠뜨림 (n(n − 3) = 대각선 수로 계산)' });
+  if (D + 3 < 100 && D + 3 !== n) w.push({ s: gon(D + 3), note: '한 꼭짓점에서 그은 대각선 수로 계산함 (n − 3 = 대각선 수)' });
+  w.push({ s: gon(n + 1) }, { s: gon(n - 1) }, { s: gon(n + 2) });
+  return build(r, { text: `대각선의 개수가 ${D}개인 다각형은?`, correct: { s: gon(n) }, wrongs: w, order: 'shuffle',
+    explain: `${M(`[[n(n − 3)|2]] = ${D}`)} → ${M(`n(n − 3) = ${2 * D} = ${n} × ${n - 3}`)} → ${M(`n = ${n}`)}, ${gon(n)}` });
+};
+// 삼각형의 내각과 외각
+G['mp-4'] = (r) => { // 외각 = 이웃하지 않는 두 내각의 합
+  const a = ri(r, 6, 16) * 5, b = ri(r, 6, 16) * 5, x = a + b; if (x >= 175) return G['mp-4'](r);
+  const cc = 1 / Math.tan((180 - a - b) * Math.PI / 180), cb = 1 / Math.tan(b * Math.PI / 180), W = cc + cb; // 꼭대기 높이 1, ∠B = b, ∠C = 180 − a − b
+  return { ...build(r, { text: `그림과 같이 △ABC에서 ∠A = ${a}°, ∠B = ${b}°이고 변 BC의 연장선 위에 점 D가 있습니다. ∠ACD의 크기는?`, correct: { v: q(x) },
+    wrongs: [{ v: q(180 - x), note: '외각 대신 내각 ∠ACB를 구함' }, { v: q(Math.abs(a - b) || 5), note: '두 내각의 차를 구함' }, { v: q(180 - a), note: '이웃하지 않는 두 내각 중 하나만 씀' }],
+    fill: () => q(5 * ri(r, 4, 34)), fmt: degF, order: 'asc', explain: `삼각형의 한 외각의 크기는 이웃하지 않는 두 내각의 크기의 합 → ∠ACD = ${a}° + ${b}° = ${x}°` }),
+    fig: shape({ B: P(0, 0), C: P(W, 0), A: P(cb, 1), D: P(W + 0.9, 0) }, [{ k: 'poly', p: ['A', 'B', 'C'] }, { k: 'seg', p: ['C', 'D'] },
+      { k: 'angle', p: ['C', 'B', 'A'], label: `${b}°` }, { k: 'angle', p: ['B', 'A', 'C'], label: `${a}°` }, { k: 'angle', p: ['D', 'C', 'A'], label: '?' }]) };
+};
+G['mp-5'] = (r) => { // 세 내각의 비
+  for (;;) { const p = ri(r, 1, 5), qq = ri(r, 1, 6), s = ri(r, 2, 9), sum = p + qq + s; if (180 % sum || new Set([p, qq, s]).size < 3) continue;
+    const u = 180 / sum, big = Math.max(p, qq, s) * u, ask = pick(r, ['큰', '작은'] as const), ans = ask === '큰' ? big : Math.min(p, qq, s) * u;
+    return build(r, { text: `삼각형의 세 내각의 크기의 비가 ${p} : ${qq} : ${s}일 때, 가장 <b>${ask}</b> 각의 크기는?`, correct: { v: q(ans) },
+      wrongs: [{ v: q(ask === '큰' ? Math.min(p, qq, s) * u : big), note: `가장 ${ask === '큰' ? '작은' : '큰'} 각을 구함` }, { v: q(2 * ans), note: '내각의 합을 360°로 봄' }, { v: q(u), note: '한 칸(1)의 크기만 구함' }],
+      fill: () => q(5 * ri(r, 2, 30)), fmt: degF, order: 'asc', explain: `내각의 합 180° → 한 칸 = 180° ÷ ${sum} = ${u}° → 가장 ${ask} 각 = ${ask === '큰' ? Math.max(p, qq, s) : Math.min(p, qq, s)} × ${u}° = ${ans}°` }); }
+};
+G['mp-10'] = (r) => { // 별 모양 다섯 각의 합 = 180°
+  for (;;) { const xs = [0, 1, 2, 3].map(() => ri(r, 4, 9) * 5), s = xs.reduce((a, b) => a + b, 0), x = 180 - s; if (x < 15 || x > 60) continue;
+    const pts: Record<string, number[]> = {}; ['A', 'B', 'C', 'D', 'E'].forEach((k, i) => { const t = (90 + 72 * i) * Math.PI / 180; pts['_' + k] = P(3 * Math.cos(t), 3 * Math.sin(t)); });
+    const order = ['_A', '_C', '_E', '_B', '_D'], labs = [...xs.map((v) => `${v}°`), 'x'];
+    const items: any[] = [{ k: 'poly', p: order }];
+    order.forEach((k, i) => { const prev = order[(i + 4) % 5], next = order[(i + 1) % 5]; items.push({ k: 'angle', p: [next, k, prev], label: labs[i] }); });
+    return { ...build(r, { text: `그림과 같은 별 모양에서 다섯 꼭짓점의 각 중 네 각의 크기가 ${xs.map((v) => v + '°').join(', ')}일 때, 나머지 한 각 ${M('∠x')}의 크기는?`, correct: { v: q(x) },
+      wrongs: [{ v: q(360 - s), note: '다섯 각의 합을 360°로 봄 (별 모양 다섯 각의 합은 180°)' }, { v: q(540 - s), note: '오각형 내각의 합(540°)을 씀' }, { v: q(x + 10) }],
+      fill: () => q(5 * ri(r, 2, 20)), fmt: degF, order: 'asc', explain: `별 모양의 다섯 각의 합은 180° (삼각형의 외각 성질로 다섯 각을 한 삼각형에 모을 수 있음) → ${M(`∠x = 180° − ${s}° = ${x}°`)}` }),
+      fig: shape(pts, items) }; }
+};
+// 다각형의 내각·외각
+G['mp-6'] = (r) => { // 내각의 합
+  const n = ri(r, 5, 14), S = 180 * (n - 2);
+  return build(r, { text: `${gon(n)}의 내각의 크기의 합은?`, correct: { v: q(S) },
+    wrongs: [{ v: q(180 * n), note: '180° × n 으로 계산 (삼각형은 n − 2개)' }, { v: q(180 * (n - 3)), note: '대각선 수(n − 3)를 곱함' }, { v: q(360 * (n - 2)) }, { v: q(360), note: '외각의 합과 헷갈림' }],
+    fill: () => q(S + 180 * (r() < 0.5 ? -1 : 1) * ri(r, 2, 3)), fmt: degF, order: 'asc', explain: `한 꼭짓점에서 대각선을 그으면 삼각형 ${n} − 2 = ${n - 2}개 → 180° × ${n - 2} = ${S}°` });
+};
+const REG = [5, 6, 8, 9, 10, 12, 15, 18, 20];
+G['mp-7'] = (r) => { // 정다각형 한 내각/한 외각
+  const n = pick(r, REG), inner = 180 * (n - 2) / n, outer = 360 / n, askIn = r() < 0.6, ans = askIn ? inner : outer;
+  return build(r, { text: `정${gon(n)}의 한 ${askIn ? '내각' : '외각'}의 크기는?`, correct: { v: q(ans) },
+    wrongs: askIn ? [{ v: q(outer), note: '한 외각을 구함 (한 내각 = 180° − 한 외각)' }, { v: q(180 * (n - 2)), note: '내각의 합을 구하고 n으로 나누지 않음' }, ...(180 * n % n === 0 && 180 * (n - 3) % n === 0 ? [{ v: q(180 * (n - 3) / n), note: '내각의 합을 180° × (n − 3)으로 계산함' }] : [])]
+      : [{ v: q(inner), note: '한 내각을 구함' }, ...(180 % n === 0 ? [{ v: q(180 / n), note: '외각의 합을 180°로 봄 (360°)' }] : []), { v: q(360), note: '외각의 합을 그대로 씀' }],
+    fill: () => q(5 * ri(r, 2, 34)), fmt: degF, order: 'asc',
+    explain: askIn ? `내각의 합 180° × ${n - 2} = ${180 * (n - 2)}° → ÷ ${n} = ${inner}° (또는 180° − 360° ÷ ${n})` : `외각의 합은 항상 360° → 360° ÷ ${n} = ${outer}°` });
+};
+G['mp-8'] = (r) => { // 한 내각 : 한 외각 = p : q → 몇 각형
+  for (;;) { const n = pick(r, REG), inner = 180 * (n - 2) / n, outer = 360 / n, g = gcd(inner, outer), p = inner / g, qq = outer / g; if (p > 9) continue;
+    const w: Opt[] = [...(360 % inner === 0 && 360 / inner >= 3 ? [{ s: `정${gon(360 / inner)}`, note: '내각과 외각을 바꿔 계산함' }] : []), { s: `정${gon(n + 1)}` }, { s: `정${gon(n - 1)}` }, { s: `정${gon(n + 2)}` }, { s: `정${gon(n * 2)}`, note: '한 외각 대신 한 칸(1)의 크기로 나눔' }];
+    return build(r, { text: `한 내각의 크기와 한 외각의 크기의 비가 ${p} : ${qq}인 정다각형은?`, correct: { s: `정${gon(n)}` }, wrongs: w, order: 'shuffle',
+      explain: `한 내각 + 한 외각 = 180° → 한 외각 = 180° × ${M(frs(qq, p + qq))} = ${outer}° → 360° ÷ ${outer}° = ${n} → 정${gon(n)}` }); }
+};
+G['mp-9'] = (r) => { // 외각의 합 360°로 x 구하기
+  for (;;) { const n = pick(r, [4, 5, 6]), x = ri(r, 10, 40), cs = Array.from({ length: n - 1 }, () => ri(r, 4, 16) * 5), base = cs.reduce((a, b) => a + b, 0), k = ri(r, 1, 3);
+    const c0 = 360 - base - k * x; if (c0 === 0 || Math.abs(c0) > 40 || k * x + c0 < 20) continue;
+    const xe = `${k === 1 ? '' : k}x ${c0 < 0 ? '−' : '+'} ${Math.abs(c0)}`, w: Opt[] = [];
+    const s2 = 180 * (n - 2) - base - c0; if (s2 % k === 0 && s2 / k > 0 && s2 / k !== x) w.push({ v: q(s2 / k), note: '외각의 합을 내각의 합처럼 계산함 (외각의 합은 항상 360°)' });
+    const s3 = 180 - base - c0; if (s3 % k === 0 && s3 / k > 0) w.push({ v: q(s3 / k), note: '외각의 합을 180°로 봄' });
+    return build(r, { text: `${gon(n)}의 외각의 크기가 각각 ${[...cs.map((c) => `${c}°`), M(`(${xe})°`)].join(', ')}일 때, ${M('x')}의 값은?`, correct: { v: q(x) }, wrongs: w,
+      fill: nearInt(r, x, 6), fmt: intF, order: 'asc', explain: `다각형의 외각의 합은 항상 360° → ${M(`${base} + ${xe} = 360`)} → ${M(`${k === 1 ? '' : k}x = ${k * x}`)} → ${M(`x = ${x}`)}` }); }
+};
+
 // 고정 문항: 생성기를 정해진 seed 로 돌려 문제지의 원래 문항을 만든다(같은 코드면 항상 같은 문제)
 export function makeFixed(id: string, area: string, seed: number) {
   const { _vals, ...rest } = G[id](makeRng(seed)) as any; void _vals;
