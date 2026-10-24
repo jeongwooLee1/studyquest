@@ -1976,6 +1976,89 @@ G['ht-10'] = (r) => { // 정삼각형을 한 줄로 이어 붙인 띠의 둘레
     fig: shape(pts, items) };
 };
 
+// ── 다희(초4) 4-2 「사각형」: 수직과 평행, 사다리꼴·평행사변형·마름모·직사각형·정사각형 ──
+G['hq-1'] = (r) => tfPick(r, ['두 직선이 만나서 이루는 각이 직각이면 두 직선은 서로 수직이다.', '한 직선에 수직인 두 직선은 서로 평행하다.', '평행한 두 직선은 아무리 길게 늘여도 서로 만나지 않는다.', '평행선 사이의 거리는 어디에서 재어도 같다.', '한 점을 지나고 한 직선에 수직인 직선은 한 개만 그을 수 있다.'],
+  [['평행선 사이의 거리는 재는 곳마다 다르다.', '평행선 사이의 수선의 길이는 어디서나 같음'], ['한 점을 지나고 한 직선에 평행한 직선은 여러 개 그을 수 있다.', '한 개만 그을 수 있음'],
+   ['두 직선이 만나기만 하면 서로 수직이다.', '만나서 이루는 각이 직각일 때만 수직'], ['평행선 사이의 거리는 두 직선을 비스듬히 이은 선분의 길이이다.', '수직인 선분(수선)의 길이'], ['서로 만나지 않는 두 직선은 수직이다.', '만나지 않는 두 직선은 평행']], '수직과 평행');
+G['hq-2'] = (r) => { // 세 평행선 사이의 거리
+  const a = ri(r, 2, 12); let b: number; do { b = ri(r, 2, 12); } while (b === a); const whole = r() < 0.5;
+  const fig = shape({ _a1: P(0, 0), _a2: P(8, 0), _b1: P(0, -1.6), _b2: P(8, -1.6), _c1: P(0, -3.2), _c2: P(8, -3.2), _p: P(6, 0), _q: P(6, -1.6), _s: P(6, -3.2) }, [
+    { k: 'seg', p: ['_a1', '_a2'] }, { k: 'seg', p: ['_b1', '_b2'] }, { k: 'seg', p: ['_c1', '_c2'] }, { k: 'text', at: [-0.5, 0], s: '가' }, { k: 'text', at: [-0.5, -1.6], s: '나' }, { k: 'text', at: [-0.5, -3.2], s: '다' },
+    { k: 'seg', p: ['_p', '_q'], dash: true, label: whole ? `${a} cm` : `${a} cm` }, { k: 'seg', p: ['_q', '_s'], dash: true, label: whole ? `${b} cm` : '? cm' }]);
+  if (whole) return { ...build(r, { text: `직선 가, 나, 다는 서로 평행합니다. 가와 나 사이의 거리가 ${a} cm, 나와 다 사이의 거리가 ${b} cm일 때, 가와 다 사이의 거리는?`, correct: { v: q(a + b) },
+    wrongs: [{ v: q(Math.abs(a - b)), note: '두 거리의 차를 구함 (가와 다 사이는 두 거리의 합)' }, { v: q(a * b), note: '두 거리를 곱함' }, { v: q(Math.max(a, b)), note: '한 거리만 씀' }],
+    fill: nearInt(r, a + b, 4), fmt: cm, order: 'asc', explain: `가와 다 사이 = 가와 나 사이 + 나와 다 사이 = ${a} + ${b} = ${a + b} cm` }), fig };
+  return { ...build(r, { text: `직선 가, 나, 다는 서로 평행합니다. 가와 다 사이의 거리가 ${a + b} cm, 가와 나 사이의 거리가 ${a} cm일 때, 나와 다 사이의 거리는?`, correct: { v: q(b) },
+    wrongs: [{ v: q(2 * a + b), note: '빼야 하는데 더함' }, { v: q(a), note: '가와 나 사이 거리를 그대로 씀' }, { v: q(a + b), note: '가와 다 사이 거리를 그대로 씀' }],
+    fill: nearInt(r, b, 4), fmt: cm, order: 'asc', explain: `나와 다 사이 = ${a + b} − ${a} = ${b} cm` }), fig };
+};
+const pgFig = (a: number, b: number, t: number, labs: any[] = []) => { const c = Math.cos(t * Math.PI / 180) * b * 0.6, s = Math.sin(t * Math.PI / 180) * b * 0.6, A = a * 0.6;
+  return shape({ _A: P(0, 0), _B: P(A, 0), _C: P(A + c, s), _D: P(c, s) }, [{ k: 'poly', p: ['_A', '_B', '_C', '_D'] }, ...labs]); };
+G['hq-3'] = (r) => { // 평행사변형 둘레
+  let a: number, b: number; do { a = ri(r, 3, 15); b = ri(r, 3, 15); } while (a === b);
+  if (r() < 0.5) return { ...build(r, { text: `이웃한 두 변의 길이가 ${a} cm, ${b} cm인 평행사변형의 네 변의 길이의 합은?`, correct: { v: q(2 * (a + b)) },
+    wrongs: [{ v: q(a + b), note: '두 변만 더함 (마주 보는 변도 같으므로 2배)' }, { v: q(4 * a), note: '네 변이 모두 같다고 봄 (마름모처럼)' }, { v: q(a * b), note: '두 변을 곱함 (넓이처럼)' }],
+    fill: nearInt(r, 2 * (a + b), 6), fmt: cm, order: 'asc', explain: `평행사변형은 마주 보는 두 변의 길이가 같아요 → (${a} + ${b}) × 2 = ${2 * (a + b)} cm` }),
+    fig: pgFig(a, b, 60, [{ k: 'side', p: ['_A', '_B'], label: `${a} cm` }, { k: 'side', p: ['_D', '_A'], label: `${b} cm` }]) };
+  const L = 2 * (a + b);
+  return { ...build(r, { text: `네 변의 길이의 합이 ${L} cm인 평행사변형에서 한 변의 길이가 ${a} cm입니다. 이 변과 이웃한 변의 길이는?`, correct: { v: q(b) },
+    wrongs: [{ v: q(L - a), note: '한 변만 뺌 (마주 보는 변도 같은 길이)' }, { v: q(L - 2 * a), note: '2로 나누지 않음' }, ...(L % 4 === 0 ? [{ v: q(L / 4), note: '네 변이 모두 같다고 봄' }] : [])],
+    fill: nearInt(r, b, 4), fmt: cm, order: 'asc', explain: `${L} − ${a} × 2 = ${L - 2 * a} → 이웃한 변 2개이므로 ÷ 2 = ${b} cm` }),
+    fig: pgFig(a, b, 60, [{ k: 'side', p: ['_A', '_B'], label: `${a} cm` }, { k: 'side', p: ['_D', '_A'], label: '? cm' }]) };
+};
+G['hq-4'] = (r) => { // 평행사변형의 각
+  const x = ri(r, 7, 16) * 5, ask = pick(r, ['이웃한', '마주 보는'] as const), ans = ask === '이웃한' ? 180 - x : x;
+  return { ...build(r, { text: `평행사변형에서 한 각의 크기가 ${x}°입니다. 이 각과 <b>${ask}</b> 각의 크기는?`, correct: { v: q(ans) },
+    wrongs: ask === '이웃한' ? [{ v: q(x), note: '이웃한 각을 마주 보는 각처럼 같다고 봄 (이웃한 두 각의 합은 180°)' }, { v: q(360 - x), note: '360°에서 뺌' }, { v: q(90 - x > 0 ? 90 - x : x - 90 || 5) }]
+      : [{ v: q(180 - x), note: '마주 보는 각을 이웃한 각처럼 계산함 (마주 보는 각은 크기가 같음)' }, { v: q(360 - x) }, { v: q(2 * x), note: '2배 함' }],
+    fill: () => q(5 * ri(r, 4, 32)), fmt: degF, order: 'asc', explain: ask === '이웃한' ? `평행사변형에서 이웃한 두 각의 합은 180° → 180° − ${x}° = ${ans}°` : `평행사변형에서 마주 보는 두 각의 크기는 같아요 → ${x}°` }),
+    fig: pgFig(10, 7, x, [{ k: 'angle', p: ['_B', '_A', '_D'], label: `${x}°` }, { k: 'angle', p: ask === '이웃한' ? ['_C', '_B', '_A'] : ['_D', '_C', '_B'], label: '?' }]) };
+};
+G['hq-5'] = (r) => { // 마름모 둘레 ↔ 한 변
+  const a = ri(r, 3, 20);
+  if (r() < 0.5) return build(r, { text: `네 변의 길이의 합이 ${4 * a} cm인 마름모의 한 변의 길이는?`, correct: { v: q(a) },
+    wrongs: [{ v: q(2 * a), note: '2로 나눔 (마름모는 네 변이 모두 같으므로 4로 나눔)' }, ...((4 * a) % 3 === 0 ? [{ v: q(4 * a / 3), note: '3으로 나눔' }] : []), { v: q(4 * a - 4), note: '4로 나누지 않고 뺌' }],
+    fill: nearInt(r, a, 4), fmt: cm, order: 'asc', explain: `마름모는 네 변의 길이가 모두 같아요 → ${4 * a} ÷ 4 = ${a} cm` });
+  return build(r, { text: `한 변의 길이가 ${a} cm인 마름모의 네 변의 길이의 합은?`, correct: { v: q(4 * a) },
+    wrongs: [{ v: q(2 * a), note: '두 변만 더함' }, { v: q(a * a), note: '변을 곱함 (넓이처럼)' }, { v: q(3 * a), note: '세 변만 더함' }],
+    fill: nearInt(r, 4 * a, 6), fmt: cm, order: 'asc', explain: `네 변이 모두 ${a} cm → ${a} × 4 = ${4 * a} cm` });
+};
+G['hq-6'] = (r) => tfPick(r, ['정사각형은 직사각형이라고 할 수 있다.', '정사각형은 마름모라고 할 수 있다.', '직사각형은 평행사변형이라고 할 수 있다.', '마름모는 평행사변형이라고 할 수 있다.', '평행사변형은 사다리꼴이라고 할 수 있다.'],
+  [['직사각형은 정사각형이라고 할 수 있다.', '직사각형은 네 변의 길이가 같지 않을 수 있음'], ['마름모는 정사각형이라고 할 수 있다.', '마름모는 네 각이 직각이 아닐 수 있음'], ['사다리꼴은 평행사변형이라고 할 수 있다.', '사다리꼴은 평행한 변이 한 쌍뿐일 수 있음'],
+   ['평행사변형은 마름모라고 할 수 있다.', '평행사변형은 네 변이 모두 같지 않을 수 있음'], ['직사각형은 마름모라고 할 수 있다.', '직사각형은 네 변이 모두 같지 않을 수 있음']], '여러 가지 사각형');
+const QUADS: [string, string][] = [['사다리꼴', '평행한 변이 한 쌍이라도 있는'], ['평행사변형', '마주 보는 두 쌍의 변이 서로 평행한'], ['마름모', '네 변의 길이가 모두 같은'], ['직사각형', '네 각이 모두 직각인'], ['정사각형', '네 변의 길이가 모두 같고 네 각이 모두 직각인']];
+G['hq-7'] = (r) => { // 조건으로 가장 알맞은 이름 (조건만으로 알 수 있는 가장 좁은 이름)
+  const i = ri(r, 0, 4), [name, cond] = QUADS[i], names = QUADS.map((x) => x[0]);
+  const wider: Record<number, number[]> = { 0: [], 1: [0], 2: [1, 0], 3: [1, 0], 4: [3, 2, 1, 0] }; // i 가 될 수 있는 더 넓은 이름
+  const t = build(r, { text: `${cond} 사각형의 이름으로 <b>가장 알맞은</b> 것은?`, correct: { s: name },
+    wrongs: names.filter((_, j) => j !== i).map((s) => { const j = names.indexOf(s); return { s, note: wider[i].includes(j) ? `${s}${josa(s, '이라고', '라고')}도 할 수 있지만 더 알맞은 이름이 있음` : wider[j].includes(i) ? `조건만으로는 ${s}${josa(s, '이라고', '라고')} 할 수 없음` : '조건에 맞지 않음' }; }), order: 'fixed',
+    explain: `${cond} 사각형 → ${name}${i === 4 ? '' : ' (이 조건만으로는 더 좁은 이름을 붙일 수 없어요)'}` });
+  // 보기는 늘 사다리꼴 → 정사각형 순서로
+  const idx = names.map((o) => t.options.indexOf(o) + 1);
+  return { ...t, options: names, answer: idx.indexOf(t.answer) + 1, traps: t.traps.map((x: any) => ({ ...x, a: idx.indexOf(x.a) + 1 })), _vals: names.map(() => null) };
+};
+G['hq-8'] = (r) => { // 마름모 나머지 세 각
+  const x = ri(r, 7, 16) * 5, ask = r() < 0.5 ? 'sum' : 'adj';
+  if (ask === 'sum') return build(r, { text: `마름모에서 한 각의 크기가 ${x}°일 때, 나머지 세 각의 크기의 합은?`, correct: { v: q(360 - x) },
+    wrongs: [{ v: q(180 - x), note: '사각형 네 각의 합을 180°로 봄 (360°)' }, { v: q(3 * x), note: '네 각이 모두 같다고 봄' }, { v: q(360), note: '네 각의 합을 그대로 씀' }],
+    fill: () => q(5 * ri(r, 20, 66)), fmt: degF, order: 'asc', explain: `사각형의 네 각의 합은 360° → 360° − ${x}° = ${360 - x}°` });
+  return build(r, { text: `마름모에서 한 각의 크기가 ${x}°일 때, 이 각과 이웃한 각의 크기는?`, correct: { v: q(180 - x) },
+    wrongs: [{ v: q(x), note: '이웃한 각을 마주 보는 각처럼 같다고 봄' }, { v: q(360 - x), note: '360°에서 뺌 (이웃한 두 각의 합은 180°)' }, { v: q(90) , note: '마름모의 각을 직각으로 봄' }],
+    fill: () => q(5 * ri(r, 4, 32)), fmt: degF, order: 'asc', explain: `마름모도 평행사변형이에요 → 이웃한 두 각의 합 180° → 180° − ${x}° = ${180 - x}°` });
+};
+G['hq-9'] = (r) => { // 둘레와 두 변의 차 → 긴 변
+  for (;;) { const s = ri(r, 3, 12), d = ri(r, 1, 8), l = s + d, L = 2 * (s + l), askLong = r() < 0.5;
+    return build(r, { text: `네 변의 길이의 합이 ${L} cm인 평행사변형에서 긴 변이 짧은 변보다 ${d} cm 깁니다. ${askLong ? '긴' : '짧은'} 변의 길이는?`, correct: { v: q(askLong ? l : s) },
+      wrongs: [{ v: q(askLong ? s : l), note: `${askLong ? '짧은' : '긴'} 변을 구함` }, { v: q(L / 2), note: '두 변의 합을 답함 (둘레 ÷ 2 = 긴 변 + 짧은 변)' }, ...((L / 2 - d) % 2 === 0 ? [] : []), { v: q(askLong ? l + d : Math.max(1, s - d)) }],
+      fill: nearInt(r, askLong ? l : s, 4), fmt: cm, order: 'asc', explain: `둘레 ÷ 2 = 긴 변 + 짧은 변 = ${L / 2} cm → 짧은 변 = (${L / 2} − ${d}) ÷ 2 = ${s} cm, 긴 변 = ${s} + ${d} = ${l} cm` }); }
+};
+G['hq-10'] = (r) => { // 마주 보는 두 각의 합 → 다른 각
+  const x = ri(r, 7, 17) * 5, S = 2 * x, ans = 180 - x;
+  return build(r, { text: `평행사변형에서 마주 보는 두 각의 크기의 합이 ${S}°일 때, 다른 한 각의 크기는?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(x), note: '마주 보는 한 각을 구하고 끝냄' }, { v: q(360 - S), note: '나머지 두 각의 합을 구함 (÷ 2를 빠뜨림)' }, { v: q(180 - S > 0 ? 180 - S : S - 180 || 5), note: '이웃한 각의 합 180°에서 두 각의 합을 뺌' }],
+    fill: () => q(5 * ri(r, 4, 32)), fmt: degF, order: 'asc', explain: `마주 보는 두 각은 같으므로 한 각 = ${S}° ÷ 2 = ${x}° → 이웃한 각 = 180° − ${x}° = ${ans}°` });
+};
+
 // 고정 문항: 생성기를 정해진 seed 로 돌려 문제지의 원래 문항을 만든다(같은 코드면 항상 같은 문제)
 export function makeFixed(id: string, area: string, seed: number) {
   const { _vals, ...rest } = G[id](makeRng(seed)) as any; void _vals;
