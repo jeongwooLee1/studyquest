@@ -5,6 +5,7 @@
 | sci-gas-diag | 기체의 성질 진단 | 49·50·54강 | 12 | false (정답 비공개) | 15분 |
 | sci-n50 | 압력과 부피 (보일 법칙) | 50강 확인 | 8 | true | 12분 |
 | sci-n54 | 온도와 부피 (샤를 법칙) | 54강 확인 | 8 | true | 12분 |
+| sci-gas-unit | 기체의 성질 단원 종합 | 49~59강 정리 뒤 | 20 | true | 25분 |
 | sci-n37 | 힘의 표현과 평형 | 37강 확인 | 8 | true | 12분 |
 | sci-n38 | 중력 (무게와 질량) | 38강 확인 | 8 | true | 12분 |
 | sci-n39 | 탄성력 | 39강 확인 | 8 | true | 12분 |
@@ -14,6 +15,7 @@
 파일 (`supabase/functions/lt-api/tests/`)
 - `sci_gas.ts` — `SCI_GAS_SETS`(기체 3종), `SCI_TWINS`(문항당 변형 2개)
 - `sci_force.ts` — `SCI_FORCE_SETS`(힘 5종), `SCI_FORCE_TWINS`(문항당 변형 3개)
+- `sci_gas_unit.ts` — `SCI_GAS_UNIT`(기체 종합 20), `SCI_GAS_UNIT_TWINS`(문항당 변형 3개)
 - `sci_common.ts` — 보기 섞기(`mixOptions`, `mixTwins`)
 
 강의 번호·제목은 EBS 중학 뉴런 과학1 개념책(2022개정) 강의 목록 기준: 37 힘의 표현과 평형, 38 중력, 39 탄성력, 40 마찰력, 41 부력, 49 기체의 압력, 50 압력과 부피, 54 온도와 부피.
@@ -36,7 +38,7 @@
 - 형식: `SCI_TWINS[원래 문항 id] = [{ text, options, answer, traps?, explain }, …]` — 문항마다 2개, 보기 5개, answer는 1부터.
 - 문항 객체 안에 넣지 않은 까닭: `publicQ`는 answer·traps·explain만 빼므로 문항 안의 변형 문항 정답이 페이지로 나간다.
 - 같은 개념·같은 함정을 다른 상황(다른 숫자·다른 생활 예)으로 묻는다.
-- 보기 순서: 손으로 쓰면 정답이 2·3번에 몰려서 `mixOptions`로 문항 id에 따라 정해진 순서로 섞는다. 숫자 보기·순서 있는 보기는 그대로 두고 변형 문항에 `keepOrder: true`를 붙인다(twinOf가 다시 섞지 않게). 이미 배포된 기체 문제지 본문은 응시 기록과 맞추려고 섞지 않았다.
+- 보기 순서: 손으로 쓰면 정답이 2·3번에 몰려서 `mixOptions`로 문항 id에 따라 정해진 순서로 섞는다. 숫자 보기·ㄱㄴㄷ 묶음 보기·순서 있는 보기는 그대로 두고 변형 문항에 `keepOrder: true`를 붙인다(twinOf가 다시 섞지 않게). 이미 배포된 기체 문제지 본문은 응시 기록과 맞추려고 섞지 않았다.
 
 ## 검증
 - 구조: 모든 문항·변형 문항의 answer 범위, traps가 정답이 아님, 보기 중복 없음, 영역 연결, 변형 2개 이상 — 스크립트로 확인(오류 0).
