@@ -1894,6 +1894,88 @@ G['ms-10'] = (r) => { // 직각삼각형을 돌린 원뿔의 겉넓이·부피 (
     unitS: ' cm²', fill: nearPv(r, ans), explain: `밑면의 반지름 ${rad} cm, 모선 ${l} cm인 원뿔 → 밑넓이 π × ${rad}² = ${rad * rad}π, 옆넓이 π × ${rad} × ${l} = ${rad * l}π → ${M(piStr(ans))} cm²` }), fig };
 };
 
+// ── 다희(초4) 4-2 「삼각형」: 이등변삼각형·정삼각형, 예각·직각·둔각삼각형 ──
+G['ht-1'] = (r) => { // 이등변삼각형 둘레 → 나머지 한 변
+  for (;;) { const a = ri(r, 4, 15), b = ri(r, 3, 15), Lp = 2 * a + b; if (b === a || b >= 2 * a) continue;
+    return { ...build(r, { text: `이등변삼각형에서 길이가 같은 두 변이 각각 ${a} cm이고, 세 변의 길이의 합이 ${Lp} cm입니다. 나머지 한 변은 몇 cm인가요?`, correct: { v: q(b) },
+      wrongs: [{ v: q(Lp - a), note: '같은 변을 하나만 뺌 (같은 변이 2개)' }, ...(Lp % 3 === 0 ? [{ v: q(Lp / 3), note: '정삼각형처럼 3으로 나눔' }] : []), { v: q(Lp + a) }, { v: q(a), note: '같은 변의 길이를 그대로 씀' }],
+      fill: nearInt(r, b, 4), fmt: cm, order: 'asc', explain: `${Lp} − ${a} − ${a} = ${b} cm (길이가 같은 변이 2개)` }),
+      fig: shape({ _B: P(0, 0), _C: P(b, 0), _A: P(b / 2, Math.sqrt(a * a - b * b / 4)) }, [{ k: 'poly', p: ['_A', '_B', '_C'] }, { k: 'side', p: ['_B', '_A'], label: `${a} cm` }, { k: 'side', p: ['_A', '_C'], label: `${a} cm` }, { k: 'side', p: ['_B', '_C'], label: '? cm' }, { k: 'tick', p: ['_A', '_B'] }, { k: 'tick', p: ['_A', '_C'] }]) }; }
+};
+G['ht-2'] = (r) => { // 꼭지각 → 밑각
+  const t = ri(r, 4, 28) * 5, ans = (180 - t) / 2; if (!Number.isInteger(ans)) return G['ht-2'](r);
+  return build(r, { text: `이등변삼각형에서 길이가 같은 두 변 사이의 각이 ${t}°일 때, 나머지 한 각(밑각)의 크기는?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(180 - t), note: '÷ 2를 빠뜨림 (크기가 같은 밑각이 2개)' }, { v: q(t), note: '주어진 각을 그대로 고름' }, ...(t < 90 ? [{ v: q(90 - t), note: '삼각형 세 각의 합을 90°로 봄' }] : [])],
+    fill: () => q(Math.max(5, ans + (r() < 0.5 ? -1 : 1) * ri(r, 1, 6) * 5)), fmt: degF, order: 'asc', explain: `세 각의 합 180° → 180° − ${t}° = ${180 - t}°, 밑각 두 개가 같으므로 ÷ 2 → ${ans}°` });
+};
+G['ht-3'] = (r) => { // 밑각 → 꼭지각
+  const b = ri(r, 7, 17) * 5, ans = 180 - 2 * b;
+  return build(r, { text: `이등변삼각형에서 크기가 같은 두 각이 각각 ${b}°일 때, 나머지 한 각의 크기는?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(180 - b), note: '같은 각을 하나만 뺌 (같은 각이 2개)' }, { v: q(b), note: '주어진 각을 그대로 고름' }, { v: q(360 - 2 * b), note: '삼각형 세 각의 합을 360°로 봄' }],
+    fill: () => q(Math.max(5, ans + (r() < 0.5 ? -1 : 1) * ri(r, 1, 6) * 5)), fmt: degF, order: 'asc', explain: `180° − ${b}° − ${b}° = ${ans}°` });
+};
+G['ht-4'] = (r) => { // 정삼각형 둘레 → 한 변
+  const a = ri(r, 3, 25), Lp = 3 * a;
+  return build(r, { text: `세 변의 길이의 합이 ${Lp} cm인 정삼각형의 한 변은 몇 cm인가요?`, correct: { v: q(a) },
+    wrongs: [...(Lp % 2 === 0 ? [{ v: q(Lp / 2), note: '2로 나눔 (정삼각형은 세 변이 같으므로 3으로 나눔)' }] : []), ...(Lp % 4 === 0 ? [{ v: q(Lp / 4), note: '정사각형처럼 4로 나눔' }] : []), { v: q(Lp - 3), note: '3으로 나누지 않고 뺌' }, { v: q(Lp) }],
+    fill: nearInt(r, a, 4), fmt: cm, order: 'asc', explain: `정삼각형은 세 변의 길이가 모두 같아요 → ${Lp} ÷ 3 = ${a} cm` });
+};
+G['ht-5'] = (r) => tfPick(r, ['정삼각형의 세 각은 모두 60°이다.', '이등변삼각형은 두 각의 크기가 같다.', '정삼각형은 이등변삼각형이라고 할 수 있다.', '정삼각형은 세 변의 길이가 모두 같다.', '직각삼각형에는 직각이 한 개 있다.'],
+  [['이등변삼각형은 세 변의 길이가 모두 같다.', '이등변삼각형은 두 변의 길이가 같음'], ['정삼각형의 한 각은 90°이다.', '정삼각형의 한 각은 60°'], ['이등변삼각형은 모두 정삼각형이다.', '두 변만 같은 이등변삼각형도 있음'],
+   ['둔각삼각형에는 둔각이 두 개 있다.', '둔각은 한 개만 있을 수 있음 (두 개면 합이 180°보다 커짐)'], ['예각삼각형에는 예각이 두 개 있다.', '예각삼각형은 세 각이 모두 예각']], '삼각형');
+const TRI3 = ['예각삼각형', '직각삼각형', '둔각삼각형'];
+const triKind = (m: number) => (m < 90 ? 0 : m === 90 ? 1 : 2);
+G['ht-6'] = (r) => { // 두 각으로 분류 (나머지 각 구하기)
+  for (;;) { const a = ri(r, 3, 16) * 5, b = ri(r, 3, 16) * 5, c = 180 - a - b; if (c <= 0) continue; const k = triKind(Math.max(a, b, c)), naive = triKind(Math.max(a, b)); if (k === naive && r() < 0.7) continue;
+    const correct = { s: TRI3[k] };
+    const t = build(r, { text: `삼각형의 두 각의 크기가 ${a}°, ${b}°입니다. 이 삼각형은 어떤 삼각형인가요?`, correct,
+      wrongs: TRI3.filter((_, i) => i !== k).map((s, i) => ({ s, note: TRI3.indexOf(s) === naive ? '나머지 한 각을 구하지 않고 주어진 두 각만 보고 판단함' : undefined })), count: 3, order: 'fixed',
+      explain: `나머지 한 각 = 180° − ${a}° − ${b}° = ${c}° → 가장 큰 각 ${Math.max(a, b, c)}°${k === 0 ? '도 예각 → 세 각이 모두 예각: 예각삼각형' : k === 1 ? '가 직각 → 직각삼각형' : '가 둔각 → 둔각삼각형'}` });
+    // 보기는 늘 예각·직각·둔각 순서로
+    const idx = TRI3.map((o) => t.options.indexOf(o) + 1);
+    return { ...t, options: TRI3, answer: idx.indexOf(t.answer) + 1, traps: t.traps.map((x: any) => ({ ...x, a: idx.indexOf(x.a) + 1 })), _vals: TRI3.map(() => null) }; }
+};
+G['ht-7'] = (r) => { // 세 각이 주어진 보기에서 고르기
+  const want = pick(r, [0, 2]), tri = (kind: number) => { for (;;) { const a = ri(r, 2, 30) * 5, b = ri(r, 2, 30) * 5, c = 180 - a - b; if (c < 10) continue; if (triKind(Math.max(a, b, c)) === kind) return [a, b, c]; } };
+  const s = (t: number[]) => t.map((x) => `${x}°`).join(', '), c = tri(want), others: number[][] = [];
+  for (const k of [1, 2 - want, 2 - want, 1, 2 - want, 1, 2 - want]) { if (others.length >= 4) break; for (let t2 = 0; t2 < 50; t2++) { const o = tri(k); if (s(o) !== s(c) && !others.some((x) => s(x) === s(o))) { others.push(o); break; } } }
+  return build(r, { text: `세 각의 크기가 다음과 같은 삼각형 중 <b>${TRI3[want]}</b>은?`, correct: { s: s(c) },
+    wrongs: others.map((t) => ({ s: s(t), note: `${TRI3[triKind(Math.max(...t))]}을 고름 (가장 큰 각 ${Math.max(...t)}°)` })), order: 'shuffle',
+    explain: `가장 큰 각을 보면 돼요: ${s(c)} → 가장 큰 각 ${Math.max(...c)}°${want === 0 ? '도 90°보다 작음 → 예각삼각형' : '가 90°보다 큼 → 둔각삼각형'}` });
+};
+G['ht-8'] = (r) => { // 변과 각으로 이름 붙이기
+  const sideK = pick(r, ['이등변', '세 변 다름'] as const), angK = ri(r, 0, 2);
+  const angle = angK === 0 ? ri(r, 10, 16) * 5 : angK === 1 ? 90 : ri(r, 20, 28) * 5;
+  const sides = sideK === '이등변' ? `두 변의 길이가 같고` : '세 변의 길이가 모두 다르고';
+  const name = (sk: string, ak: number) => `${sk === '이등변' ? '이등변삼각형' : '세 변의 길이가 다른 삼각형'}이면서 ${TRI3[ak]}`;
+  const correct = name(sideK, angK), ws = [name(sideK, (angK + 1) % 3), name(sideK, (angK + 2) % 3), name(sideK === '이등변' ? '다름' : '이등변', angK), '정삼각형'];
+  return build(r, { text: `${sides}, 가장 큰 각이 ${angle}°인 삼각형의 이름으로 알맞은 것은?`, correct: { s: correct },
+    wrongs: ws.map((s, i) => ({ s, note: i < 2 ? '각으로 나누는 것을 잘못함 (가장 큰 각으로 판단)' : i === 2 ? '변으로 나누는 것을 잘못함' : '정삼각형은 세 변이 모두 같고 세 각이 60°' })), order: 'shuffle',
+    explain: `변: ${sideK === '이등변' ? '두 변이 같음 → 이등변삼각형' : '세 변이 다름'} / 각: 가장 큰 각 ${angle}° → ${TRI3[angK]}` });
+};
+G['ht-9'] = (r) => { // 둘레와 나머지 변 → 같은 변
+  for (;;) { const a = ri(r, 4, 15), b = ri(r, 3, 15), Lp = 2 * a + b; if (b === a || b >= 2 * a) continue;
+    return build(r, { text: `세 변의 길이의 합이 ${Lp} cm인 이등변삼각형에서 나머지 한 변이 ${b} cm입니다. 길이가 같은 한 변은 몇 cm인가요?`, correct: { v: q(a) },
+      wrongs: [{ v: q(Lp - b), note: '2로 나누지 않음 (같은 변이 2개)' }, ...(Lp % 2 === 0 ? [{ v: q(Lp / 2), note: '둘레를 2로만 나눔 (나머지 변을 먼저 빼야 함)' }] : []), ...(Lp % 3 === 0 ? [{ v: q(Lp / 3), note: '정삼각형처럼 3으로 나눔' }] : []), { v: q(b), note: '나머지 변의 길이를 그대로 씀' }],
+      fill: nearInt(r, a, 4), fmt: cm, order: 'asc', explain: `${Lp} − ${b} = ${Lp - b} → 같은 변 2개이므로 ${Lp - b} ÷ 2 = ${a} cm` }); }
+};
+G['ht-10'] = (r) => { // 정삼각형을 한 줄로 이어 붙인 띠의 둘레
+  const n = ri(r, 3, 8), a = ri(r, 2, 9), ans = (n + 2) * a, pts: Record<string, number[]> = {}, items: any[] = [];
+  // 위아래로 번갈아 놓은 정삼각형 n개: 아래 꼭짓점 0, a, 2a…, 위 꼭짓점 a/2, 3a/2…
+  const h = a * Math.sqrt(3) / 2, low: string[] = [], up: string[] = [];
+  // 꼭짓점 n + 2개를 아래·위 번갈아 지그재그로: 이웃한 세 점마다 정삼각형 하나
+  for (let i = 0; i < Math.ceil((n + 2) / 2); i++) { pts['_l' + i] = P(i * a, 0); low.push('_l' + i); }
+  for (let i = 0; i < Math.floor((n + 2) / 2); i++) { pts['_u' + i] = P(i * a + a / 2, h); up.push('_u' + i); }
+  const zig: string[] = []; for (let i = 0; i < n + 2; i++) zig.push(i % 2 === 0 ? low[i / 2] : up[(i - 1) / 2]);
+  for (let i = 0; i + 1 < n + 2; i++) items.push({ k: 'seg', p: [zig[i], zig[i + 1]] });
+  for (let i = 0; i + 2 < n + 2; i++) items.push({ k: 'seg', p: [zig[i], zig[i + 2]] });
+  items.push({ k: 'side', p: [low[0], low[1]], label: `${a} cm` });
+  return { ...build(r, { text: `한 변이 ${a} cm인 정삼각형 ${n}개를 그림과 같이 겹치지 않게 한 줄로 이어 붙였습니다. 만든 도형의 둘레는 몇 cm인가요?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(3 * n * a), note: '붙은 변도 모두 셈 (붙은 변은 둘레가 아님)' }, { v: q(n * a), note: '한 줄의 변만 셈' }, { v: q((n + 1) * a) }],
+    fill: nearInt(r, ans, 6), fmt: cm, order: 'asc', explain: `정삼각형 ${n}개의 변은 3 × ${n} = ${3 * n}개, 그중 붙은 곳 ${n - 1}군데는 변 2개씩 둘레에서 빠짐 → ${3 * n} − ${2 * (n - 1)} = ${n + 2}개 → ${n + 2} × ${a} = ${ans} cm` }),
+    fig: shape(pts, items) };
+};
+
 // 고정 문항: 생성기를 정해진 seed 로 돌려 문제지의 원래 문항을 만든다(같은 코드면 항상 같은 문제)
 export function makeFixed(id: string, area: string, seed: number) {
   const { _vals, ...rest } = G[id](makeRng(seed)) as any; void _vals;
