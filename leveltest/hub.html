@@ -59,6 +59,7 @@
   var DIAG_WHEN = '이번 주 진단 · 하루 1~2개 · 모르는 건 「잘 모르겠어요」';
   var M1_EXTRA = [
     { label: '📝 진단 테스트 (국어·영어·과학)', items: [{ id: 'kor-m1-diag', when: DIAG_WHEN }, { id: 'eng-m1-diag', when: DIAG_WHEN }, { id: 'sci-gas-diag', when: DIAG_WHEN }] },
+    { label: '🔬 과학 · 뉴런 강의 확인 문제', items: [{ id: 'sci-n50' }, { id: 'sci-n54' }] },
   ];
   var E4_EXTRA = [
     { label: '📝 진단 테스트 (국어·영어)', items: [{ id: 'kor-e4-diag', when: DIAG_WHEN }, { id: 'eng-e4-diag', when: DIAG_WHEN }] },
@@ -84,6 +85,8 @@
   // 학교에서 아직 안 배운 단원 — 배운 다음에 풀기
   var WHEN = {};
   // 강의 대신 볼 약속
+  LECTURES['sci-n50'] = 'EBS 중학 앱 「뉴런 과학1」 50강 (기체의 압력과 부피)';
+  LECTURES['sci-n54'] = 'EBS 중학 앱 「뉴런 과학1」 54강 (기체의 온도와 부피)';
   var TIPS = { 'h-word': '강의 없이 바로! 구하는 것에 밑줄 긋고, 답을 고른 뒤 문제를 한 번 더 읽어요.' };
   var PASS = 0.8; // 이 비율 이상 맞히면 ⭐ 통과
   var app = document.getElementById('app');
@@ -142,7 +145,7 @@
       '<div class="t">' + LT.esc(m.title) + '</div>' +
       '<div class="u">' + LT.esc(m.subtitle) + '</div>' +
       '<div class="meta">' + m.count + '문항 · ' + m.minutes + '분' + (item.when ? '<br><span class="when">📅 ' + LT.esc(item.when) + '</span>' : '') + '</div>' +
-      (LECTURES[item.id] ? '<div class="lec"><b>📺 먼저 볼 강의</b> EBS 초등 앱에서 ' + LT.esc(LECTURES[item.id]) + '</div>' : '') +
+      (LECTURES[item.id] ? '<div class="lec"><b>📺 먼저 볼 강의</b> ' + (/^EBS/.test(LECTURES[item.id]) ? '' : 'EBS 초등 앱에서 ') + LT.esc(LECTURES[item.id]) + '</div>' : '') +
       (TIPS[item.id] ? '<div class="lec"><b>✏️ 약속</b> ' + LT.esc(TIPS[item.id]) + '</div>' : '') + '<div class="st">';
     if (going) {
       h += '<span class="chip go">✏️ 풀고 있어요</span><div class="acts"><a class="btn sm" href="' + link(item.id, name) + '">이어 풀기</a></div>';

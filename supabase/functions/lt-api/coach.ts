@@ -5,9 +5,9 @@
 // 아이별 진도 (hub.html STUDENTS 와 같은 순서)
 // wait: 학교에서 아직 안 배운 단원 — 다음 문제지로 권하지 않는다
 export const PLAN: Record<string, { emoji: string; sets: string[]; wait?: string[]; tests: string[] }> = {
-  '이다연': { emoji: '🐰', sets: ['u-mix', 'u-div', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag'] },
-  '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-addf', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag'] },
-  '이다희': { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec'], tests: ['math-e4', 'eng-e4-diag'] },
+  '이다연': { emoji: '🐰', sets: ['u-mix', 'u-div', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
+  '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-addf', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
+  '이다희': { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec'], tests: ['math-e4', 'eng-e4-diag', 'kor-e4-diag'] },
 };
 // 이 레벨테스트의 부족한 영역은 이미 문제지로 만들어져 있다
 const COVERED = ['math-m1', 'math-e4'];
@@ -23,6 +23,8 @@ export const LECTURES: Record<string, string> = {
   'u-prop': 'EBS 초등 「만점왕 수학 6-2」 → 「비례식과 비례배분」 개념 강의',
   'h-frac': 'EBS 초등 「만점왕 수학 3-2」 → 「분수」 개념 강의',
   'h-dec': 'EBS 초등 「만점왕 수학 4-2」 → 「소수의 덧셈과 뺄셈」 개념 강의',
+  'sci-n50': 'EBS 중학 「뉴런 과학1」 50강 (기체의 압력과 부피)',
+  'sci-n54': 'EBS 중학 「뉴런 과학1」 54강 (기체의 온도와 부피)',
   'h-word': '강의 없이 — 구하는 것에 밑줄 긋고, 답을 고른 뒤 문제를 한 번 더 읽기',
 };
 // 오답 습관 → 다음에 할 행동
