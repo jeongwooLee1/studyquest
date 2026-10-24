@@ -28,7 +28,8 @@
 | id | 문항·시간 | 영역 |
 |---|---|---|
 | eng-m1-past | 10·12분 | 규칙 과거형 철자 2 · 불규칙 과거형 3 · was/were 2 · did 부정·의문 3 |
+| eng-m1-modal | 10·12분 | can·may 2 · will·be going to 2 · must·have to·should 3 · 조동사 문장 형태 3 |
 
 - 출판사와 상관없는 중1 성취기준 문법(과거시제는 모든 중1 교과서에 있음).
 - 다시 풀기 변형: `ENG_VARIANTS[원래 문항 id]` 3개씩(30개), 함정 문구는 원래 문항과 같은 상수 사용.
-- 통합: index.ts `VARIANTS`에 `...ENG_VARIANTS`, TESTS에 `...ENG_GRAM_SETS`, coach.ts PLAN·LECTURES에 `eng-m1-past`.
+- 통합: index.ts `VARIANTS`에 `...ENG_VARIANTS`, TESTS에 `...ENG_GRAM_SETS`, coach.ts PLAN·LECTURES에 세트 id 추가.
