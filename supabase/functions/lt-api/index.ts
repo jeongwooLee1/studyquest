@@ -30,11 +30,14 @@ import { MATH_E4 } from './tests/math_e4.ts';
 import { UNIT_SETS } from './tests/rec_units.ts';
 import { E4_SETS } from './tests/e4_sets.ts';
 import { GEO_E } from './tests/geo_e.ts';
+import { ENG_DIAG, engReliability } from './tests/eng_diag.ts';
 import { grade } from './grade.ts';
-import { makeTwin, hasTwin } from './twins.ts';
+import { makeTwin, hasTwin, makeRng } from './twins.ts';
+import { KOR_M1_DIAG, KOR_E4_DIAG } from './tests/kor_diag.ts';
+import { SCI_GAS_SETS, SCI_TWINS } from './tests/sci_gas.ts';
 import { attemptCoach, dailyCoach, PLAN } from './coach.ts';
 
-const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, GEO_E, REC_1, REC_2, REC_3, REC_4, ...UNIT_SETS, ...E4_SETS].map((t) => [t.id, t]));
+const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, GEO_E, REC_1, REC_2, REC_3, REC_4, ...UNIT_SETS, ...E4_SETS, ...ENG_DIAG, KOR_M1_DIAG, KOR_E4_DIAG, ...SCI_GAS_SETS].map((t) => [t.id, t]));
 const SITE = 'https://study.blissme.ai/leveltest/';
 const GRACE_MS = 2 * 60 * 1000; // 마감 후 네트워크 지연 허용
 
@@ -79,19 +82,43 @@ function unresolvedOf(row: any): string[] {
   if (row.result.mastery) return Object.entries(row.result.mastery).filter(([, o]: any) => !o.mastered).map(([id]) => id);
   return [...new Set((row.result.perQ || []).filter((p: any) => !p.correct).map((p: any) => srcId(p.id)))] as string[];
 }
+// 오늘(한국 시간) 끝낸 다시 풀기에서 MAX_TRIES 번 안에 통과 못 한 유형이 있으면 그날은 다시 풀기 잠금 (찍어서 넘기기 방지)
+const kstDay = (iso: string) => new Date(new Date(iso).getTime() + 9 * 3600e3).toISOString().slice(0, 10);
+async function retryLocked(sb: any, student: string, base: any) {
+  const { data } = await sb.from('lt_attempts').select('started_at,result').eq('student', student).eq('test_id', base.id + RE)
+    .neq('status', 'in_progress').order('started_at', { ascending: false }).limit(1);
+  const last = data && data[0];
+  if (!last || kstDay(last.started_at) !== kstDay(new Date().toISOString())) return false;
+  return Object.values(last.result?.mastery || {}).some((o: any) => o.stopped);
+}
+const LOCK_MSG = '오늘은 여기까지! 아빠랑 같이 풀이를 본 다음, 내일 다시 도전해요.';
 // 마지막으로 낸 답안(원래 문제지 또는 다시 풀기)에서 해결 못 한 유형과, 설명에 쓸 '마지막으로 틀린 문제'
 async function wrongSources(sb: any, student: string, base: any) {
   const { data } = await sb.from('lt_attempts').select('result,status,questions').eq('student', student).in('test_id', [base.id, base.id + RE])
     .neq('status', 'in_progress').order('started_at', { ascending: false }).limit(1);
   const last = data && data[0]; if (!last) return [];
   const qs = last.questions || base.questions;
-  return unresolvedOf(last).filter((id) => hasTwin(id) && base.questions.some((q: any) => q.id === id)).slice(0, MAX_SRC).map((id) => {
+  return unresolvedOf(last).filter((id) => canTwin(id) && base.questions.some((q: any) => q.id === id)).slice(0, MAX_SRC).map((id) => {
     const src = base.questions.find((q: any) => q.id === id), area = base.areas.find((a: any) => a.id === src.area);
     const ps = (last.result.perQ || []).filter((p: any) => srcId(p.id) === id && !p.correct), p = ps[ps.length - 1];
     const q = (p && qs.find((x: any) => x.id === p.id)) || src;
     return { src, lesson: { src: id, no: base.questions.indexOf(src) + 1, area: area ? area.name : '', text: q.text, fig: q.fig, options: q.options, answer: q.answer,
       given: p ? p.given : null, dk: !!(p && p.dk), trap: p ? p.trap : null, explain: q.explain || '', tip: area && area.study ? area.study[1] || area.study[0] : '' } };
   });
+}
+// 다시 풀기 문제 만들기: 수학은 twins.ts 생성기, 국어·영어·과학은 과목 파일의 변형 문항(<과목>_VARIANTS[원래 문항 id])
+const VARIANTS: Record<string, any[]> = { ...SCI_TWINS };
+const canTwin = (id: string) => hasTwin(id) || !!VARIANTS[id]?.length;
+function twinOf(src: any, sd: number, used: string[] = []) {
+  if (hasTwin(src.id)) return makeTwin(src, sd);
+  const vs = VARIANTS[src.id]; if (!vs?.length) return null;
+  const n = used.filter((id) => srcId(id) === src.id).length, k = n % vs.length, v = vs[k];
+  // 변형을 다 쓰고 다시 낼 때만 보기 순서를 섞는다(같은 문제를 같은 자리로 외워 고르지 않게)
+  const idx = v.options.map((_: any, i: number) => i);
+  if (n >= vs.length) { const r = makeRng(sd); for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; } }
+  const pos = (a: number) => idx.indexOf(a - 1) + 1;
+  return { id: `${src.id}~v${k}-${sd.toString(36)}`, src: src.id, area: src.area, type: 'choice', text: v.text, fig: v.fig, options: idx.map((i: number) => v.options[i]),
+    answer: pos(v.answer), traps: (v.traps || []).map((t: any) => ({ ...t, a: pos(t.a) })), explain: v.explain || '' };
 }
 const publicQ = (q: any) => { const { answer: _a, traps: _t, explain: _e, ...rest } = q; return rest; };
 
@@ -156,6 +183,7 @@ function resultMessage(test: any, row: any, res: any) {
   const dk = res.perQ.filter((p: any) => p.dk).length, blank = res.perQ.filter((p: any) => p.blank).length;
   if (dk || blank) L.push(`모르겠어요 ${dk}문항 · 빈칸 ${blank}문항`);
   if (row.fast_guesses) L.push(`⚡ 너무 빨리 찍어서 경고 ${row.fast_guesses}번`);
+  if (String(test.id).startsWith('eng-')) { const r = engReliability(res, row.fast_guesses || 0); L.push(`🔎 진단 신뢰도: ${escH(r.label)}${r.note ? ' — ' + escH(r.note) : ''}`); }
   for (const g of [...new Set(res.areas.map((a: any) => a.group))] as string[]) {
     const as = res.areas.filter((a: any) => a.group === g);
     if (!as.length) continue;
@@ -272,7 +300,9 @@ Deno.serve(async (req) => {
         const rows = (data || []).filter((r: any) => r.test_id === base.id || r.test_id === base.id + RE);
         const last = rows.find((r: any) => r.status !== 'in_progress');
         const wrong = last ? unresolvedOf(last).length : 0;
-        progress[id].retry = { wrong, inProgress: rows.some((r: any) => r.test_id === base.id + RE && r.status === 'in_progress'),
+        const lastRe = rows.find((r: any) => r.test_id === base.id + RE && r.status !== 'in_progress');
+        const locked = !!lastRe && kstDay(lastRe.started_at) === kstDay(new Date().toISOString()) && Object.values(lastRe.result?.mastery || {}).some((o: any) => o.stopped);
+        progress[id].retry = { wrong, locked, inProgress: rows.some((r: any) => r.test_id === base.id + RE && r.status === 'in_progress'),
           rounds: rows.filter((r: any) => r.test_id === base.id + RE && r.status !== 'in_progress').length };
       }
       return json({ student, progress });
@@ -290,6 +320,7 @@ Deno.serve(async (req) => {
       if (!student) return json({ error: '이름이 필요해요' }, 400);
       await finalizeExpired(sb);
       const srcs = await wrongSources(sb, student, base);
+      if (srcs.length && await retryLocked(sb, student, base)) return json({ count: srcs.length, locked: true, message: LOCK_MSG, lessons: [] });
       return json({ count: srcs.length, streak: STREAK, title: base.title, subtitle: base.subtitle, lessons: srcs.map((x: any) => x.lesson) });
     }
 
@@ -317,7 +348,7 @@ Deno.serve(async (req) => {
       const sid = srcId(q.id), o = m[sid];
       if (!o.mastered && !o.stopped && o.pending === 0) {
         const src = baseOf(row.test_id).questions.find((x: any) => x.id === sid);
-        const t = src && makeTwin(src, seed());
+        const t = src && twinOf(src, seed(), questions.map((x: any) => x.id));
         if (t) { questions = [...questions, t]; m = masteryOf(questions, answers); }
       }
       await sb.from('lt_attempts').update({ answers, qtimes, questions, saved_at: new Date().toISOString() }).eq('id', row.id).eq('status', 'in_progress');
@@ -348,7 +379,8 @@ Deno.serve(async (req) => {
       if (isRetry) {
         const srcs = await wrongSources(sb, student, test);
         if (!srcs.length) return json({ error: '다시 풀 틀린 문제가 없어요 🎉' }, 400);
-        questions = srcs.map((x: any) => makeTwin(x.src, seed())).filter(Boolean);
+        if (await retryLocked(sb, student, test)) return json({ error: LOCK_MSG }, 400);
+        questions = srcs.map((x: any) => twinOf(x.src, seed())).filter(Boolean);
         test = retryTest(test, questions);
       }
       const startedAt = new Date(now).toISOString();

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>수학 문제지</title>
+<title>공부 문제지</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="stylesheet" href="lt.css">
 <style>
@@ -55,10 +55,19 @@
   // 문제지를 더 만들면 여기에 id 를 추가한다(id 는 lt-api tests/*.ts 의 id).
   var MATH_M1 = { id: 'math-m1', when: '11/14(토) 다시 보기 · 아빠가 말하면 풀기' };
   var GEO = { id: 'geo-e', when: '이번 주 · 40분 · 중1 2학기 도형 대비 (아빠가 말하면 풀기)' };
+  // 국어·영어·과학 (과목 담당이 만든 문제지). 아직 서버에 없는 id 는 카드가 안 보인다
+  var DIAG_WHEN = '이번 주 진단 · 하루 1~2개 · 모르는 건 「잘 모르겠어요」';
+  var M1_EXTRA = [
+    { label: '📝 진단 테스트 (국어·영어·과학)', items: [{ id: 'kor-m1-diag', when: DIAG_WHEN }, { id: 'eng-m1-diag', when: DIAG_WHEN }, { id: 'sci-gas-diag', when: DIAG_WHEN }] },
+    { label: '🔬 과학 · 뉴런 강의 확인 문제', items: [{ id: 'sci-n50' }, { id: 'sci-n54' }] },
+  ];
+  var E4_EXTRA = [
+    { label: '📝 진단 테스트 (국어·영어)', items: [{ id: 'kor-e4-diag', when: DIAG_WHEN }, { id: 'eng-e4-diag', when: DIAG_WHEN }] },
+  ];
   var STUDENTS = [
-    { name: '이다연', emoji: '🐰', sets: ['u-mix', 'u-div', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [GEO, MATH_M1] },
-    { name: '이다혜', emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-addf', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [GEO, MATH_M1] },
-    { name: '이다희', emoji: '🐥', setsLabel: '보충 문제지', sets: ['h-frac', 'h-word', 'h-dec'], tests: [{ id: 'math-e4', when: '아빠가 말하면 풀기 · 45분' }] },
+    { name: '이다연', emoji: '🐰', sets: ['u-mix', 'u-div', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [GEO, MATH_M1], extra: M1_EXTRA },
+    { name: '이다혜', emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-addf', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [GEO, MATH_M1], extra: M1_EXTRA },
+    { name: '이다희', emoji: '🐥', setsLabel: '수학 보충 문제지', sets: ['h-frac', 'h-word', 'h-dec'], tests: [{ id: 'math-e4', when: '아빠가 말하면 풀기 · 45분' }], extra: E4_EXTRA },
   ];
   // 문제지를 풀기 전에 볼 EBS 강의 (EBS 초등 앱에서 교재 이름으로 검색 → 단원 이름 찾기). 단원평가·시험 문제 풀이 강의는 건너뛴다.
   var LECTURES = {
@@ -74,8 +83,10 @@
     'h-dec': '「만점왕 수학 4-2」 → 「소수의 덧셈과 뺄셈」 개념 강의',
   };
   // 학교에서 아직 안 배운 단원 — 배운 다음에 풀기
-  var WHEN = { 'h-dec': '학교에서 4-2 「소수의 덧셈과 뺄셈」을 배운 다음에 풀어요' };
+  var WHEN = {};
   // 강의 대신 볼 약속
+  LECTURES['sci-n50'] = 'EBS 중학 앱 「뉴런 과학1」 50강 (기체의 압력과 부피)';
+  LECTURES['sci-n54'] = 'EBS 중학 앱 「뉴런 과학1」 54강 (기체의 온도와 부피)';
   var TIPS = { 'h-word': '강의 없이 바로! 구하는 것에 밑줄 긋고, 답을 고른 뒤 문제를 한 번 더 읽어요.' };
   var PASS = 0.8; // 이 비율 이상 맞히면 ⭐ 통과
   var app = document.getElementById('app');
@@ -91,8 +102,8 @@
   }
 
   function pickName() {
-    document.title = '수학 문제지';
-    app.innerHTML = '<div class="card"><h1>📚 수학 문제지</h1><p class="sub">누구인지 골라 주세요</p><div class="names">' +
+    document.title = '공부 문제지';
+    app.innerHTML = '<div class="card"><h1>📚 공부 문제지</h1><p class="sub">누구인지 골라 주세요</p><div class="names">' +
       STUDENTS.map(function (s, i) { return '<button data-i="' + i + '">' + face(s) + LT.esc(s.name) + '</button>'; }).join('') + '</div></div>';
     var names = app.querySelector('.names');
     names.onclick = function (e) {
@@ -134,7 +145,7 @@
       '<div class="t">' + LT.esc(m.title) + '</div>' +
       '<div class="u">' + LT.esc(m.subtitle) + '</div>' +
       '<div class="meta">' + m.count + '문항 · ' + m.minutes + '분' + (item.when ? '<br><span class="when">📅 ' + LT.esc(item.when) + '</span>' : '') + '</div>' +
-      (LECTURES[item.id] ? '<div class="lec"><b>📺 먼저 볼 강의</b> EBS 초등 앱에서 ' + LT.esc(LECTURES[item.id]) + '</div>' : '') +
+      (LECTURES[item.id] ? '<div class="lec"><b>📺 먼저 볼 강의</b> ' + (/^EBS/.test(LECTURES[item.id]) ? '' : 'EBS 초등 앱에서 ') + LT.esc(LECTURES[item.id]) + '</div>' : '') +
       (TIPS[item.id] ? '<div class="lec"><b>✏️ 약속</b> ' + LT.esc(TIPS[item.id]) + '</div>' : '') + '<div class="st">';
     if (going) {
       h += '<span class="chip go">✏️ 풀고 있어요</span><div class="acts"><a class="btn sm" href="' + link(item.id, name) + '">이어 풀기</a></div>';
@@ -148,6 +159,7 @@
         '<a class="btn ' + (re && (re.wrong || re.inProgress) ? 'ghost ' : '') + 'sm" href="' + link(item.id, name, true) + '">다시 풀기</a></div>';
       // 틀린 문제가 남아 있으면: 비슷한 문제로 다시 풀기
       if (re && re.inProgress) h += '<div class="retry"><span>🔁 틀린 문제 다시 풀기 하는 중</span><a class="btn sm" href="' + reLink(item.id, name) + '">이어 풀기</a></div>';
+      else if (re && re.wrong && re.locked) h += '<div class="retry"><span>🛑 틀린 문제 <b>' + re.wrong + '개</b> — 아빠랑 풀이 보고 내일 다시</span></div>';
       else if (re && re.wrong) h += '<div class="retry"><span>🔁 틀린 문제 <b>' + re.wrong + '개</b> — 설명 보고 다시 풀어요</span><a class="btn sm" href="' + reLink(item.id, name, true) + '">다시 풀기 ▶</a></div>';
     } else {
       h += '<span class="chip">아직 안 풀었어요</span><div class="acts"><a class="btn sm" href="' + link(item.id, name, true) + '">풀기 ▶</a></div>';
@@ -156,16 +168,20 @@
   }
 
   function render(s, progress) {
-    document.title = s.name + ' · 수학 문제지';
+    document.title = s.name + ' · 공부 문제지';
     var sets = s.sets.map(function (id) { return { id: id, when: WHEN[id] }; });
     var doneN = sets.filter(function (x) { return progress[x.id] && progress[x.id].done > 0; }).length;
     var h = '<div class="card"><div class="top"><h1>' + face(s) + LT.esc(s.name) + '</h1><button class="switch" id="switch">이름 바꾸기</button></div>' +
-      (s.sets.length ? '<div class="sum"><b>' + (s.setsLabel || '초등 복습 문제지') + ' ' + s.sets.length + '개 중 ' + doneN + '개 완료</b>' + (doneN === s.sets.length ? ' 🎉' : '') +
+      (s.sets.length ? '<div class="sum"><b>' + (s.setsLabel || '수학 · 초등 복습 문제지') + ' ' + s.sets.length + '개 중 ' + doneN + '개 완료</b>' + (doneN === s.sets.length ? ' 🎉' : '') +
       '<div class="bar"><i style="width:' + Math.max(3, doneN / s.sets.length * 100) + '%"></i></div></div>' +
       '<p class="muted" style="margin:12px 0 0">위에서부터 하나씩! 그 단원 EBS 강의 먼저 보고 → 문제지 풀기 → 틀린 문제는 풀이 보고 다시. 3일 뒤에 「다시 풀기」로 한 번 더 풀어요.</p>'
       : '<p class="muted" style="margin:12px 0 0">레벨테스트로 어디가 약한지 먼저 알아볼게요. 연습장과 연필 준비하고, 모르는 건 찍지 말고 「잘 모르겠어요」!</p>') + '</div>';
-    if (s.sets.length) h += '<div class="sec">' + (s.setsLabel || '초등 복습 문제지') + '</div>' + sets.map(function (x, i) { return card(x, i + 1, s.name, progress[x.id]); }).join('');
-    if (s.tests.length) h += '<div class="sec">레벨테스트</div>' + s.tests.map(function (x, i) { return card(x, 'T', s.name, progress[x.id]); }).join('');
+    (s.extra || []).forEach(function (g) {
+      var cards = g.items.map(function (x) { return card(x, '✎', s.name, progress[x.id]); }).filter(Boolean);
+      if (cards.length) h += '<div class="sec">' + LT.esc(g.label) + '</div>' + cards.join('');
+    });
+    if (s.sets.length) h += '<div class="sec">' + (s.setsLabel || '수학 · 초등 복습 문제지') + '</div>' + sets.map(function (x, i) { return card(x, i + 1, s.name, progress[x.id]); }).join('');
+    if (s.tests.length) h += '<div class="sec">수학 레벨테스트</div>' + s.tests.map(function (x, i) { return card(x, 'T', s.name, progress[x.id]); }).join('');
     app.innerHTML = h;
     document.getElementById('switch').onclick = function () { LT.store('lt.hub.name', null); try { history.replaceState(null, '', location.pathname); } catch (e) {} pickName(); };
   }
