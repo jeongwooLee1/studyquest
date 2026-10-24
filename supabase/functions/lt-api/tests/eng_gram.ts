@@ -2,9 +2,10 @@
 //   eng-m1-past  과거시제 확인(10): 규칙 과거형 철자 · 불규칙 과거형 · was/were · did 부정·의문
 //   eng-m1-modal 조동사·미래 확인(10): can·may · will·be going to · must·have to·should · 조동사 문장 형태
 //   eng-m1-inf   to부정사·동명사 확인(10): want to · enjoy -ing·전치사 뒤 · 둘 다/주어 자리 · ~하기 위해·~할
+//   eng-m1-comp  비교급·최상급 확인(10): 비교급 만들기 · 불규칙 · 최상급 · as ~ as·비교 문장 이해
 // 다시 풀기용 변형 문항은 ENG_VARIANTS[원래 문항 id] 에 3개씩(문항 객체 밖에 두어 정답이 페이지로 나가지 않게, sci_gas.ts 와 같은 방식).
 // 변형 문항 형식: { text, options, answer, traps?, explain } — 원래 문항과 같은 개념·같은 함정 문구, 보기 5개.
-// 표기: 줄바꿈 \n, 강조 <b>…</b>. '$'는 쓰지 않는다. 문항 id 는 세트마다 접두어(과거 'ep-', 조동사 'em-', to부정사 'ei-').
+// 표기: 줄바꿈 \n, 강조 <b>…</b>. '$'는 쓰지 않는다. 문항 id 는 세트마다 접두어(과거 'ep-', 조동사 'em-', to부정사 'ei-', 비교 'ec-').
 
 const G = '문법';
 const set = (id: string, title: string, subtitle: string, minutes: number, practice: boolean, areas: any[], questions: any[]) => ({
@@ -229,7 +230,77 @@ export const ENG_M1_INF = set('eng-m1-inf', 'to부정사·동명사 확인', '�
     explain: 'decide + to + 동사원형, 결심했다(과거) → decided to exercise.' },
 ]);
 
-export const ENG_GRAM_SETS = [ENG_M1_PAST, ENG_M1_MODAL, ENG_M1_INF];
+// ── 비교급·최상급 ──
+const N_ER_Y = '자음+y로 끝나면 y를 i로 고치고 -er / -est (easy → easier)';
+const N_ER_DBL = '「짧은 모음+자음 하나」로 끝나면 자음을 한 번 더 쓰고 -er / -est (big → bigger)';
+const N_MORE = '긴 형용사(interesting, beautiful 등)는 more / most를 앞에 씀';
+const N_MORESHORT = '짧은 형용사에 more / most를 붙임 (taller, not more tall)';
+const N_DOUBLE = 'more / most와 -er / -est를 함께 씀';
+const N_IRRC = '불규칙 비교급·최상급 (good-better-best, bad-worse-worst, many-more-most)';
+const N_THAN = 'than(~보다)이 있으면 비교급';
+const N_THE = '최상급 앞에 the를 빠뜨림 (the tallest)';
+const N_SUP = '「가장 ~한」(in·of와 함께)은 최상급';
+const N_ASAS = 'as ~ as 사이에는 형용사 원래 모양(원급)';
+const N_READ = '비교하는 두 대상의 크고 작음을 거꾸로 읽음';
+
+const A_CMP = { id: 'c1', group: G, name: '비교급 만들기', unit: '중1 「비교급」',
+  why: '-er / more, y → i, 자음 두 번 쓰기 — 형태를 고르는 문제가 꼭 나와요.',
+  study: ['EBS 중학 프리미엄 중1 영어 문법 「비교급·최상급」 강의', 'tall-taller, easy-easier, big-bigger, beautiful-more beautiful 네 가지 유형으로 단어 5개씩 정리'] };
+const A_IRRC = { id: 'c2', group: G, name: '불규칙 비교', unit: '중1 「불규칙 비교급·최상급」',
+  why: 'good·bad·many는 모양이 완전히 바뀌어서 외워야 해요.',
+  study: ['EBS 중학 프리미엄 중1 영어 문법 「비교급·최상급」 강의', 'good/well-better-best, bad-worse-worst, many/much-more-most 소리 내어 5번'] };
+const A_SUPR = { id: 'c3', group: G, name: '최상급', unit: '중1 「최상급」',
+  why: 'the를 빠뜨리거나 비교급을 쓰는 실수가 서술형 감점 단골이에요.',
+  study: ['EBS 중학 프리미엄 중1 영어 문법 「비교급·최상급」 강의', 'the + -est / the most + 형용사 + in(장소·집단) / of(셋 이상) 예문 3개'] };
+const A_CREAD = { id: 'c4', group: G, name: 'as ~ as · 비교 문장 이해', unit: '중1 「원급 비교·비교 표현」',
+  why: '표·글을 보고 누가 더 큰지 고르는 문제는 비교급 뜻을 정확히 읽어야 풀려요.',
+  study: ['EBS 중학 프리미엄 중1 영어 문법 「원급 비교」 강의', 'A is taller than B = B is shorter than A 처럼 반대로 바꿔 말해 보기'] };
+
+export const ENG_M1_COMP = set('eng-m1-comp', '비교급·최상급 확인', '중1 영어 문법 · -er / more · the -est · as ~ as', 12, true,
+  [A_CMP, A_IRRC, A_SUPR, A_CREAD], [
+  { id: 'ec-1', area: 'c1', text: '빈칸에 들어갈 말로 알맞은 것은?\nThis question is ______ than that one.',
+    options: ['easy', 'easyer', 'more easy', 'easiest', 'easier'], answer: 5,
+    traps: [{ a: 1, note: N_THAN }, { a: 2, note: N_ER_Y }, { a: 3, note: N_MORESHORT }, { a: 4, note: N_THAN }],
+    explain: 'than → 비교급. easy는 자음+y → easier.' },
+  { id: 'ec-2', area: 'c1', text: '빈칸에 들어갈 말로 알맞은 것은?\nThis movie is ______ than the book.',
+    options: ['interestinger', 'more interesting', 'interesting', 'most interesting', 'more interestinger'], answer: 2,
+    traps: [{ a: 1, note: N_MORE }, { a: 3, note: N_THAN }, { a: 4, note: N_THAN }, { a: 5, note: N_DOUBLE }],
+    explain: 'interesting은 긴 형용사 → more interesting.' },
+  { id: 'ec-3', area: 'c1', text: '다음 중 비교급이 바르게 짝지어진 것은?',
+    options: ['tall – more tall', 'pretty – prettier', 'fat – fater', 'famous – famouser', 'heavy – heavyer'], answer: 2,
+    traps: [{ a: 1, note: N_MORESHORT }, { a: 3, note: N_ER_DBL }, { a: 4, note: N_MORE }, { a: 5, note: N_ER_Y }],
+    explain: 'pretty → prettier. ① taller ③ fatter ④ more famous ⑤ heavier 가 맞아요.' },
+  { id: 'ec-4', area: 'c2', text: '빈칸에 들어갈 말로 알맞은 것은?\nYour idea is ______ than mine.',
+    options: ['good', 'gooder', 'better', 'more good', 'best'], answer: 3,
+    traps: [{ a: 1, note: N_THAN }, { a: 2, note: N_IRRC }, { a: 4, note: N_IRRC }, { a: 5, note: N_THAN }],
+    explain: 'good의 비교급은 better(불규칙).' },
+  { id: 'ec-5', area: 'c3', text: '빈칸에 들어갈 말로 알맞은 것은?\nMount Everest is the ______ mountain in the world.',
+    options: ['high', 'higher', 'most high', 'highest', 'more higher'], answer: 4,
+    traps: [{ a: 1, note: N_SUP }, { a: 2, note: N_SUP }, { a: 3, note: N_MORESHORT }, { a: 5, note: N_DOUBLE }],
+    explain: 'the ~ in the world(세계에서 가장) → 최상급 highest.' },
+  { id: 'ec-6', area: 'c3', text: '다음 중 어법상 바른 문장은?',
+    options: ['She is the most smart girl in her class.', 'He is tallest boy in his school.', 'It is the bigest city in Korea.', 'Math is the difficultest subject for me.', 'This is the most expensive bag in the store.'], answer: 5,
+    traps: [{ a: 1, note: N_MORESHORT }, { a: 2, note: N_THE }, { a: 3, note: N_ER_DBL }, { a: 4, note: N_MORE }],
+    explain: 'expensive는 긴 형용사 → the most expensive. ① the smartest ② the tallest ③ the biggest ④ the most difficult' },
+  { id: 'ec-7', area: 'c4', text: '빈칸에 들어갈 말로 알맞은 것은?\nMy brother is as ______ as my father.',
+    options: ['tall', 'taller', 'tallest', 'more tall', 'the tallest'], answer: 1,
+    traps: [{ a: 2, note: N_ASAS }, { a: 3, note: N_ASAS }, { a: 4, note: N_ASAS }, { a: 5, note: N_ASAS }],
+    explain: 'as + 원급 + as = ~만큼 …한 → as tall as(아빠만큼 키가 크다).' },
+  { id: 'ec-8', area: 'c4', text: '다음 글의 내용과 일치하는 것은?\n\nMina is 150 cm tall. Jisu is 155 cm tall. Yuna is 160 cm tall.',
+    options: ['Mina is taller than Jisu.', 'Jisu is the tallest of the three.', 'Yuna is shorter than Mina.', 'Jisu is taller than Mina.', 'Mina is as tall as Yuna.'], answer: 4,
+    traps: [{ a: 1, note: N_READ }, { a: 2, note: N_READ }, { a: 3, note: N_READ }],
+    explain: 'Mina 150 < Jisu 155 < Yuna 160. 지수가 미나보다 커요. 가장 큰 사람은 Yuna.' },
+  { id: 'ec-9', area: 'c3', text: '우리말을 영어로 바르게 옮긴 것은?\n「그는 우리 반에서 가장 빠른 학생이다.」',
+    options: ['He is the fastest student in our class.', 'He is faster student in our class.', 'He is the most fast student in our class.', 'He is fastest student in our class.', 'He is the faster student in our class.'], answer: 1,
+    traps: [{ a: 2, note: N_SUP }, { a: 3, note: N_MORESHORT }, { a: 4, note: N_THE }, { a: 5, note: N_SUP }],
+    explain: '가장 빠른 → the fastest.' },
+  { id: 'ec-10', area: 'c4', text: '두 문장의 뜻이 같도록 빈칸에 알맞은 것은?\nJiho is taller than Minsu. = Minsu is ______ than Jiho.',
+    options: ['taller', 'shorter', 'tallest', 'shortest', 'more short'], answer: 2,
+    traps: [{ a: 1, note: N_READ }, { a: 3, note: N_THAN }, { a: 4, note: N_THAN }, { a: 5, note: N_MORESHORT }],
+    explain: '지호가 민수보다 크다 = 민수가 지호보다 작다 → shorter.' },
+]);
+
+export const ENG_GRAM_SETS = [ENG_M1_PAST, ENG_M1_MODAL, ENG_M1_INF, ENG_M1_COMP];
 
 type V = { text: string; options: string[]; answer: number; traps?: { a: number; note: string }[]; explain: string };
 export const ENG_VARIANTS: Record<string, V[]> = {
@@ -499,5 +570,91 @@ export const ENG_VARIANTS: Record<string, V[]> = {
       traps: [{ a: 1, note: N_TOV }, { a: 2, note: N_TOV }, { a: 3, note: N_TOBASE }], explain: 'plan + to + 동사원형 → plan to visit.' },
     { text: '우리말을 영어로 바르게 옮긴 것은?\n「나는 숙제하는 것을 끝냈다.」', options: ['I finished doing my homework.', 'I finished to do my homework.', 'I finished do my homework.', 'I finish doing my homework.', 'I finished to doing my homework.'], answer: 1,
       traps: [{ a: 2, note: N_ING }, { a: 3, note: N_ING }, { a: 4, note: N_TENSE }, { a: 5, note: N_ING }], explain: 'finish + 동명사, 끝냈다(과거) → finished doing.' },
+  ],
+  'ec-1': [
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nMy bag is ______ than yours.', options: ['bigger', 'big', 'biger', 'more big', 'biggest'], answer: 1,
+      traps: [{ a: 2, note: N_THAN }, { a: 3, note: N_ER_DBL }, { a: 4, note: N_MORESHORT }, { a: 5, note: N_THAN }], explain: 'than → 비교급. big은 짧은 모음+자음 → bigger.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nToday is ______ than yesterday.', options: ['hot', 'hoter', 'hottest', 'more hot', 'hotter'], answer: 5,
+      traps: [{ a: 1, note: N_THAN }, { a: 2, note: N_ER_DBL }, { a: 3, note: N_THAN }, { a: 4, note: N_MORESHORT }], explain: 'than → 비교급. hot → hotter.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nMinsu is ______ than his brother.', options: ['happy', 'happier', 'happyer', 'more happy', 'happiest'], answer: 2,
+      traps: [{ a: 1, note: N_THAN }, { a: 3, note: N_ER_Y }, { a: 4, note: N_MORESHORT }, { a: 5, note: N_THAN }], explain: 'than → 비교급. happy는 자음+y → happier.' },
+  ],
+  'ec-2': [
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nHealth is ______ than money.', options: ['importanter', 'important', 'more important', 'most important', 'more importanter'], answer: 3,
+      traps: [{ a: 1, note: N_MORE }, { a: 2, note: N_THAN }, { a: 4, note: N_THAN }, { a: 5, note: N_DOUBLE }], explain: 'important는 긴 형용사 → more important.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nThis dress is ______ than that one.', options: ['beautifuler', 'most beautiful', 'beautiful', 'more beautifuler', 'more beautiful'], answer: 5,
+      traps: [{ a: 1, note: N_MORE }, { a: 2, note: N_THAN }, { a: 3, note: N_THAN }, { a: 4, note: N_DOUBLE }], explain: 'beautiful은 긴 형용사 → more beautiful.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nSoccer is ______ than baseball in my class.', options: ['more popular', 'popularer', 'popular', 'most popular', 'more popularer'], answer: 1,
+      traps: [{ a: 2, note: N_MORE }, { a: 3, note: N_THAN }, { a: 4, note: N_THAN }, { a: 5, note: N_DOUBLE }], explain: 'popular는 긴 형용사 → more popular.' },
+  ],
+  'ec-3': [
+    { text: '다음 중 비교급이 바르게 짝지어진 것은?', options: ['busy – busyer', 'thin – thiner', 'difficult – difficulter', 'large – larger', 'fast – more fast'], answer: 4,
+      traps: [{ a: 1, note: N_ER_Y }, { a: 2, note: N_ER_DBL }, { a: 3, note: N_MORE }, { a: 5, note: N_MORESHORT }],
+      explain: 'large는 e로 끝나서 -r만 → larger. ① busier ② thinner ③ more difficult ⑤ faster' },
+    { text: '다음 중 비교급이 바르게 짝지어진 것은?', options: ['wet – weter', 'early – earlyer', 'cheap – cheaper', 'careful – carefuler', 'old – more old'], answer: 3,
+      traps: [{ a: 1, note: N_ER_DBL }, { a: 2, note: N_ER_Y }, { a: 4, note: N_MORE }, { a: 5, note: N_MORESHORT }],
+      explain: 'cheap → cheaper. ① wetter ② earlier ④ more careful ⑤ older' },
+    { text: '다음 중 비교급이 바르게 짝지어진 것은?', options: ['strong – more strong', 'useful – usefuler', 'sad – sader', 'funny – funnier', 'dirty – dirtyer'], answer: 4,
+      traps: [{ a: 1, note: N_MORESHORT }, { a: 2, note: N_MORE }, { a: 3, note: N_ER_DBL }, { a: 5, note: N_ER_Y }],
+      explain: 'funny → funnier. ① stronger ② more useful ③ sadder ⑤ dirtier' },
+  ],
+  'ec-4': [
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nThe weather today is ______ than yesterday. It\'s raining hard.', options: ['bad', 'badder', 'more bad', 'worse', 'worst'], answer: 4,
+      traps: [{ a: 1, note: N_THAN }, { a: 2, note: N_IRRC }, { a: 3, note: N_IRRC }, { a: 5, note: N_THAN }], explain: 'bad의 비교급은 worse(불규칙).' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nShe has ______ books than I do.', options: ['more', 'many', 'manier', 'most', 'much'], answer: 1,
+      traps: [{ a: 2, note: N_THAN }, { a: 3, note: N_IRRC }, { a: 4, note: N_THAN }], explain: 'many의 비교급은 more(불규칙). much는 셀 수 없는 것에 써요.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nThis is the ______ day of my life! I\'m so happy.', options: ['good', 'better', 'gooder', 'best', 'goodest'], answer: 4,
+      traps: [{ a: 1, note: N_SUP }, { a: 2, note: N_SUP }, { a: 3, note: N_IRRC }, { a: 5, note: N_IRRC }], explain: 'the ~ of my life(내 인생에서 가장) → good의 최상급 best(불규칙).' },
+  ],
+  'ec-5': [
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nJiho is the ______ student in our class.', options: ['tall', 'taller', 'most tall', 'tallest', 'more tall'], answer: 4,
+      traps: [{ a: 1, note: N_SUP }, { a: 2, note: N_SUP }, { a: 3, note: N_MORESHORT }, { a: 5, note: N_MORESHORT }], explain: 'the ~ in our class → 최상급 tallest.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nThis is the ______ book in this library.', options: ['old', 'oldest', 'older', 'most old', 'more older'], answer: 2,
+      traps: [{ a: 1, note: N_SUP }, { a: 3, note: N_SUP }, { a: 4, note: N_MORESHORT }, { a: 5, note: N_DOUBLE }], explain: 'the ~ in this library → 최상급 oldest.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nAugust is the ______ month of the year in Korea.', options: ['hot', 'hotter', 'hotest', 'most hot', 'hottest'], answer: 5,
+      traps: [{ a: 1, note: N_SUP }, { a: 2, note: N_SUP }, { a: 3, note: N_ER_DBL }, { a: 4, note: N_MORESHORT }], explain: 'the ~ of the year → 최상급. hot → hottest(t를 한 번 더).' },
+  ],
+  'ec-6': [
+    { text: '다음 중 어법상 바른 문장은?', options: ['Tom is the faster runner of the three.', 'This is the most beautiful place in Seoul.', 'He is the most strong person I know.', 'Today is happiest day of my life.', 'That is the heavyest box here.'], answer: 2,
+      traps: [{ a: 1, note: N_SUP }, { a: 3, note: N_MORESHORT }, { a: 4, note: N_THE }, { a: 5, note: N_ER_Y }],
+      explain: 'beautiful → the most beautiful. ① the fastest ③ the strongest ④ the happiest ⑤ the heaviest' },
+    { text: '다음 중 어법상 바른 문장은?', options: ['She is the busyest person in my family.', 'Winter is the colder season of the year.', 'This is the most cheap pen.', 'Jupiter is biggest planet.', 'He is the most famous singer in Korea.'], answer: 5,
+      traps: [{ a: 1, note: N_ER_Y }, { a: 2, note: N_SUP }, { a: 3, note: N_MORESHORT }, { a: 4, note: N_THE }],
+      explain: 'famous → the most famous. ① the busiest ② the coldest ③ the cheapest ④ the biggest' },
+    { text: '다음 중 어법상 바른 문장은?', options: ['This is the importantest rule.', 'Seoul is the largest city in Korea.', 'He is the most fast swimmer.', 'It was the worse day of my life.', 'Mina is youngest in her family.'], answer: 2,
+      traps: [{ a: 1, note: N_MORE }, { a: 3, note: N_MORESHORT }, { a: 4, note: N_IRRC }, { a: 5, note: N_THE }],
+      explain: 'large → the largest. ① the most important ③ the fastest ④ the worst ⑤ the youngest' },
+  ],
+  'ec-7': [
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nThis box is as ______ as that one.', options: ['heavier', 'heavy', 'heaviest', 'more heavy', 'the heaviest'], answer: 2,
+      traps: [{ a: 1, note: N_ASAS }, { a: 3, note: N_ASAS }, { a: 4, note: N_ASAS }, { a: 5, note: N_ASAS }], explain: 'as + 원급 + as → as heavy as.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nYour bike is not as ______ as mine.', options: ['newer', 'newest', 'new', 'more new', 'the newest'], answer: 3,
+      traps: [{ a: 1, note: N_ASAS }, { a: 2, note: N_ASAS }, { a: 4, note: N_ASAS }, { a: 5, note: N_ASAS }], explain: 'not as + 원급 + as = ~만큼 …하지 않다 → not as new as.' },
+    { text: '빈칸에 들어갈 말로 알맞은 것은?\nScience is as ______ as math to me.', options: ['more interesting', 'most interesting', 'interestinger', 'interesting', 'the most interesting'], answer: 4,
+      traps: [{ a: 1, note: N_ASAS }, { a: 2, note: N_ASAS }, { a: 3, note: N_ASAS }, { a: 5, note: N_ASAS }], explain: 'as + 원급 + as → as interesting as.' },
+  ],
+  'ec-8': [
+    { text: '다음 글의 내용과 일치하는 것은?\n\nThis bag is 30,000 won. That bag is 20,000 won. The red bag is 50,000 won.', options: ['This bag is cheaper than that bag.', 'The red bag is the cheapest.', 'That bag is the cheapest of the three.', 'That bag is more expensive than this bag.', 'This bag is as expensive as the red bag.'], answer: 3,
+      traps: [{ a: 1, note: N_READ }, { a: 2, note: N_READ }, { a: 4, note: N_READ }], explain: 'that bag 2만 원 < this bag 3만 원 < red bag 5만 원 → 가장 싼 것은 that bag.' },
+    { text: '다음 글의 내용과 일치하는 것은?\n\nTom got 80 points. Ben got 95 points. Sam got 80 points.', options: ['Tom got a higher score than Ben.', 'Sam got the highest score.', 'Ben got a lower score than Sam.', 'Tom\'s score was as high as Sam\'s.', 'Ben got the lowest score.'], answer: 4,
+      traps: [{ a: 1, note: N_READ }, { a: 2, note: N_READ }, { a: 3, note: N_READ }, { a: 5, note: N_READ }], explain: 'Tom 80 = Sam 80 → as high as(~만큼 높은). 가장 높은 사람은 Ben.' },
+    { text: '다음 글의 내용과 일치하는 것은?\n\nBusan is 400 km from Seoul. Daejeon is 160 km from Seoul. Gwangju is 300 km from Seoul.', options: ['Daejeon is farther from Seoul than Gwangju.', 'Busan is the farthest from Seoul.', 'Gwangju is closer to Seoul than Daejeon.', 'Busan is closer to Seoul than Gwangju.', 'Daejeon is as far from Seoul as Busan.'], answer: 2,
+      traps: [{ a: 1, note: N_READ }, { a: 3, note: N_READ }, { a: 4, note: N_READ }], explain: '대전 160 < 광주 300 < 부산 400 km → 서울에서 가장 먼 곳은 부산(the farthest).' },
+  ],
+  'ec-9': [
+    { text: '우리말을 영어로 바르게 옮긴 것은?\n「이것은 이 가게에서 가장 비싼 컴퓨터이다.」', options: ['This is the expensivest computer in this store.', 'This is most expensive computer in this store.', 'This is the more expensive computer in this store.', 'This is the most expensive computer in this store.', 'This is the most expensivest computer in this store.'], answer: 4,
+      traps: [{ a: 1, note: N_MORE }, { a: 2, note: N_THE }, { a: 3, note: N_SUP }, { a: 5, note: N_DOUBLE }], explain: '가장 비싼 → the most expensive.' },
+    { text: '우리말을 영어로 바르게 옮긴 것은?\n「겨울은 일 년 중 가장 추운 계절이다.」', options: ['Winter is the coldest season of the year.', 'Winter is colder season of the year.', 'Winter is the most cold season of the year.', 'Winter is coldest season of the year.', 'Winter is the colder season of the year.'], answer: 1,
+      traps: [{ a: 2, note: N_SUP }, { a: 3, note: N_MORESHORT }, { a: 4, note: N_THE }, { a: 5, note: N_SUP }], explain: '가장 추운 → the coldest.' },
+    { text: '우리말을 영어로 바르게 옮긴 것은?\n「그녀는 세 명 중에서 가장 어리다.」', options: ['She is younger of the three.', 'She is the most young of the three.', 'She is youngest of the three.', 'She is the younger of the three.', 'She is the youngest of the three.'], answer: 5,
+      traps: [{ a: 1, note: N_SUP }, { a: 2, note: N_MORESHORT }, { a: 3, note: N_THE }, { a: 4, note: N_SUP }], explain: '셋 중 가장 어린 → the youngest of the three.' },
+  ],
+  'ec-10': [
+    { text: '두 문장의 뜻이 같도록 빈칸에 알맞은 것은?\nThis book is thicker than that book. = That book is ______ than this book.', options: ['thicker', 'thiner', 'more thin', 'thinner', 'thinnest'], answer: 4,
+      traps: [{ a: 1, note: N_READ }, { a: 2, note: N_ER_DBL }, { a: 3, note: N_MORESHORT }, { a: 5, note: N_THAN }], explain: '이 책이 더 두껍다 = 저 책이 더 얇다 → thinner(n을 한 번 더).' },
+    { text: '두 문장의 뜻이 같도록 빈칸에 알맞은 것은?\nMy dog is older than my cat. = My cat is ______ than my dog.', options: ['younger', 'older', 'youngest', 'more young', 'oldest'], answer: 1,
+      traps: [{ a: 2, note: N_READ }, { a: 3, note: N_THAN }, { a: 4, note: N_MORESHORT }, { a: 5, note: N_THAN }], explain: '개가 고양이보다 나이가 많다 = 고양이가 더 어리다 → younger.' },
+    { text: '두 문장의 뜻이 같도록 빈칸에 알맞은 것은?\nThe bus is slower than the subway. = The subway is ______ than the bus.', options: ['slower', 'fastest', 'more fast', 'fastter', 'faster'], answer: 5,
+      traps: [{ a: 1, note: N_READ }, { a: 2, note: N_THAN }, { a: 3, note: N_MORESHORT }], explain: '버스가 지하철보다 느리다 = 지하철이 더 빠르다 → faster.' },
   ],
 };
