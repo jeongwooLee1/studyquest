@@ -216,7 +216,7 @@ window.LT = (function () {
   function roundSVG(fig) {
     var r = fig.r || 3, h = fig.h || 5, kind = fig.kind, e = 0.35, L = fig.labels || {}, show = fig.show || [];
     var top = kind === 'sphere' ? r : kind === 'hemisphere' ? r : h, bot = kind === 'sphere' ? -r : -r * e;
-    var k = Math.min(180 / (2 * r), 160 / (top - bot)), px = 52, py = 26, W = 2 * r * k + 2 * px, H = (top - bot) * k + 2 * py;
+    var k = Math.min(180 / (2 * r), 160 / (top - bot)), px = 52, py = 30, W = 2 * r * k + 2 * px, H = (top - bot) * k + 2 * py;
     var X = function (x) { return px + (x + r) * k; }, Y = function (y) { return py + (top - y) * k; }, f1 = function (v) { return Math.round(v * 10) / 10; };
     var R = r * k, RY = r * e * k;
     // y=yc 높이의 타원 반쪽: front=true 이면 앞쪽(아래 반)
@@ -229,14 +229,15 @@ window.LT = (function () {
       if (L.h || show.indexOf('h') >= 0) { if (show.indexOf('h') >= 0) o.push(line(0, 0, 0, h, true)); if (L.h) o.push(lab(r, h / 2, L.h, 'start', 7)); }
     } else if (kind === 'cone') {
       o.push(half(0, true, false), half(0, false, true), line(-r, 0, 0, h), line(r, 0, 0, h));
-      if (show.indexOf('h') >= 0 || L.h) { o.push(line(0, 0, 0, h, true)); if (L.h) o.push(lab(0, h / 2, L.h, 'start', 5)); }
+      // 높이 글자는 원뿔 밖(옆 모서리 바깥)에: 오른쪽, 모선 글자가 있으면 왼쪽
+      if (show.indexOf('h') >= 0 || L.h) { o.push(line(0, 0, 0, h, true)); if (L.h) o.push(L.l ? lab(-r / 2, h / 2, L.h, 'end', -8) : lab(r / 2, h / 2, L.h, 'start', 8)); }
       if (L.l) o.push(lab(r / 2, h / 2, L.l, 'start', 8));
     } else if (kind === 'sphere') {
       o.push('<circle class="s" cx="' + f1(X(0)) + '" cy="' + f1(Y(0)) + '" r="' + f1(R) + '"/>', half(0, true, false), half(0, false, true));
     } else if (kind === 'hemisphere') {
       o.push('<path class="s" d="M' + f1(X(-r)) + ' ' + f1(Y(0)) + ' A' + f1(R) + ' ' + f1(R) + ' 0 0 1 ' + f1(X(r)) + ' ' + f1(Y(0)) + '"/>', half(0, true, false), half(0, false, true));
     } else return '';
-    if (L.r || show.indexOf('r') >= 0) { o.push(line(0, 0, r, 0, true), '<circle class="dot" cx="' + f1(X(0)) + '" cy="' + f1(Y(0)) + '" r="2.4"/>'); if (L.r) o.push(lab(r / 2, 0, L.r, 'middle', 0, -9)); }
+    if (L.r || show.indexOf('r') >= 0) { o.push(line(0, 0, r, 0, true), '<circle class="dot" cx="' + f1(X(0)) + '" cy="' + f1(Y(0)) + '" r="2.4"/>'); if (L.r) o.push(kind === 'sphere' ? lab(r / 2, 0, L.r, 'middle', 0, -9) : lab(r / 2, 0, L.r, 'middle', 0, RY + 11)); } // 납작한 밑면 안쪽은 점선과 겹쳐서 밑면 아래에
     if (show.indexOf('axis') >= 0) o.push('<line class="s d" x1="' + f1(X(0)) + '" y1="' + f1(Y(top) - 14) + '" x2="' + f1(X(0)) + '" y2="' + f1(Y(bot) + 14) + '"/>');
     o.push('</svg>');
     return o.join('');
