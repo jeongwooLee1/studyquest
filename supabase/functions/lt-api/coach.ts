@@ -7,7 +7,7 @@
 export const PLAN: Record<string, { emoji: string; sets: string[]; wait?: string[]; tests: string[] }> = {
   '이다연': { emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'm2-solid', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'kor-m1-v5-1', 'kor-m1-v5-2', 'kor-m1-v5-3', 'kor-m1-v5-4', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
   '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'm2-solid', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'eng-m1-past', 'eng-m1-modal', 'eng-m1-inf', 'eng-m1-comp', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
-  '이다희': { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec', 'h-tri', 'kor-e4-read', 'eng-e4-v1'], tests: ['math-e4', 'eng-e4-diag', 'kor-e4-diag'] },
+  '이다희': { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec', 'h-tri', 'h-quad', 'kor-e4-read', 'eng-e4-v1'], tests: ['math-e4', 'eng-e4-diag', 'kor-e4-diag'] },
 };
 // 이 레벨테스트의 부족한 영역은 이미 문제지로 만들어져 있다
 const COVERED = ['math-m1', 'math-e4'];
@@ -56,6 +56,7 @@ export const LECTURES: Record<string, string> = {
   'kor-m1-v5-3': '강의 없이 — 10분 어휘·문법 세트',
   'kor-m1-v5-4': '강의 없이 — 10분 어휘·문법 세트',
   'kor-e4-read': '강의 없이 — 질문의 「아닌 것」「남은」「두 번째」에 동그라미 치고 풀기',
+  'h-quad': 'EBS 초등 「만점왕 수학 4-2」 → 「사각형」 개념 강의',
   'h-tri': 'EBS 초등 「만점왕 수학 4-2」 → 「삼각형」 개념 강의',
   'h-word': '강의 없이 — 구하는 것에 밑줄 긋고, 답을 고른 뒤 문제를 한 번 더 읽기',
 };
