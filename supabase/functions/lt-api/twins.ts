@@ -103,7 +103,7 @@ const decU = (u: string) => (v: Q) => dec(v) + u;
 const intF = (v: Q) => mixed(v);
 
 // ── 생성기 ──
-type Gen = (r: Rng) => ReturnType<typeof build>;
+type Gen = (r: Rng) => ReturnType<typeof build> & { fig?: any };
 const G: Record<string, Gen> = {};
 const L2R = '앞에서부터 차례로 계산함 (×÷ 먼저 계산하는 순서 무시)';
 
@@ -816,6 +816,237 @@ G['hw-10'] = (r) => { // 잘못 계산한 수
   return build(r, { text: `어떤 수에서 ${J(a, '을', '를')} 빼야 할 것을 잘못하여 더했더니 ${J(R, '이', '가')} 되었습니다. 바르게 계산하면 얼마인가요?`, correct: { v: q(ans) },
     wrongs: [{ v: q(x), note: '어떤 수만 구하고 끝냄 (바르게 계산하기를 빠뜨림)' }, { v: q(R), note: '잘못 계산한 값을 그대로 씀' }, { v: q(R + a) }],
     fill: nearInt(r, ans, 6), fmt: intF, order: 'asc', explain: `어떤 수: ${R} − ${a} = ${x} → 바르게 계산: ${x} − ${a} = ${ans}` });
+};
+
+// ── 다연·다혜 도형 보충: 평면도형의 넓이(초5-1) · 원의 둘레와 넓이(초6-2) ──
+// 그림(fig)은 docs/math/figure-spec.md 의 type:'shape'. 그림이 안 나와도 글만으로 풀 수 있게 쓴다.
+const cm = unit(' cm'), cm2 = unit(' cm²');
+const P = (x: number, y: number) => [Math.round(x * 100) / 100, Math.round(y * 100) / 100];
+const shape = (pts: Record<string, number[]>, items: any[]) => ({ type: 'shape', pts, items });
+const even = (r: Rng, a: number, b: number) => 2 * ri(r, Math.ceil(a / 2), Math.floor(b / 2));
+const HALF = '삼각형처럼 ÷ 2를 함';
+const NO_HALF = '÷ 2를 빠뜨림';
+
+// 평면도형의 넓이
+G['ga-1'] = (r) => { // 평행사변형: 밑변 × 높이 (비스듬한 변 함정)
+  let a: number, h: number, s: number; do { a = ri(r, 6, 15); h = ri(r, 3, 10); s = h + ri(r, 1, 4); } while (s === a);
+  const off = Math.sqrt(s * s - h * h);
+  return { ...build(r, { text: `밑변이 ${a} cm, 높이가 ${h} cm, 다른 한 변이 ${s} cm인 평행사변형의 넓이는?`, correct: { v: q(a * h) },
+    wrongs: [{ v: q(a * s), note: '높이 대신 비스듬한 변의 길이를 곱함' }, ...((a * h) % 2 === 0 ? [{ v: q(a * h / 2), note: HALF }] : []), { v: q(2 * (a + s)), note: '넓이 대신 둘레를 구함' }],
+    fill: nearInt(r, a * h, 12), fmt: cm2, order: 'asc', explain: `평행사변형의 넓이 = 밑변 × 높이 = ${a} × ${h} = ${a * h} cm² (비스듬한 변 ${s} cm는 쓰지 않아요)` }),
+    fig: shape({ A: P(0, 0), B: P(a, 0), C: P(a + off, h), D: P(off, h), _h: P(off, 0) }, [
+      { k: 'poly', p: ['A', 'B', 'C', 'D'] }, { k: 'seg', p: ['D', '_h'], dash: true, label: `${h} cm` }, { k: 'right', p: ['D', '_h', 'B'] },
+      { k: 'side', p: ['A', 'B'], label: `${a} cm` }, { k: 'side', p: ['A', 'D'], label: `${s} cm` }]) };
+};
+G['ga-2'] = (r) => { // 삼각형: 밑변 × 높이 ÷ 2
+  let a: number, h: number; do { a = ri(r, 6, 16); h = ri(r, 3, 12); } while ((a * h) % 2);
+  const ans = a * h / 2, top = ri(r, 1, a - 1);
+  return { ...build(r, { text: `밑변이 ${a} cm, 높이가 ${h} cm인 삼각형의 넓이는?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(a * h), note: NO_HALF }, { v: q(a + h), note: '밑변과 높이를 더함' }, ...(ans % 2 === 0 ? [{ v: q(ans / 2), note: '÷ 2를 두 번 함' }] : [])],
+    fill: nearInt(r, ans, 10), fmt: cm2, order: 'asc', explain: `삼각형의 넓이 = 밑변 × 높이 ÷ 2 = ${a} × ${h} ÷ 2 = ${ans} cm²` }),
+    fig: shape({ A: P(0, 0), B: P(a, 0), C: P(top, h), _h: P(top, 0) }, [
+      { k: 'poly', p: ['A', 'B', 'C'] }, { k: 'seg', p: ['C', '_h'], dash: true, label: `${h} cm` }, { k: 'right', p: ['C', '_h', 'B'] }, { k: 'side', p: ['A', 'B'], label: `${a} cm` }]) };
+};
+G['ga-3'] = (r) => { // 둘레로 정사각형 넓이
+  const s = ri(r, 3, 12), L = 4 * s, ans = s * s;
+  return build(r, { text: `둘레가 ${L} cm인 정사각형의 넓이는?`, correct: { v: q(ans) },
+    wrongs: [{ v: q((L / 2) * (L / 2)), note: '둘레를 2로 나눈 값을 한 변으로 씀 (정사각형은 4로 나눠야 함)' }, { v: q(L), note: '둘레를 넓이로 씀' }, { v: q(s * 4 * 2) }],
+    fill: nearInt(r, ans, 10), fmt: cm2, order: 'asc', explain: `정사각형은 네 변이 같아요 → 한 변 ${L} ÷ 4 = ${s} cm → 넓이 ${s} × ${s} = ${ans} cm²` });
+};
+G['ga-4'] = (r) => { // 사다리꼴
+  let t: number, b: number, h: number; do { t = ri(r, 3, 9); b = t + ri(r, 2, 8); h = ri(r, 3, 10); } while (((t + b) * h) % 2);
+  const ans = (t + b) * h / 2, off = ri(r, 0, b - t);
+  return { ...build(r, { text: `윗변이 ${t} cm, 아랫변이 ${b} cm, 높이가 ${h} cm인 사다리꼴의 넓이는?`, correct: { v: q(ans) },
+    wrongs: [{ v: q((t + b) * h), note: NO_HALF }, { v: q(b * h), note: '아랫변 × 높이만 함 (윗변을 더하지 않음)' }, { v: q(t * b), note: '윗변과 아랫변을 곱함' }],
+    fill: nearInt(r, ans, 10), fmt: cm2, order: 'asc', explain: `사다리꼴의 넓이 = (윗변 + 아랫변) × 높이 ÷ 2 = (${t} + ${b}) × ${h} ÷ 2 = ${ans} cm²` }),
+    fig: shape({ A: P(0, 0), B: P(b, 0), C: P(off + t, h), D: P(off, h), _h: P(off, 0) }, [
+      { k: 'poly', p: ['A', 'B', 'C', 'D'] }, { k: 'seg', p: ['D', '_h'], dash: true, label: `${h} cm` }, { k: 'right', p: ['D', '_h', 'B'] },
+      { k: 'side', p: ['A', 'B'], label: `${b} cm` }, { k: 'side', p: ['D', 'C'], label: `${t} cm` }]) };
+};
+G['ga-5'] = (r) => { // 마름모
+  const d1 = even(r, 4, 16); let d2: number; do { d2 = even(r, 4, 16); } while (d2 === d1);
+  const ans = d1 * d2 / 2;
+  return { ...build(r, { text: `두 대각선의 길이가 ${d1} cm, ${d2} cm인 마름모의 넓이는?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(d1 * d2), note: NO_HALF }, { v: q(d1 * d2 / 4), note: '÷ 4를 함 (마름모는 ÷ 2)' }, { v: q(d1 + d2), note: '두 대각선을 더함' }],
+    fill: nearInt(r, ans, 10), fmt: cm2, order: 'asc', explain: `마름모의 넓이 = 한 대각선 × 다른 대각선 ÷ 2 = ${d1} × ${d2} ÷ 2 = ${ans} cm²` }),
+    fig: shape({ A: P(0, d2 / 2), B: P(d1 / 2, 0), C: P(d1, d2 / 2), D: P(d1 / 2, d2), _o: P(d1 / 2, d2 / 2) }, [
+      { k: 'poly', p: ['A', 'B', 'C', 'D'] }, { k: 'seg', p: ['A', 'C'], dash: true, label: `${d1} cm` }, { k: 'seg', p: ['B', 'D'], dash: true, label: `${d2} cm` }, { k: 'right', p: ['C', '_o', 'D'] }]) };
+};
+G['ga-6'] = (r) => { // 삼각형 넓이 → 높이
+  const a = ri(r, 4, 14), h = even(r, 4, 16), S = a * h / 2, top = ri(r, 1, a - 1);
+  return { ...build(r, { text: `넓이가 ${S} cm²이고 밑변이 ${a} cm인 삼각형의 높이는?`, correct: { v: q(h) },
+    wrongs: [{ v: q(h / 2), note: '넓이를 밑변으로 나누기만 함 (삼각형은 넓이 × 2 ÷ 밑변)' }, { v: q(S * 2), note: '× 2만 하고 밑변으로 나누지 않음' }, ...(S > a ? [{ v: q(S - a) }] : [])],
+    fill: nearInt(r, h, 6), fmt: cm, order: 'asc', explain: `밑변 × 높이 ÷ 2 = 넓이 → ${a} × □ ÷ 2 = ${S} → ${a} × □ = ${S * 2} → □ = ${S * 2} ÷ ${a} = ${h} cm` }),
+    fig: shape({ A: P(0, 0), B: P(a, 0), C: P(top, h), _h: P(top, 0) }, [
+      { k: 'poly', p: ['A', 'B', 'C'] }, { k: 'seg', p: ['C', '_h'], dash: true, label: '? cm' }, { k: 'right', p: ['C', '_h', 'B'] }, { k: 'side', p: ['A', 'B'], label: `${a} cm` }]) };
+};
+G['ga-7'] = (r) => { // 사다리꼴 넓이 → 높이
+  const t = ri(r, 2, 8), b = t + ri(r, 2, 8), h = even(r, 4, 14), S = (t + b) * h / 2, off = ri(r, 0, b - t);
+  return { ...build(r, { text: `넓이가 ${S} cm²이고 윗변이 ${t} cm, 아랫변이 ${b} cm인 사다리꼴의 높이는?`, correct: { v: q(h) },
+    wrongs: [{ v: q(h / 2), note: '넓이를 (윗변 + 아랫변)으로 나누기만 함 (× 2를 빠뜨림)' }, ...((S * 2) % b === 0 && S * 2 / b !== h ? [{ v: q(S * 2 / b), note: '윗변을 더하지 않고 아랫변으로만 나눔' }] : []), { v: q(S * 2), note: '× 2만 하고 나누지 않음' }],
+    fill: nearInt(r, h, 6), fmt: cm, order: 'asc', explain: `(윗변 + 아랫변) × 높이 ÷ 2 = 넓이 → (${t} + ${b}) × □ ÷ 2 = ${S} → ${t + b} × □ = ${S * 2} → □ = ${h} cm` }),
+    fig: shape({ A: P(0, 0), B: P(b, 0), C: P(off + t, h), D: P(off, h), _h: P(off, 0) }, [
+      { k: 'poly', p: ['A', 'B', 'C', 'D'] }, { k: 'seg', p: ['D', '_h'], dash: true, label: '? cm' }, { k: 'right', p: ['D', '_h', 'B'] },
+      { k: 'side', p: ['A', 'B'], label: `${b} cm` }, { k: 'side', p: ['D', 'C'], label: `${t} cm` }]) };
+};
+G['ga-8'] = (r) => { // m와 cm 섞인 넓이
+  const x = ri(r, 2, 6), y = ri(r, 2, 9) * 10, ans = x * 100 * y;
+  return build(r, { text: `가로가 ${x} m, 세로가 ${y} cm인 직사각형의 넓이는 몇 cm²인가요?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(x * y), note: '단위를 cm로 맞추지 않고 곱함 (1 m = 100 cm)' }, { v: q(x * 10 * y), note: '1 m를 10 cm로 계산함' }, { v: q(x * 1000 * y), note: '1 m를 1000 cm로 계산함' }, { v: q(2 * (x * 100 + y)), note: '넓이 대신 둘레를 구함' }],
+    fill: () => q(ans + (r() < 0.5 ? -1 : 1) * ri(r, 1, 9) * 100), fmt: cm2, order: 'asc', explain: `단위부터 맞추기: ${x} m = ${x * 100} cm → ${x * 100} × ${y} = ${ans} cm²` });
+};
+G['ga-9'] = (r) => { // 모퉁이를 잘라 낸 도형
+  const W = ri(r, 8, 14), H = ri(r, 6, 12), w = ri(r, 2, W - 4), h = ri(r, 2, H - 3), ans = W * H - w * h;
+  return { ...build(r, { text: `가로 ${W} cm, 세로 ${H} cm인 직사각형의 한 모퉁이에서 가로 ${w} cm, 세로 ${h} cm인 직사각형을 잘라 냈습니다. 남은 도형의 넓이는?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(W * H), note: '잘라 낸 부분을 빼지 않음' }, { v: q(W * H + w * h), note: '잘라 낸 부분을 더함' }, { v: q(2 * (W + H)), note: '넓이 대신 둘레를 구함' }, { v: q((W - w) * (H - h)), note: '남은 부분 중 일부만 구함' }],
+    fill: nearInt(r, ans, 10), fmt: cm2, order: 'asc', explain: `큰 직사각형 − 잘라 낸 직사각형 = ${W} × ${H} − ${w} × ${h} = ${W * H} − ${w * h} = ${ans} cm²` }),
+    fig: shape({ A: P(0, 0), B: P(W, 0), C: P(W, H - h), D: P(W - w, H - h), E: P(W - w, H), F: P(0, H), _x: P(W, H) }, [
+      { k: 'seg', p: ['E', '_x'], dash: true }, { k: 'seg', p: ['_x', 'C'], dash: true },
+      { k: 'poly', p: ['A', 'B', 'C', 'D', 'E', 'F'], fill: true }, { k: 'side', p: ['A', 'B'], label: `${W} cm` }, { k: 'side', p: ['F', 'A'], label: `${H} cm` },
+      { k: 'side', p: ['E', '_x'], label: `${w} cm` }, { k: 'side', p: ['_x', 'C'], label: `${h} cm` }]) };
+};
+G['ga-10'] = (r) => { // 평행사변형과 넓이가 같은 삼각형
+  const a = ri(r, 4, 12), h = even(r, 4, 12);
+  return build(r, { text: `밑변이 ${a} cm, 높이가 ${h} cm인 평행사변형과 넓이가 같은 삼각형을 그리려고 합니다. 삼각형의 밑변을 ${a} cm로 하면 높이는 몇 cm로 해야 하나요?`, correct: { v: q(2 * h) },
+    wrongs: [{ v: q(h), note: '삼각형 넓이의 ÷ 2를 생각하지 않음 (높이가 같으면 넓이는 반)' }, { v: q(h / 2), note: '높이를 반으로 줄임 (거꾸로 생각함)' }, { v: q(a * h) }],
+    fill: nearInt(r, 2 * h, 6), fmt: cm, order: 'asc', explain: `평행사변형 넓이 ${a} × ${h} = ${a * h} cm² → 삼각형: ${a} × □ ÷ 2 = ${a * h} → □ = ${a * h * 2} ÷ ${a} = ${2 * h} cm (밑변이 같으면 높이를 2배로)` });
+};
+
+// 원의 둘레와 넓이 (원주율 3.14) — 값은 분수(Q)로 정확히 계산하고 소수로 씀
+const PI = q(314, 100);
+const qm = (...xs: (number | Q)[]) => xs.reduce<Q>((acc, x) => mul(acc, typeof x === 'number' ? q(x) : x), q(1));
+const dcm = decU(' cm'), dcm2 = decU(' cm²');
+const nearPi = (r: Rng, c: Q) => () => add(c, qm(PI, (r() < 0.5 ? -1 : 1) * ri(r, 1, 6)));
+const circ = (rad: number, items: any[] = []) => shape({ O: P(0, 0), _a: P(rad, 0), _b: P(-rad, 0) }, [{ k: 'circle', c: 'O', r: rad }, { k: 'dot', p: 'O' }, ...items]);
+const PI_T = '(원주율 3.14)';
+
+G['gc-1'] = (r) => { // 반지름 → 원주
+  const rad = ri(r, 2, 15), ans = qm(2, rad, PI);
+  return { ...build(r, { text: `반지름이 ${rad} cm인 원의 둘레(원주)는? ${PI_T}`, correct: { v: ans },
+    wrongs: [{ v: qm(rad, PI), note: '지름 대신 반지름에 원주율을 곱함 (원주 = 지름 × 원주율)' }, { v: qm(rad, rad, PI), note: '둘레 대신 넓이를 구함' }, { v: qm(4, rad, PI), note: '반지름을 지름으로 보고 또 2배 함' }],
+    fill: nearPi(r, ans), fmt: dcm, order: 'asc', explain: `지름 = ${rad} × 2 = ${rad * 2} cm → 원주 = 지름 × 원주율 = ${rad * 2} × 3.14 = ${dec(ans)} cm` }),
+    fig: circ(rad, [{ k: 'seg', p: ['O', '_a'], label: `${rad} cm` }]) };
+};
+G['gc-2'] = (r) => { // 지름 → 넓이
+  const d = even(r, 4, 20), rad = d / 2, ans = qm(rad, rad, PI);
+  return { ...build(r, { text: `지름이 ${d} cm인 원의 넓이는? ${PI_T}`, correct: { v: ans },
+    wrongs: [{ v: qm(d, d, PI), note: '반지름 대신 지름을 두 번 곱함 (넓이 = 반지름 × 반지름 × 원주율)' }, { v: qm(d, PI), note: '넓이 대신 원주를 구함' }, { v: qm(rad, PI), note: '반지름 × 원주율만 함 (반지름을 한 번 더 곱해야 함)' }],
+    fill: nearPi(r, ans), fmt: dcm2, order: 'asc', explain: `반지름 = ${d} ÷ 2 = ${rad} cm → 넓이 = ${rad} × ${rad} × 3.14 = ${dec(ans)} cm²` }),
+    fig: circ(rad, [{ k: 'seg', p: ['_b', '_a'], label: `${d} cm` }]) };
+};
+G['gc-3'] = (r) => { // 원주 → 지름
+  const d = ri(r, 3, 20), C = qm(d, PI);
+  return build(r, { text: `둘레(원주)가 ${dec(C)} cm인 원의 지름은? ${PI_T}`, correct: { v: q(d) },
+    wrongs: [{ v: q(d, 2), note: '지름 대신 반지름을 구함' }, { v: q(d * 2), note: '지름을 구한 뒤 또 2배 함' }],
+    fill: nearInt(r, d, 5), fmt: dcm, order: 'asc', explain: `원주 = 지름 × 3.14 → 지름 = ${dec(C)} ÷ 3.14 = ${d} cm` });
+};
+G['gc-4'] = (r) => { // 원주 → 넓이 (2단계)
+  const rad = ri(r, 2, 10), C = qm(2, rad, PI), ans = qm(rad, rad, PI);
+  return build(r, { text: `둘레(원주)가 ${dec(C)} cm인 원의 넓이는? ${PI_T}`, correct: { v: ans },
+    wrongs: [{ v: qm(2 * rad, 2 * rad, PI), note: '지름을 반지름처럼 곱함 (지름 ÷ 2 = 반지름)' }, { v: qm(rad, PI), note: '반지름 × 원주율만 함' }, { v: C, note: '넓이 대신 원주를 그대로 씀' }],
+    fill: nearPi(r, ans), fmt: dcm2, order: 'asc', explain: `지름 = ${dec(C)} ÷ 3.14 = ${2 * rad} cm, 반지름 = ${rad} cm → 넓이 = ${rad} × ${rad} × 3.14 = ${dec(ans)} cm²` });
+};
+G['gc-5'] = (r) => { // 반원의 넓이
+  const d = even(r, 4, 20), rad = d / 2, ans = qm(rad, rad, PI, q(1, 2));
+  return { ...build(r, { text: `지름이 ${d} cm인 원을 반으로 자른 반원의 넓이는? ${PI_T}`, correct: { v: ans },
+    wrongs: [{ v: qm(rad, rad, PI), note: '반원인데 2로 나누지 않음' }, { v: qm(d, d, PI, q(1, 2)), note: '반지름 대신 지름을 곱함' }, { v: qm(d, PI, q(1, 2)), note: '넓이 대신 반원의 곡선 길이를 구함' }],
+    fill: nearPi(r, ans), fmt: dcm2, order: 'asc', explain: `반지름 ${rad} cm → 원의 넓이 ${rad} × ${rad} × 3.14 = ${dec(qm(rad, rad, PI))} → 반원은 ÷ 2 = ${dec(ans)} cm²` }),
+    fig: shape({ O: P(0, 0), _a: P(rad, 0), _b: P(-rad, 0) }, [{ k: 'arc', c: 'O', r: rad, from: 0, to: 180, fill: true }, { k: 'seg', p: ['_b', '_a'], label: `${d} cm` }]) };
+};
+G['gc-6'] = (r) => { // 반원의 둘레 (곡선 + 지름)
+  const d = even(r, 4, 20), arc = qm(d, PI, q(1, 2)), ans = add(arc, q(d));
+  return { ...build(r, { text: `지름이 ${d} cm인 반원의 둘레(곡선 부분과 지름을 합한 길이)는? ${PI_T}`, correct: { v: ans },
+    wrongs: [{ v: arc, note: '곡선 부분만 구함 (지름을 더하지 않음)' }, { v: add(qm(d, PI), q(d)), note: '반원인데 원 전체의 둘레를 씀' }, { v: add(arc, q(d / 2)), note: '지름 대신 반지름을 더함' }],
+    fill: nearPi(r, ans), fmt: dcm, order: 'asc', explain: `곡선 = ${d} × 3.14 ÷ 2 = ${dec(arc)} cm, 여기에 지름 ${d} cm를 더해 ${dec(ans)} cm` }),
+    fig: shape({ O: P(0, 0), _a: P(d / 2, 0), _b: P(-d / 2, 0) }, [{ k: 'arc', c: 'O', r: d / 2, from: 0, to: 180 }, { k: 'seg', p: ['_b', '_a'], label: `${d} cm` }]) };
+};
+G['gc-7'] = (r) => { // 반지름 k배 → 원주·넓이 몇 배
+  const k = ri(r, 2, 5), area = r() < 0.6, ans = area ? k * k : k;
+  return build(r, { text: `원의 반지름을 ${k}배로 늘이면 ${area ? '넓이' : '둘레(원주)'}는 처음의 몇 배가 되나요?`, correct: { v: q(ans) },
+    wrongs: area ? [{ v: q(k), note: '넓이도 반지름처럼 같은 배수라고 생각함 (반지름을 두 번 곱하므로 배수도 두 번)' }, { v: q(2 * k) }, { v: q(k * k * k) }]
+      : [{ v: q(k * k), note: '원주를 넓이와 헷갈림 (원주는 반지름에 3.14 × 2를 한 번 곱함)' }, { v: q(2 * k) }, { v: q(k + 1) }],
+    fill: nearInt(r, ans, 4), fmt: unit('배'), order: 'asc', explain: area ? `반지름 1인 원과 ${k}인 원: 넓이 1 × 1 × 3.14 와 ${k} × ${k} × 3.14 → ${k * k}배` : `원주 = 반지름 × 2 × 3.14 → 반지름이 ${k}배면 원주도 ${k}배` });
+};
+G['gc-8'] = (r) => { // 바퀴가 굴러간 거리
+  const d = ri(r, 2, 6) * 10, n = ri(r, 3, 10), ans = qm(d, PI, n);
+  return build(r, { text: `지름이 ${d} cm인 바퀴가 ${n}바퀴 굴러갔습니다. 바퀴가 굴러간 거리는 몇 cm인가요? ${PI_T}`, correct: { v: ans },
+    wrongs: [{ v: qm(d / 2, PI, n), note: '지름 대신 반지름으로 원주를 구함' }, { v: qm(d, PI), note: '한 바퀴만 구함 (바퀴 수를 곱하지 않음)' }, { v: qm(d / 2, d / 2, PI, n), note: '원주 대신 넓이를 구함' }],
+    fill: nearPi(r, ans), fmt: dcm, order: 'asc', explain: `한 바퀴 = 원주 = ${d} × 3.14 = ${dec(qm(d, PI))} cm → ${n}바퀴 = ${dec(qm(d, PI))} × ${n} = ${dec(ans)} cm` });
+};
+G['gc-9'] = (r) => { // 정사각형 − 꼭 맞는 원
+  const a = even(r, 4, 20), rad = a / 2, circle = qm(rad, rad, PI), ans = sub(q(a * a), circle);
+  return { ...build(r, { text: `한 변이 ${a} cm인 정사각형 안에 꼭 맞게 원을 그렸습니다. 정사각형에서 원을 뺀 부분(색칠한 부분)의 넓이는? ${PI_T}`, correct: { v: ans },
+    wrongs: [{ v: circle, note: '원의 넓이만 구함 (구하는 것을 끝까지 안 봄)' }, { v: sub(q(a * a), qm(a, PI)), note: '원의 넓이 대신 원주를 뺌' }, { v: q(a * a), note: '원을 빼지 않음' }],
+    fill: nearPi(r, ans), fmt: dcm2, order: 'asc',
+    explain: `정사각형 ${a} × ${a} = ${a * a} cm², 원(반지름 ${rad} cm) ${rad} × ${rad} × 3.14 = ${dec(circle)} cm² → ${a * a} − ${dec(circle)} = ${dec(ans)} cm²` }),
+    fig: shape({ A: P(-rad, -rad), B: P(rad, -rad), C: P(rad, rad), D: P(-rad, rad), O: P(0, 0) }, [
+      { k: 'poly', p: ['A', 'B', 'C', 'D'], fill: true }, { k: 'circle', c: 'O', r: rad, fill: 'bg' }, { k: 'circle', c: 'O', r: rad }, { k: 'side', p: ['A', 'B'], label: `${a} cm` }]) };
+};
+G['gc-10'] = (r) => { // 피자 1판과 작은 피자 여러 판 (넓이 비교)
+  for (;;) {
+    const d1 = even(r, 24, 40), n = ri(r, 2, 3), d2 = even(r, 14, d1 - 6), big = d1 * d1, small = n * d2 * d2;
+    if (big === small || n * d2 <= d1) continue; // 지름의 합은 작은 쪽이 항상 길게 → 함정
+    const r1 = d1 / 2, r2 = d2 / 2, A = qm(r1, r1, PI), B = qm(r2, r2, PI, n);
+    const oA = { s: `지름 ${d1} cm 피자 1판이 더 넓다` }, oB = { s: `지름 ${d2} cm 피자 ${n}판이 더 넓다` }, oE = { s: '넓이가 같다' };
+    const correct = big > small ? oA : oB;
+    return build(r, { text: `지름 ${d1} cm인 피자 1판과 지름 ${d2} cm인 피자 ${n}판 중 어느 쪽의 넓이가 더 넓은가요? (피자는 원 모양, 두께는 같음, 원주율 3.14)`, correct,
+      wrongs: [...(correct === oA ? [{ ...oB, note: '지름의 합으로 비교함 (넓이는 반지름 × 반지름 × 원주율)' }] : [oA]), oE], count: 3, order: 'shuffle',
+      explain: `1판: ${r1} × ${r1} × 3.14 = ${dec(A)} cm², ${n}판: ${r2} × ${r2} × 3.14 × ${n} = ${dec(B)} cm² → ${big > small ? `${d1} cm 1판` : `${d2} cm ${n}판`}이 더 넓어요` });
+  }
+};
+
+// ── 다혜: 분수 크기 비교 다시 확인 (u-red 의 크기 비교를 빨리 찍어서 통과) ──
+const cmpOpts = (A: string, B: string) => [{ s: `${A} > ${B}` }, { s: `${A} < ${B}` }, { s: `${A} = ${B}` }];
+const fs = (f: Q) => M(fr(f[0], f[1]));
+function properF(r: Rng, dLo: number, dHi: number): Q { for (;;) { const d = ri(r, dLo, dHi), n = ri(r, 1, d - 1); if (gcd(n, d) === 1) return [n, d]; } }
+function cmpBuild(r: Rng, a: Q, b: Q, As: string, Bs: string, note: string, explain: string, lastNum = a[0]) { // lastNum: A를 읽을 때 마지막 소리(분자)
+  const opts = cmpOpts(As, Bs), correct = lt(b, a) ? opts[0] : opts[1], opp = correct === opts[0] ? opts[1] : opts[0];
+  return build(r, { text: `${As} ${josa(lastNum, '과', '와')} ${Bs} 의 크기를 바르게 비교한 것은?`, correct, wrongs: [{ ...opp, note }, opts[2]], count: 3, order: 'shuffle', explain });
+}
+G['rc-1'] = (r) => { // 분모가 다른 두 분수 (분모·분자 큰 쪽이 작게)
+  for (;;) { const a = properF(r, 3, 9), b = properF(r, 3, 9); if (a[1] === b[1] || eq(a, b)) continue;
+    const big = lt(b, a) ? a : b, small = big === a ? b : a; if (!(small[1] > big[1] && small[0] > big[0])) continue;
+    const L = lcm(a[1], b[1]);
+    return cmpBuild(r, a, b, fs(a), fs(b), '분모·분자가 큰 분수가 더 크다고 생각함 (통분해서 비교해야 함)',
+      `통분(분모 ${L}): ${fs(a)} = ${M(fr(a[0] * L / a[1], L))}, ${fs(b)} = ${M(fr(b[0] * L / b[1], L))} → 분자가 큰 ${fs(big)}${josa(big[0], '이', '가')} 더 커요`); }
+};
+G['rc-2'] = (r) => { // 분자가 같은 두 분수
+  for (;;) { const n = ri(r, 1, 5), d1 = ri(r, n + 1, 12), d2 = ri(r, n + 1, 12); if (d1 === d2 || gcd(n, d1) !== 1 || gcd(n, d2) !== 1) continue;
+    const a: Q = [n, d1], b: Q = [n, d2];
+    return cmpBuild(r, a, b, fs(a), fs(b), '분모가 클수록 큰 분수라고 생각함 (분자가 같으면 분모가 작을수록 큼)',
+      `분자가 ${J(n, '으로', '로')} 같으면 똑같이 적게 나눈 쪽(분모가 작은 쪽)의 한 조각이 커요 → ${fs([n, Math.min(d1, d2)])}${josa(n, '이', '가')} 더 커요`); }
+};
+G['rc-3'] = (r) => { // 가장 큰 분수 (5개)
+  for (;;) {
+    const fsx: Q[] = []; while (fsx.length < 5) { const f = properF(r, 3, 12); if (!fsx.some((x) => eq(x, f))) fsx.push(f); }
+    const mx0 = fsx.reduce((a, b) => (lt(a, b) ? b : a)), lure = fsx.filter((f) => f !== mx0).reduce((a, b) => (b[0] > a[0] || (b[0] === a[0] && b[1] > a[1]) ? b : a));
+    if (!(lure[0] > mx0[0] && lure[1] > mx0[1])) continue; // 분모·분자가 다 큰데 더 작은 분수가 있어야 함정
+    return build(r, { text: '다음 중 가장 큰 분수는?', correct: { s: fs(mx0) },
+      wrongs: fsx.filter((f) => f !== mx0).map((f) => ({ s: fs(f), note: f === lure ? '분모·분자가 큰 분수가 더 크다고 생각함 (통분하거나 소수로 바꿔 비교)' : undefined })), order: 'shuffle',
+      explain: `소수로 바꿔 비교(분자 ÷ 분모): ${fsx.map((f) => fs(f) + ' ≈ ' + (Math.round(num(f) * 1000) / 1000)).join(', ')} → ${fs(mx0)}` });
+  }
+};
+G['rc-4'] = (r) => { // 1/2 보다 큰 분수 고르기
+  for (;;) {
+    const c = properF(r, 3, 7); if (c[0] * 2 <= c[1]) continue;
+    const ws: Q[] = []; for (let t = 0; ws.length < 4 && t < 200; t++) { const f = properF(r, 5, 15); if (f[0] * 2 < f[1] && f[0] >= 2 && !ws.some((x) => eq(x, f))) ws.push(f); }
+    if (ws.length < 4 || !ws.some((f) => f[0] > c[0])) continue;
+    const lure = ws.reduce((a, b) => (b[0] > a[0] ? b : a));
+    return build(r, { text: `다음 중 ${M(fr(1, 2))} 보다 <b>큰</b> 분수는?`, correct: { s: fs(c) },
+      wrongs: ws.map((f) => ({ s: fs(f), note: f === lure ? '분자가 크면 큰 분수라고 생각함 (분자 × 2와 분모를 비교)' : undefined })), order: 'shuffle',
+      explain: `${M(fr(1, 2))} 보다 크려면 분자 × 2 가 분모보다 커야 해요: ${[c, ...ws].map((f) => `${fs(f)} → ${f[0]} × 2 = ${f[0] * 2} ${f[0] * 2 > f[1] ? '>' : '<'} ${f[1]}`).join(', ')}` });
+  }
+};
+G['rc-5'] = (r) => { // 대분수와 가분수
+  for (;;) {
+    const w = ri(r, 1, 4), f = properF(r, 2, 9), a = add(q(w), f), d2 = ri(r, 2, 9); if (d2 === f[1]) continue;
+    const n2 = Math.round(num(a) * d2) + (r() < 0.5 ? -1 : 1) * ri(r, 0, 2), b: Q = [n2, d2];
+    if (n2 <= d2 || gcd(n2, d2) !== 1 || eq(a, b) || Math.floor(num(b)) < 1) continue;
+    const As = M(`${w}${fr(f[0], f[1])}`), Bs = fs(b), bw = Math.floor(n2 / d2), bf: Q = [n2 % d2, d2];
+    const how = bw !== w ? `자연수 부분 ${J(w, '과', '와')} ${bw} 비교` : `자연수가 같으니 분수 부분 ${fs(f)}${josa(f[0], '과', '와')} ${M(fr(bf[0], bf[1]))}${josa(bf[0], '을', '를')} 통분해 비교`;
+    const win = lt(b, a) ? As : Bs, winN = lt(b, a) ? f[0] : n2;
+    return cmpBuild(r, a, b, As, Bs, '가분수를 대분수로 바꾸지 않고 숫자 크기만 보고 비교함', `${Bs} = ${M(`${bw}${fr(bf[0], bf[1])}`)} 로 바꾸기 → ${how} → ${win}${josa(winN, '이', '가')} 더 커요`, f[0]);
+  }
 };
 
 // 고정 문항: 생성기를 정해진 seed 로 돌려 문제지의 원래 문항을 만든다(같은 코드면 항상 같은 문제)
