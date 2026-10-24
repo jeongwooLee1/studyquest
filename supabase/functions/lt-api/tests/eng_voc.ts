@@ -2,8 +2,9 @@
 //   eng-e4-v1  학교·가족 단어(10): 뜻 알기 · 영어 단어 고르기 · 문장·글 속 단어(끝까지 읽기)
 //   eng-e4-v2  음식·동물 단어(10): 뜻 알기 · 영어 단어 고르기·분류 · 문장·글 속 단어(좋아한다/좋아하지 않는다, 누구)
 //   eng-e4-v3  시간·날씨·요일 단어(10): 요일·달·계절·날씨·숫자 · 시각 읽기 · 요일 순서 · No 뒤 끝까지 읽기
+//   eng-e4-v4  동작·감정 단어(10): 동작·기분·몸 상태 · can't · because · 누가 무엇을
 // 다시 풀기용 변형 문항은 ENG_VOC_VARIANTS[원래 문항 id] 에 3개씩(sci_gas.ts·eng_gram.ts 와 같은 형식).
-// 표기: 줄바꿈 \n, 강조 <b>…</b>. '$'는 쓰지 않는다. 문항 id 는 세트마다 접두어(학교·가족 'ev1-', 음식·동물 'ev2-', 시간·날씨 'ev3-').
+// 표기: 줄바꿈 \n, 강조 <b>…</b>. '$'는 쓰지 않는다. 문항 id 는 세트마다 접두어(학교·가족 'ev1-', 음식·동물 'ev2-', 시간·날씨 'ev3-', 동작·감정 'ev4-').
 
 const G = '어휘';
 const set = (id: string, title: string, subtitle: string, minutes: number, practice: boolean, areas: any[], questions: any[]) => ({
@@ -107,7 +108,40 @@ export const ENG_E4_V3 = set('eng-e4-v3', '시간·날씨·요일 단어', '초4
     traps: [{ a: 1, note: N_WHAT }, { a: 2, note: N_WHAT }], explain: 'I go swimming on Friday. → 금요일. 월요일은 피아노, 수요일은 축구예요.' },
 ]);
 
-export const ENG_VOC_SETS = [ENG_E4_V1, ENG_E4_V2, ENG_E4_V3];
+// ── 동작·감정 ──
+const N_FEEL = '감정 단어를 헷갈림 (happy 기쁜 / sad 슬픈 / angry 화난 / surprised 놀란)';
+const N_ACT = '동작 단어를 헷갈림 (run 달리다 / walk 걷다, draw 그리다 / write 쓰다)';
+const N_OPP = '반대 뜻의 단어와 헷갈림 (open 열다 / close 닫다, bored 지루한 / excited 신난)';
+const N_BODY = '몸 상태 단어를 헷갈림 (hungry 배고픈 / thirsty 목마른 / sleepy 졸린)';
+const N_CAN = 'can(할 수 있다)과 can\'t(할 수 없다)를 거꾸로 읽음';
+
+export const ENG_E4_V4 = set('eng-e4-v4', '동작·감정 단어', '초4 영어 어휘 · 움직임, 기분·몸 상태', 10, true, [
+  area('a1', '뜻 알기', '동작·기분 단어는 대화와 글에서 가장 자주 나와요.', ['EBS 초등 「초등 영어 4학년」 단어 복습', '단어를 읽으며 몸짓·표정으로 흉내 내기(run, jump, happy, sad)']),
+  area('a2', '영어 단어 고르기', '비슷한 동작·기분을 구분해서 골라야 해요.', ['EBS 초등 「초등 영어 4학년」 단어 복습', '반대말 짝(open–close, happy–sad, bored–excited) 카드 만들기']),
+  area('a3', '문장·글 속 단어', 'can\'t, because, 누가 무엇을 하는지 끝까지 읽어야 맞힐 수 있어요.', ['글에서 can\'t 와 because 에 밑줄', '질문의 사람 이름에 동그라미 치고 그 사람 문장만 다시 읽기']),
+], [
+  { id: 'ev4-1', area: 'a1', text: '다음 영어 단어의 뜻은?\nhappy', options: ['슬픈', '기쁜', '화난', '피곤한', '배고픈'], answer: 2,
+    traps: [{ a: 1, note: N_FEEL }], explain: 'happy = 기쁜, 행복한. 슬픈 sad, 화난 angry.' },
+  { id: 'ev4-2', area: 'a1', text: '다음 영어 단어의 뜻은?\nswim', options: ['달리다', '날다', '헤엄치다', '걷다', '춤추다'], answer: 3, explain: 'swim = 헤엄치다(수영하다). 달리다 run, 날다 fly, 걷다 walk.' },
+  { id: 'ev4-3', area: 'a1', text: '다음 영어 단어의 뜻은?\nopen', options: ['닫다', '앉다', '일어서다', '열다', '가다'], answer: 4,
+    traps: [{ a: 1, note: N_OPP }], explain: 'open = 열다. 닫다는 close.' },
+  { id: 'ev4-4', area: 'a1', text: '다음 영어 단어의 뜻은?\nhungry', options: ['목마른', '배부른', '졸린', '아픈', '배고픈'], answer: 5,
+    traps: [{ a: 1, note: N_BODY }], explain: 'hungry = 배고픈. 목마른 thirsty, 배부른 full, 졸린 sleepy.' },
+  { id: 'ev4-5', area: 'a2', text: '「노래하다」를 영어로 하면?', options: ['sing', 'dance', 'draw', 'read', 'cook'], answer: 1,
+    traps: [{ a: 2, note: N_ACT }], explain: '노래하다 = sing. 춤추다 dance, 그리다 draw.' },
+  { id: 'ev4-6', area: 'a2', text: '「무서운(겁먹은)」을 영어로 하면?', options: ['scared', 'sleepy', 'sorry', 'surprised', 'sad'], answer: 1,
+    traps: [{ a: 4, note: N_FEEL }, { a: 5, note: N_FEEL }], explain: '무서운·겁먹은 = scared. 놀란 surprised, 슬픈 sad.' },
+  { id: 'ev4-7', area: 'a3', text: '빈칸에 알맞은 말은?\nI\'m ______. I want some water.', options: ['hungry', 'thirsty', 'sleepy', 'happy', 'full'], answer: 2,
+    traps: [{ a: 1, note: N_BODY }], explain: '물을 마시고 싶다 → thirsty(목마른).' },
+  { id: 'ev4-8', area: 'a3', text: '글을 읽고 질문에 답하세요.\n\nI can swim. I can ride a bike. But I can\'t skate.\n\nQ. 내가 <b>할 수 없는</b> 것은?', options: ['수영', '자전거 타기', '스케이트', '달리기', '줄넘기'], answer: 3,
+    traps: [{ a: 1, note: N_CAN }, { a: 2, note: N_CAN }], explain: 'But I can\'t skate. → 스케이트. 수영·자전거는 할 수 있어요.' },
+  { id: 'ev4-9', area: 'a3', text: '글을 읽고 질문에 답하세요.\n\nMina is sad today because she lost her cat.\n\nQ. 미나가 슬픈 이유는?', options: ['시험을 못 봐서', '감기에 걸려서', '친구와 싸워서', '비가 와서', '고양이를 잃어버려서'], answer: 5,
+    explain: 'because(왜냐하면) 뒤가 이유: she lost her cat → 고양이를 잃어버려서.' },
+  { id: 'ev4-10', area: 'a3', text: '글을 읽고 질문에 답하세요.\n\nIt\'s Sunday. Dad is cooking. Mom is reading a book. My brother is sleeping.\n\nQ. <b>엄마</b>는 무엇을 하고 있나요?', options: ['요리하기', '책 읽기', '잠자기', '청소하기', '노래하기'], answer: 2,
+    traps: [{ a: 1, note: N_WHAT }, { a: 3, note: N_WHAT }], explain: 'Mom is reading a book. → 책 읽기. 요리는 아빠, 잠은 형(오빠·남동생)이에요.' },
+]);
+
+export const ENG_VOC_SETS = [ENG_E4_V1, ENG_E4_V2, ENG_E4_V3, ENG_E4_V4];
 
 type V = { text: string; options: string[]; answer: number; traps?: { a: number; note: string }[]; explain: string };
 export const ENG_VOC_VARIANTS: Record<string, V[]> = {
@@ -310,5 +344,82 @@ export const ENG_VOC_VARIANTS: Record<string, V[]> = {
       traps: [{ a: 1, note: N_WHAT }, { a: 2, note: N_WHAT }, { a: 3, note: N_WHAT }], explain: 'We have art on Friday. → 금요일. 월요일은 음악, 화·목은 영어예요.' },
     { text: '글을 읽고 질문에 답하세요.\n\nI get up at seven. I have lunch at twelve. I go to bed at ten.\n\nQ. <b>잠자리에 드는</b> 시각은?', options: ['10시', '7시', '12시', '9시', '11시'], answer: 1,
       traps: [{ a: 2, note: N_WHAT }, { a: 3, note: N_WHAT }], explain: 'I go to bed at ten. → 10시. 7시는 일어나는 시각, 12시는 점심이에요.' },
+  ],
+  'ev4-1': [
+    { text: '다음 영어 단어의 뜻은?\nsad', options: ['기쁜', '화난', '슬픈', '졸린', '무서운'], answer: 3,
+      traps: [{ a: 1, note: N_FEEL }], explain: 'sad = 슬픈. 기쁜은 happy.' },
+    { text: '다음 영어 단어의 뜻은?\nangry', options: ['화난', '기쁜', '슬픈', '지루한', '놀란'], answer: 1,
+      traps: [{ a: 3, note: N_FEEL }], explain: 'angry = 화난.' },
+    { text: '다음 영어 단어의 뜻은?\ntired', options: ['배고픈', '목마른', '아픈', '피곤한', '신난'], answer: 4, explain: 'tired = 피곤한.' },
+  ],
+  'ev4-2': [
+    { text: '다음 영어 단어의 뜻은?\nrun', options: ['걷다', '달리다', '뛰어오르다', '앉다', '서다'], answer: 2,
+      traps: [{ a: 1, note: N_ACT }], explain: 'run = 달리다. 걷다는 walk.' },
+    { text: '다음 영어 단어의 뜻은?\njump', options: ['뛰어오르다', '걷다', '날다', '수영하다', '앉다'], answer: 1, explain: 'jump = 뛰어오르다(점프하다).' },
+    { text: '다음 영어 단어의 뜻은?\nwalk', options: ['달리다', '앉다', '춤추다', '걷다', '자다'], answer: 4,
+      traps: [{ a: 1, note: N_ACT }], explain: 'walk = 걷다. 달리다는 run.' },
+  ],
+  'ev4-3': [
+    { text: '다음 영어 단어의 뜻은?\nclose', options: ['열다', '닫다', '들어오다', '나가다', '쓰다'], answer: 2,
+      traps: [{ a: 1, note: N_OPP }], explain: 'close = 닫다. 열다는 open.' },
+    { text: '다음 영어 표현의 뜻은?\nsit down', options: ['일어서다', '눕다', '앉다', '들어오다', '나가다'], answer: 3,
+      traps: [{ a: 1, note: N_OPP }], explain: 'sit down = 앉다. 일어서다는 stand up.' },
+    { text: '다음 영어 표현의 뜻은?\nstand up', options: ['앉다', '눕다', '걷다', '멈추다', '일어서다'], answer: 5,
+      traps: [{ a: 1, note: N_OPP }], explain: 'stand up = 일어서다. 앉다는 sit down.' },
+  ],
+  'ev4-4': [
+    { text: '다음 영어 단어의 뜻은?\nthirsty', options: ['배고픈', '목마른', '졸린', '추운', '아픈'], answer: 2,
+      traps: [{ a: 1, note: N_BODY }], explain: 'thirsty = 목마른. 배고픈은 hungry.' },
+    { text: '다음 영어 단어의 뜻은?\nsleepy', options: ['배고픈', '목마른', '졸린', '추운', '심심한'], answer: 3,
+      traps: [{ a: 1, note: N_BODY }], explain: 'sleepy = 졸린(sleep 자다).' },
+    { text: '다음 영어 단어의 뜻은?\nsick', options: ['건강한', '배고픈', '행복한', '아픈', '추운'], answer: 4, explain: 'sick = 아픈.' },
+  ],
+  'ev4-5': [
+    { text: '「그림을 그리다」를 영어로 하면?', options: ['write', 'read', 'draw', 'sing', 'play'], answer: 3,
+      traps: [{ a: 1, note: N_ACT }], explain: '그리다 = draw. write는 (글씨를) 쓰다.' },
+    { text: '「요리하다」를 영어로 하면?', options: ['eat', 'clean', 'wash', 'cook', 'make'], answer: 4,
+      traps: [{ a: 1, note: N_ACT }], explain: '요리하다 = cook. eat은 먹다.' },
+    { text: '「읽다」를 영어로 하면?', options: ['write', 'listen', 'speak', 'sing', 'read'], answer: 5,
+      traps: [{ a: 1, note: N_ACT }], explain: '읽다 = read. write는 쓰다.' },
+  ],
+  'ev4-6': [
+    { text: '「놀란」을 영어로 하면?', options: ['scared', 'surprised', 'sorry', 'bored', 'happy'], answer: 2,
+      traps: [{ a: 1, note: N_FEEL }], explain: '놀란 = surprised. scared는 무서운.' },
+    { text: '「지루한」을 영어로 하면?', options: ['busy', 'excited', 'bored', 'tired', 'angry'], answer: 3,
+      traps: [{ a: 2, note: N_OPP }], explain: '지루한 = bored. excited는 신난(반대).' },
+    { text: '「신난」을 영어로 하면?', options: ['bored', 'sad', 'tired', 'excited', 'sorry'], answer: 4,
+      traps: [{ a: 1, note: N_OPP }], explain: '신난 = excited. bored는 지루한(반대).' },
+  ],
+  'ev4-7': [
+    { text: '빈칸에 알맞은 말은?\nI\'m ______. I want to go to bed.', options: ['hungry', 'thirsty', 'happy', 'sleepy', 'angry'], answer: 4,
+      traps: [{ a: 1, note: N_BODY }, { a: 2, note: N_BODY }], explain: '자러 가고 싶다 → sleepy(졸린).' },
+    { text: '빈칸에 알맞은 말은?\nI\'m ______. Let\'s eat lunch.', options: ['full', 'sleepy', 'thirsty', 'sad', 'hungry'], answer: 5,
+      traps: [{ a: 1, note: N_OPP }, { a: 3, note: N_BODY }], explain: '점심을 먹자 → hungry(배고픈). full은 배부른.' },
+    { text: '빈칸에 알맞은 말은?\nIt\'s my birthday! I\'m so ______.', options: ['sad', 'angry', 'happy', 'sick', 'bored'], answer: 3,
+      traps: [{ a: 1, note: N_FEEL }], explain: '생일이라서 → happy(기쁜).' },
+  ],
+  'ev4-8': [
+    { text: '글을 읽고 질문에 답하세요.\n\nMy brother can play the piano. He can\'t play the guitar.\n\nQ. 형(오빠·남동생)이 <b>할 수 없는</b> 것은?', options: ['피아노', '기타', '바이올린', '노래', '춤'], answer: 2,
+      traps: [{ a: 1, note: N_CAN }], explain: 'He can\'t play the guitar. → 기타. 피아노는 칠 수 있어요.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nBirds can fly. Fish can swim. Penguins can swim, but they can\'t fly.\n\nQ. 펭귄이 <b>할 수 없는</b> 것은?', options: ['날기', '수영', '걷기', '먹기', '잠자기'], answer: 1,
+      traps: [{ a: 2, note: N_CAN }], explain: 'they can\'t fly → 날기. 펭귄은 수영은 할 수 있어요.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nJisu can dance well. She can sing, too. But she can\'t draw well.\n\nQ. 지수가 <b>잘하지 못하는</b> 것은?', options: ['춤', '노래', '요리', '그림', '수영'], answer: 4,
+      traps: [{ a: 1, note: N_CAN }, { a: 2, note: N_CAN }], explain: 'But she can\'t draw well. → 그림. 춤·노래는 잘해요.' },
+  ],
+  'ev4-9': [
+    { text: '글을 읽고 질문에 답하세요.\n\nJiho is tired because he played soccer all day.\n\nQ. 지호가 피곤한 이유는?', options: ['잠을 못 자서', '숙제가 많아서', '하루 종일 축구를 해서', '아파서', '늦게 일어나서'], answer: 3,
+      explain: 'because 뒤: he played soccer all day → 하루 종일 축구를 해서.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nI\'m happy because my grandma is visiting today.\n\nQ. 내가 기쁜 이유는?', options: ['선물을 받아서', '시험을 잘 봐서', '생일이라서', '할머니가 오셔서', '방학이라서'], answer: 4,
+      explain: 'because 뒤: my grandma is visiting today → 오늘 할머니가 오셔서.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nMy sister is angry because I broke her pencil.\n\nQ. 언니(누나·여동생)가 화난 이유는?', options: ['내가 연필을 부러뜨려서', '내가 늦게 와서', '숙제를 안 해서', '비가 와서', '아파서'], answer: 1,
+      explain: 'because 뒤: I broke her pencil → 내가 연필을 부러뜨려서.' },
+  ],
+  'ev4-10': [
+    { text: '글을 읽고 질문에 답하세요.\n\nAt the park, Jisu is running. Minho is riding a bike. Yuna is drawing a picture.\n\nQ. <b>민호</b>는 무엇을 하고 있나요?', options: ['달리기', '그림 그리기', '자전거 타기', '수영하기', '책 읽기'], answer: 3,
+      traps: [{ a: 1, note: N_WHAT }, { a: 2, note: N_WHAT }], explain: 'Minho is riding a bike. → 자전거 타기.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nIn the classroom, Tom is singing. Ben is dancing. Sam is writing a letter.\n\nQ. <b>샘(Sam)</b>은 무엇을 하고 있나요?', options: ['노래하기', '춤추기', '책 읽기', '편지 쓰기', '그림 그리기'], answer: 4,
+      traps: [{ a: 1, note: N_WHAT }, { a: 2, note: N_WHAT }], explain: 'Sam is writing a letter. → 편지 쓰기.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nGrandpa is happy. Grandma is tired. My cousin is angry.\n\nQ. <b>할머니</b>는 어떤 기분인가요?', options: ['피곤함', '기쁨', '화남', '슬픔', '배고픔'], answer: 1,
+      traps: [{ a: 2, note: N_WHAT }, { a: 3, note: N_WHAT }], explain: 'Grandma is tired. → 피곤함. 기쁨은 할아버지, 화남은 사촌이에요.' },
   ],
 };
