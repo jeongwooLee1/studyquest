@@ -60,6 +60,14 @@ h2 { font-size: 18px; margin: 0 0 12px; letter-spacing: -.01em; }
 .fr .de { padding: .06em .2em 0; }
 sup { font-size: .68em; line-height: 0; }
 .fig { display: flex; justify-content: center; margin: 14px 0 4px; }
+.shape { max-width: 100%; height: auto; color: var(--ink); overflow: hidden; }
+.shape .s { stroke: currentColor; stroke-width: 1.6; fill: none; stroke-linejoin: round; }
+.shape .s.d { stroke-dasharray: 5 4; }
+.shape .s.fl { fill: var(--brand-soft); }
+.shape .s.bgf { fill: var(--card); }
+.shape .dot { fill: currentColor; }
+.shape text { font-size: 13px; fill: currentColor; font-weight: 600; }
+.shape text.pn { font-weight: 800; }
 svg.coord { width: 100%; max-width: 300px; height: auto; }
 svg.coord .g { stroke: var(--grid); stroke-width: 1; }
 svg.coord .ax { stroke: var(--axis); stroke-width: 1.4; }
