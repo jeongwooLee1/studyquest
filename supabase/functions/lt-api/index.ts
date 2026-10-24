@@ -13,6 +13,7 @@
 //   retryInfo {testId, student}     틀린 문제 다시 풀기 안내(testId 는 '<문제지 id>:re') — 해결 못 한 유형 수와 유형별 설명 카드
 //   start {testId: '<id>:re', …}    해결 못 한 유형마다 비슷한 문제(twins.ts) 1개로 시작. 만든 문제는 lt_attempts.questions 에 저장
 //   daily {key, send?}               아이별 하루 정리(부족한 점·조언·들을 강의·내일 할 일·카톡 문구)를 텔레그램으로
+//   fast  {attemptId, kidToken, qid, sec}  너무 빨리 찍음 → 경고 횟수 기록, 텔레그램 알림
 //   check {attemptId, kidToken, qid, v | dk, sec}  다시 풀기 한 문제 바로 채점 → 정답·풀이, 통과 전이면 같은 유형 문제를 하나 더 붙임
 //                                   같은 유형 2번 연속 정답이면 통과. 다 끝나면 submit 으로 마감(답은 서버에 저장된 것으로 채점)
 //   start   {testId, student}       응시 시작 → attemptId, kidToken, 문제, 마감 시각
@@ -43,6 +44,8 @@ const GRACE_MS = 2 * 60 * 1000; // 마감 후 네트워크 지연 허용
 // 3) 같은 유형을 STREAK번 연속 맞히면 통과, MAX_TRIES번 넘게 못 맞히면 멈추고 부모님께 알림
 const RE = ':re';
 const MAX_SRC = 6, STREAK = 2, MAX_TRIES = 6;
+// 문제가 나오고 이 시간(초) 안에 고른 답은 '찍은 것'으로 보고 아이에게 경고 + 아빠에게 알림
+const FAST_SEC = 5;
 const baseOf = (id: string) => TESTS[String(id || '').replace(/:re$/, '')];
 const retryTest = (base: any, questions: any[]) => ({ ...base, id: base.id + RE, title: base.title + ' · 틀린 문제 다시 풀기', minutes: 90, questions });
 // 응시 행이 쓰는 시험: 다시 풀기는 행에 저장된 문제로
@@ -129,6 +132,15 @@ async function tgSend(sb: any, text: string, button?: { text: string; url: strin
     return !!j.ok;
   } catch (e) { console.error('telegram', e); return false; }
 }
+// 찍기 경고: 횟수를 올리고 첫 번째, 그다음은 3번마다 텔레그램으로 알림
+async function fastGuess(sb: any, row: any, test: any, sec: number) {
+  const n = (row.fast_guesses || 0) + 1;
+  await sb.from('lt_attempts').update({ fast_guesses: n }).eq('id', row.id).eq('status', 'in_progress');
+  if (!row.no_notify && (n === 1 || n % 3 === 1)) {
+    await tgSend(sb, `⚡ <b>${escH(row.student)}</b> · ${escH(test.title)}\n문제를 ${Math.max(0, Math.round(sec))}초 만에 찍어서 경고했어요 (이 문제지에서 ${n}번째)`);
+  }
+  return n;
+}
 const kst = (iso: string) => { const d = new Date(new Date(iso).getTime() + 9 * 3600e3); const p = (n: number) => String(n).padStart(2, '0'); return `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`; };
 const mmss = (sec: number) => `${Math.floor(sec / 60)}분 ${sec % 60}초`;
 const LV = { pass: '🟢', weak: '🟡', focus: '🔴' } as Record<string, string>;
@@ -143,6 +155,7 @@ function resultMessage(test: any, row: any, res: any) {
   L.push(`소요 ${mmss(elapsed)} / 제한 ${test.minutes}분${row.tab_leaves ? ` · 화면 이탈 ${row.tab_leaves}회` : ''}`);
   const dk = res.perQ.filter((p: any) => p.dk).length, blank = res.perQ.filter((p: any) => p.blank).length;
   if (dk || blank) L.push(`모르겠어요 ${dk}문항 · 빈칸 ${blank}문항`);
+  if (row.fast_guesses) L.push(`⚡ 너무 빨리 찍어서 경고 ${row.fast_guesses}번`);
   for (const g of [...new Set(res.areas.map((a: any) => a.group))] as string[]) {
     const as = res.areas.filter((a: any) => a.group === g);
     if (!as.length) continue;
@@ -287,6 +300,10 @@ Deno.serve(async (req) => {
       if (row.status !== 'in_progress') return json({ error: '이미 끝난 다시 풀기예요' }, 409);
       const q = row.questions.find((x: any) => x.id === String(body.qid || ''));
       if (!q) return json({ error: '문제를 찾을 수 없어요' }, 404);
+      if (!body.dk && !(row.answers || {})[q.id] && Number(body.sec) < FAST_SEC) {
+        const n = await fastGuess(sb, row, testOf(row), Number(body.sec) || 0);
+        return json({ fast: true, fastCount: n });
+      }
       const answers = { ...(row.answers || {}) }, qtimes = { ...(row.qtimes || {}) };
       if (!answers[q.id]) {
         const n = Number(body.v);
@@ -309,6 +326,15 @@ Deno.serve(async (req) => {
       const next = questions.find((x: any) => !answers[x.id]);
       return json({ correct: ok, given: a.dk ? null : a.v, dk: !!a.dk, answer: q.answer, explain: q.explain || '', trap, justMastered: m[sid].mastered && !o.mastered,
         mastery: masteryList(baseOf(row.test_id), m), next: next ? publicQ(next) : null, left: questions.filter((x: any) => !answers[x.id]).length });
+    }
+
+    // 문제지 응시 중 너무 빨리 찍음 → 횟수 기록, 아빠에게 알림
+    if (action === 'fast') {
+      const row = await loadKid(sb, body.attemptId, body.kidToken);
+      if (!row) return json({ error: '응시 기록을 찾을 수 없어요' }, 404);
+      if (row.status !== 'in_progress') return json({ ok: true });
+      const n = await fastGuess(sb, row, testOf(row), Number(body.sec) || 0);
+      return json({ ok: true, fastCount: n });
     }
 
     if (action === 'start') {
@@ -377,7 +403,7 @@ Deno.serve(async (req) => {
       const key = await getSecret(sb, 'LT_PARENT_KEY');
       if (!key || !safeEq(body.key, key)) return json({ error: '학부모 키가 맞지 않아요' }, 403);
       await finalizeExpired(sb);
-      const { data } = await sb.from('lt_attempts').select('test_id,student,status,started_at,score,total,result').in('student', Object.keys(PLAN))
+      const { data } = await sb.from('lt_attempts').select('test_id,student,status,started_at,score,total,result,fast_guesses').in('student', Object.keys(PLAN))
         .neq('status', 'in_progress').order('started_at', { ascending: true }).limit(1000);
       const messages = dailyCoach(TESTS, data || [], new Date().toISOString());
       if (body.send !== false) for (const m of messages) await tgSend(sb, m);

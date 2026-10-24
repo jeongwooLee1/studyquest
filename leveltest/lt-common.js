@@ -94,5 +94,22 @@ window.LT = (function () {
 
   function store(k, v) { try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) { return null; } }
 
-  return { API: API, api: api, esc: esc, md: md, fmtNum: fmtNum, validNum: validNum, figure: figure, CIRC: CIRC, LEVEL: LEVEL, kst: kst, mmss: mmss, store: store };
+  // 너무 빨리 찍었을 때 경고 — 3초 동안 닫을 수 없음
+  var FAST_SEC = 5;
+  function fastWarn(sec, onClose) {
+    var root = document.createElement('div');
+    root.className = 'modal fastwarn';
+    root.innerHTML = '<div class="sheet"><div style="font-size:44px;text-align:center">🚨</div>' +
+      '<h2 style="text-align:center;margin:6px 0 10px">너무 빨리 찍었어요!</h2>' +
+      '<p style="font-size:17px;line-height:1.7;margin:0">문제가 나오고 <b>' + Math.max(0, Math.round(sec)) + '초</b> 만에 답을 골랐어요. 문제를 다 읽지도 않고 <b>찍은 거죠?</b></p>' +
+      '<p style="font-size:17px;line-height:1.7;margin:8px 0 0;color:var(--focus);font-weight:800">📢 이건 아빠한테 보고할게요.</p>' +
+      '<p style="font-size:15px;line-height:1.7;margin:8px 0 0">문제를 끝까지 읽고, 연습장에 직접 풀어 본 다음 답을 골라요.</p>' +
+      '<div class="acts"><button class="btn" disabled>읽는 중… 3</button></div></div>';
+    document.body.appendChild(root);
+    var b = root.querySelector('button'), left = 3;
+    var iv = setInterval(function () { left--; if (left <= 0) { clearInterval(iv); b.disabled = false; b.textContent = '다시 풀어 볼게요'; } else b.textContent = '읽는 중… ' + left; }, 1000);
+    b.onclick = function () { root.remove(); if (onClose) onClose(); };
+  }
+
+  return { API: API, api: api, esc: esc, md: md, fmtNum: fmtNum, validNum: validNum, figure: figure, CIRC: CIRC, LEVEL: LEVEL, kst: kst, mmss: mmss, store: store, FAST_SEC: FAST_SEC, fastWarn: fastWarn };
 })();

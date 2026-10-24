@@ -153,9 +153,12 @@
   function check() {
     if (S.busy) return; S.busy = true;
     var btn = document.getElementById('chk'); btn.disabled = true; btn.textContent = '채점 중…';
-    var sec = Math.round((Date.now() - S.shownAt) / 1000);
+    var sec = Math.round((Date.now() - S.shownAt) / 100) / 10;
     LT.api('check', { attemptId: S.att.attemptId, kidToken: S.att.kidToken, qid: S.q.id, v: S.pick, dk: S.dk, sec: sec }).then(function (r) {
-      S.busy = false; S.mastery = r.mastery || S.mastery; feedback(r);
+      S.busy = false;
+      // 너무 빨리 찍음: 채점하지 않고 경고 → 같은 문제를 처음부터 다시
+      if (r.fast) { LT.fastWarn(sec, function () { ask(S.q); }); return; }
+      S.mastery = r.mastery || S.mastery; feedback(r);
     }).catch(function (e) { S.busy = false; btn.disabled = false; btn.textContent = '확인하기'; alert('채점하지 못했어요: ' + e.message); });
   }
   function feedback(r) {
