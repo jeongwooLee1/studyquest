@@ -5,8 +5,8 @@
 // 아이별 진도 (hub.html STUDENTS 와 같은 순서)
 // wait: 학교에서 아직 안 배운 단원 — 다음 문제지로 권하지 않는다
 export const PLAN: Record<string, { emoji: string; sets: string[]; wait?: string[]; tests: string[] }> = {
-  '이다연': { emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'kor-m1-v5-1', 'kor-m1-v5-2', 'kor-m1-v5-3', 'kor-m1-v5-4', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
-  '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'eng-m1-past', 'eng-m1-modal', 'eng-m1-inf', 'eng-m1-comp', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
+  '이다연': { emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'kor-m1-v5-1', 'kor-m1-v5-2', 'kor-m1-v5-3', 'kor-m1-v5-4', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
+  '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'eng-m1-past', 'eng-m1-modal', 'eng-m1-inf', 'eng-m1-comp', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
   '이다희': { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec', 'kor-e4-read', 'eng-e4-v1'], tests: ['math-e4', 'eng-e4-diag', 'kor-e4-diag'] },
 };
 // 이 레벨테스트의 부족한 영역은 이미 문제지로 만들어져 있다
@@ -34,6 +34,7 @@ export const LECTURES: Record<string, string> = {
   'sci-n40': 'EBS 중학 「뉴런 과학1」 40강 (마찰력)',
   'sci-n41': 'EBS 중학 「뉴런 과학1」 41강 (부력)',
   'eng-m1-modal': 'EBS 중학 프리미엄 중1 영어 문법 「조동사」·「미래 시제」 강의',
+  'm2-circ': 'EBS 중학 「뉴런 수학1(하)」 → 「원과 부채꼴」 강의',
   'm2-poly': 'EBS 중학 「뉴런 수학1(하)」 → 「다각형」(대각선, 내각과 외각) 강의',
   'm2-cons': 'EBS 중학 「뉴런 수학1(하)」 → 「작도와 합동」 강의',
   'm2-basic': 'EBS 중학 「뉴런 수학1(하)」 → 「기본 도형」(점·선·면·각, 위치 관계, 평행선) 강의',
