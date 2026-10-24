@@ -2159,6 +2159,87 @@ G['hg-10'] = (r) => { // 다음 때 값 예상 (일정하게 늘어날 때)
       fill: () => q(Math.max(step, ans + (r() < 0.5 ? -1 : 1) * ri(r, 1, 5) * step)), fmt: unit(' cm'), order: 'asc', explain: `2일마다 ${inc} cm씩 자람 → 9일 ${vs[n - 1]} cm + ${inc} cm = ${ans} cm` }), fig: gFig(d) }; }
 };
 
+// ── 다희(초4) 4-2 「다각형」: 다각형·정다각형, 대각선, 정다각형의 각, 모양 채우기 ──
+const pName = (n: number) => koN(n) + '각형';
+function polyFig(r: Rng, n: number, regular = false, items: any[] = []) { // 볼록 다각형(꼭짓점 이름 없음)
+  const pts: Record<string, number[]> = {}, names: string[] = [], a0 = 90 + 180 / n;
+  for (let i = 0; i < n; i++) { const a = (a0 + (360 / n) * i + (regular ? 0 : (r() - 0.5) * (120 / n))) * Math.PI / 180, R = regular ? 4 : 4 * (0.85 + 0.3 * r());
+    names.push('_v' + i); pts['_v' + i] = P(R * Math.cos(a), R * Math.sin(a)); }
+  return shape(pts, [{ k: 'poly', p: names }, ...items.map((f) => f(names))]);
+}
+// 이름 보기를 변의 수 차례로 다시 놓기
+const win = (r: Rng, n: number) => { const lo = Math.max(3, n - ri(r, 0, 4)); return [0, 1, 2, 3, 4].map((k) => lo + k).filter((k) => k !== n); }; // n 을 품은 연속한 다섯 개
+const pN = (s: string) => Array.from({ length: 20 }, (_, k) => k).find((k) => k >= 3 && s.replace(/^정/, '') === pName(k)) ?? 0;
+const nameOrder = (t: any) => timeOrder(t, [...t.options].sort((a: string, b: string) => pN(a) - pN(b)).map((s: string) => ({ s })));
+G['hp-1'] = (r) => { // 그림 보고 이름
+  const n = ri(r, 5, 9), others = win(r, n);
+  return { ...nameOrder(build(r, { text: '그림의 다각형의 이름은 무엇인가요?', correct: { s: pName(n) },
+    wrongs: others.map((k) => ({ s: pName(k), note: k === n + 1 ? '변을 하나 더 셈 (한 꼭짓점에 표시하고 세기)' : k === n - 1 ? '변을 하나 덜 셈' : undefined })), count: 5, order: 'fixed',
+    explain: `변이 ${n}개, 꼭짓점이 ${n}개 → ${pName(n)}` })), fig: polyFig(r, n) };
+};
+G['hp-2'] = (r) => { // 정다각형의 둘레
+  const n = ri(r, 3, 8), a = ri(r, 3, 15);
+  return build(r, { text: `한 변의 길이가 ${a} cm인 정${pName(n)}의 모든 변의 길이의 합은?`, correct: { v: q(n * a) },
+    wrongs: [{ v: q((n - 1) * a), note: '변의 수를 하나 덜 셈' }, { v: q(4 * a === n * a ? (n + 1) * a : 4 * a), note: '변이 4개라고 봄 (정사각형처럼)' }, { v: q(n + a), note: '변의 수와 길이를 더함 (곱해야 함)' }],
+    fill: nearInt(r, n * a, 8), fmt: cm, order: 'asc', explain: `정${pName(n)}은 변 ${n}개의 길이가 모두 같아요 → ${a} × ${n} = ${n * a} cm` });
+};
+G['hp-3'] = (r) => { // 둘레 → 한 변
+  const n = ri(r, 5, 9), a = ri(r, 3, 12), L = n * a;
+  return build(r, { text: `모든 변의 길이의 합이 ${L} cm인 정${pName(n)}의 한 변의 길이는?`, correct: { v: q(a) },
+    wrongs: [...(L % (n - 1) === 0 ? [{ v: q(L / (n - 1)), note: '변의 수를 하나 덜 셈' }] : []), ...(L % 4 === 0 && L / 4 !== a ? [{ v: q(L / 4), note: '4로 나눔 (변의 수로 나눠야 함)' }] : []), { v: q(L - n), note: '변의 수를 뺌 (나눠야 함)' }],
+    fill: nearInt(r, a, 4), fmt: cm, order: 'asc', explain: `${L} ÷ ${n} = ${a} cm` });
+};
+G['hp-4'] = (r) => { // 대각선 개수
+  const n = ri(r, 4, 8), ans = n * (n - 3) / 2;
+  return { ...build(r, { text: `${pName(n)}에 그을 수 있는 대각선은 모두 몇 개인가요?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(n * (n - 3)), note: '같은 대각선을 두 번 셈 (양쪽 꼭짓점에서 한 번씩)' }, { v: q(n - 3 === ans ? n : n - 3), note: n - 3 === ans ? '변의 수를 셈' : '한 꼭짓점에서 그은 것만 셈' }, { v: q(n * (n - 1) / 2), note: '변까지 셈 (대각선은 이웃하지 않은 꼭짓점끼리)' }],
+    fill: nearInt(r, ans, 4), fmt: ea, order: 'asc', explain: `한 꼭짓점에서 ${n - 3}개씩, 꼭짓점 ${n}개 → ${n} × ${n - 3} = ${n * (n - 3)}, 같은 대각선을 두 번 셌으므로 ÷ 2 = ${ans}개` }), fig: polyFig(r, n) };
+};
+G['hp-5'] = (r) => tfPick(r, ['정다각형은 변의 길이가 모두 같고 각의 크기가 모두 같다.', '삼각형에는 대각선을 그을 수 없다.', '직사각형의 두 대각선은 길이가 같다.', '정사각형의 두 대각선은 서로 수직으로 만난다.', '마름모의 두 대각선은 서로 수직으로 만난다.', '평행사변형의 두 대각선은 서로를 똑같이 둘로 나눈다.'],
+  [['네 변의 길이가 모두 같은 사각형은 모두 정사각형이다.', '마름모는 네 변이 같아도 네 각이 같지 않을 수 있음'], ['원도 다각형이다.', '다각형은 선분으로만 둘러싸인 도형'], ['대각선은 이웃한 두 꼭짓점을 이은 선분이다.', '대각선은 이웃하지 않은 두 꼭짓점을 이은 선분'],
+   ['평행사변형의 두 대각선은 길이가 항상 같다.', '두 대각선의 길이가 같은 것은 직사각형·정사각형'], ['변의 길이가 모두 같으면 정다각형이다.', '각의 크기도 모두 같아야 정다각형']], '다각형');
+G['hp-6'] = (r) => { // 정다각형의 한 각
+  const n = pick(r, [5, 6, 8, 9, 10, 12]), sum = (n - 2) * 180, ans = sum / n;
+  return { ...build(r, { text: `정${pName(n)}의 한 각의 크기는 몇 도인가요? (정${pName(n)}은 대각선으로 삼각형 ${n - 2}개로 나눌 수 있어요)`, correct: { v: q(ans) },
+    wrongs: [{ v: q(sum), note: '모든 각의 합에서 멈춤 (각의 수로 나눠야 함)' }, { v: q(360 / n), note: '360°를 나눔 (각의 합은 삼각형 수 × 180°)' }, ...((n - 1) * 180 % n === 0 ? [{ v: q((n - 1) * 180 / n), note: '삼각형을 하나 더 셈' }] : []), { v: q(180), note: '삼각형 한 개의 각의 합을 씀' }],
+    fill: () => q(5 * ri(r, 18, 34)), fmt: degF, order: 'asc', explain: `각의 합 = 180° × ${n - 2} = ${sum}° → 한 각 = ${sum}° ÷ ${n} = ${ans}°` }),
+    fig: polyFig(r, n, true, [(v: string[]) => ({ k: 'seg', p: [v[0], v[2]], dash: true }), ...Array.from({ length: n - 4 }, (_, k) => (v: string[]) => ({ k: 'seg', p: [v[0], v[k + 3]], dash: true }))]) };
+};
+G['hp-7'] = (r) => { // 직사각형의 대각선
+  for (;;) { const d = 2 * ri(r, 5, 13), a = ri(r, 3, d - 2), b2 = d * d - a * a, b = Math.sqrt(b2); if (b < 2) continue; const ans = d + a;
+    const W = 8, H = Math.max(2.5, Math.min(6, (W * a) / b)), pts = { 'ㄱ': P(0, H), 'ㄴ': P(0, 0), 'ㄷ': P(W, 0), 'ㄹ': P(W, H), _o: P(W / 2, H / 2) };
+    return { ...build(r, { text: `직사각형 ㄱㄴㄷㄹ에서 두 대각선이 만나는 점이 ㅇ입니다. 대각선 ㄱㄷ이 ${d} cm, 변 ㄱㄴ이 ${a} cm일 때, 삼각형 ㄱㅇㄴ의 세 변의 길이의 합은?`, correct: { v: q(ans) },
+      wrongs: [{ v: q(2 * d + a), note: '선분 ㅇㄱ·ㅇㄴ을 대각선 전체로 봄 (대각선의 반)' }, { v: q(d / 2 + a), note: '대각선의 반을 하나만 더함' }, { v: q(d + 2 * a), note: '변 ㄱㄴ을 두 번 더함' }],
+      fill: nearInt(r, ans, 6), fmt: cm, order: 'asc', explain: `직사각형의 두 대각선은 길이가 같고 서로를 반으로 나눠요 → ㅇㄱ = ㅇㄴ = ${d} ÷ 2 = ${d / 2} cm → ${d / 2} + ${d / 2} + ${a} = ${ans} cm` }),
+      fig: shape(pts, [{ k: 'poly', p: ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ'] }, { k: 'seg', p: ['ㄱ', 'ㄷ'] }, { k: 'seg', p: ['ㄴ', 'ㄹ'] }, { k: 'dot', p: '_o' }, { k: 'text', at: [W / 2, H / 2 + 0.55], s: 'ㅇ' }, { k: 'side', p: ['ㄱ', 'ㄴ'], label: `${a} cm` }]) }; }
+};
+const TILES: [string, string, number, string][] = [ // 큰 모양, 조각, 개수, 풀이
+  ['정육각형', '정삼각형', 6, '정육각형은 가운데에서 정삼각형 6개로 나뉘어요'],
+  ['정육각형', '사다리꼴(정삼각형 3개 크기)', 2, '정삼각형 6개 ÷ 3개 = 2개'],
+  ['정육각형', '마름모(정삼각형 2개 크기)', 3, '정삼각형 6개 ÷ 2개 = 3개'],
+  ['사다리꼴(정삼각형 3개 크기)', '정삼각형', 3, '사다리꼴 = 정삼각형 3개'],
+  ['한 변이 2배인 큰 정삼각형', '정삼각형', 4, '변을 반으로 나눠 이으면 정삼각형 4개'],
+  ['정육각형 2개를 붙인 모양', '마름모(정삼각형 2개 크기)', 6, '정삼각형 12개 ÷ 2개 = 6개'],
+];
+G['hp-8'] = (r) => { // 모양 채우기
+  const [big, piece, ans, why] = pick(r, TILES);
+  return build(r, { text: `모양 조각(한 변의 길이가 모두 같음)으로 ${big}${josa(big.replace(/\)$/, '').slice(-1), '을', '를')} 겹치지 않게 빈틈없이 채우려고 합니다. ${piece} 조각은 몇 개 필요한가요?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(ans + 1), note: '하나 더 셈' }, { v: q(ans * 2), note: '조각 크기를 반으로 봄' }, ...(ans > 2 ? [{ v: q(ans - 1), note: '하나 덜 셈' }] : [{ v: q(6), note: '정삼각형 개수를 그대로 씀' }])],
+    fill: nearInt(r, ans, 4), fmt: ea, order: 'asc', explain: `${why} → ${ans}개` });
+};
+G['hp-9'] = (r) => { // 둘레·한 변 → 정다각형 이름
+  const n = ri(r, 5, 9), a = ri(r, 2, 9), L = n * a, others = win(r, n);
+  return nameOrder(build(r, { text: `한 변의 길이가 ${a} cm이고 모든 변의 길이의 합이 ${L} cm인 정다각형의 이름은?`, correct: { s: '정' + pName(n) },
+    wrongs: others.map((k) => ({ s: '정' + pName(k), note: k === n - 1 ? '변의 수를 하나 덜 셈' : k === n + 1 ? '변의 수를 하나 더 셈' : undefined })), count: 5, order: 'fixed',
+    explain: `변의 수 = ${L} ÷ ${a} = ${n} → 정${pName(n)}` }));
+};
+G['hp-10'] = (r) => { // 한 꼭짓점에서 그은 대각선
+  const n = ri(r, 5, 10), ans = n - 3;
+  return build(r, { text: `${pName(n)}의 한 꼭짓점에서 그을 수 있는 대각선은 몇 개인가요?`, correct: { v: q(ans) },
+    wrongs: [{ v: q(n - 1), note: '이웃한 꼭짓점까지 셈 (이웃한 두 꼭짓점과 자기 자신은 빼야 함)' }, { v: q(n - 2), note: '이웃한 꼭짓점 하나만 뺌' }, { v: q(n * (n - 3) / 2), note: '모든 대각선의 수를 셈' }],
+    fill: nearInt(r, ans, 4), fmt: ea, order: 'asc', explain: `자기 자신과 이웃한 두 꼭짓점을 빼면 ${n} − 3 = ${ans}개` });
+};
+
 // 고정 문항: 생성기를 정해진 seed 로 돌려 문제지의 원래 문항을 만든다(같은 코드면 항상 같은 문제)
 export function makeFixed(id: string, area: string, seed: number) {
   const { _vals, ...rest } = G[id](makeRng(seed)) as any; void _vals;
