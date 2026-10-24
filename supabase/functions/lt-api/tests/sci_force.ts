@@ -2,6 +2,7 @@
 //   sci-n37 힘의 표현과 평형 · sci-n38 중력 · sci-n39 탄성력 · sci-n40 마찰력 · sci-n41 부력 (강의 제목은 EBS 강의 목록 기준)
 // 다시 풀기용 비슷한 문제는 SCI_FORCE_TWINS[원래 문항 id] 에 3개씩 둔다(형식은 sci_gas.ts 의 SCI_TWINS 와 같음).
 // 보기 순서는 sci_common.ts 의 mixOptions 로 섞는다(정답 번호 고르게). 문항에 적힌 answer·traps 는 섞기 전 순서 기준.
+// mix: 섞는 순서를 바꾸는 값 — 문제지마다 한 번호가 3개를 넘지 않고 4개 이상의 번호가 쓰이도록 골랐다.
 // 무게 계산은 교과서대로 질량 1 kg 의 무게 = 9.8 N, 달의 중력 = 지구의 약 1/6.
 
 import { mixOptions, mixTwins } from './sci_common.ts';
@@ -10,7 +11,7 @@ const G = '중1';
 type V = { text: string; options: string[]; answer: number; traps?: { a: number; note: string }[]; explain: string };
 const set = (id: string, title: string, lecture: string, areas: any[], questions: any[]) => ({
   id, title, subtitle: `중1 과학 · 뉴런 ${lecture} 확인`, minutes: 12, practice: true, pace: { [G]: 90 }, areas,
-  questions: questions.map((q) => ({ type: 'choice', ...mixOptions(q.id, q) })),
+  questions: questions.map(({ mix, ...q }) => ({ type: 'choice', ...mixOptions(q.id + (mix || ''), q) })),
 });
 const area = (id: string, name: string, lecture: string, why: string, study: string) =>
   ({ id, group: G, name, unit: `뉴런 과학1 ${lecture}`, why, study: [`뉴런 과학1 ${lecture.split(' ')[0]} 다시 보기`, study] });
@@ -30,7 +31,7 @@ export const SCI_N37 = set('sci-n37', '힘의 표현과 평형', '37강', [
     options: ['kg(킬로그램)', 'g(그램)', 'cm(센티미터)', 'N(뉴턴)', 'mL(밀리리터)'], answer: 4,
     traps: [{ a: 1, note: 'kg은 질량의 단위' }],
     explain: '힘의 단위는 N(뉴턴)이에요. kg·g은 질량, cm는 길이, mL는 부피의 단위예요.' },
-  { id: 'f37-3', area: 'sf1', text: '힘을 화살표로 나타낼 때, 화살표의 <b>길이</b>가 나타내는 것은?',
+  { id: 'f37-3', mix: '#19', area: 'sf1', text: '힘을 화살표로 나타낼 때, 화살표의 <b>길이</b>가 나타내는 것은?',
     options: ['힘의 방향', '힘의 작용점', '힘의 크기', '물체의 질량', '물체가 움직인 거리'], answer: 3,
     traps: [{ a: 1, note: '힘의 방향은 화살표가 가리키는 쪽' }, { a: 2, note: '작용점은 화살표의 시작점' }],
     explain: '화살표 시작점 = 작용점, 화살표 방향 = 힘의 방향, 화살표 길이 = 힘의 크기.' },
@@ -92,7 +93,7 @@ export const SCI_N38 = set('sci-n38', '중력 (무게와 질량)', '38강', [
     options: ['용수철저울로 잰 값', '체중계로 잰 값', '양팔저울로 잰 값', '물체의 무게', '물체에 작용하는 중력의 크기'], answer: 3,
     traps: [{ a: 1, note: '용수철저울은 무게를 잼 — 달에서 1/6' }, { a: 2, note: '체중계(용수철)도 무게를 잼' }],
     explain: '양팔저울은 기준 추와 비교해 질량을 재므로 달에서도 같아요. 무게(중력의 크기)를 재는 용수철저울·체중계는 달에서 약 1/6.' },
-  { id: 'f38-8', area: 'sf4', text: '무게와 질량을 바르게 비교한 것은?',
+  { id: 'f38-8', mix: '#9', area: 'sf4', text: '무게와 질량을 바르게 비교한 것은?',
     options: ['무게의 단위는 kg, 질량의 단위는 N이다', '무게는 어디서나 같다', '질량은 용수철저울로 잰다', '질량은 중력의 크기이다', '무게의 단위는 N, 질량의 단위는 kg이다'], answer: 5,
     traps: [{ a: 1, note: '단위를 거꾸로 짝지음' }],
     explain: '무게: 중력의 크기, 단위 N, 장소에 따라 변함, 용수철저울. 질량: 물질의 양, 단위 kg, 변하지 않음, 양팔저울.' },
@@ -161,7 +162,7 @@ export const SCI_N40 = set('sci-n40', '마찰력', '40강', [
     options: ['접촉면이 매끄러울수록 크다', '물체의 무게가 가벼울수록 크다', '접촉면이 거칠수록, 물체의 무게가 무거울수록 크다', '물체의 색깔에 따라 달라진다', '항상 일정하다'], answer: 3,
     traps: [{ a: 1, note: '거꾸로 생각함 — 거칠수록 큼' }, { a: 2, note: '거꾸로 생각함 — 무거울수록 큼' }],
     explain: '마찰력은 접촉면이 거칠수록, 물체의 무게가 클수록 커요.' },
-  { id: 'f40-5', area: 'sf8', text: '같은 나무 도막을 여러 면 위에 올려놓고 면을 천천히 기울였더니, 미끄러지기 시작한 각도가 다음과 같았어요. 마찰력이 가장 큰 면은?\n유리판 15°, 나무판 25°, 사포 40°, 비닐 20°, 고무판 35°',
+  { id: 'f40-5', mix: '#29', area: 'sf8', text: '같은 나무 도막을 여러 면 위에 올려놓고 면을 천천히 기울였더니, 미끄러지기 시작한 각도가 다음과 같았어요. 마찰력이 가장 큰 면은?\n유리판 15°, 나무판 25°, 사포 40°, 비닐 20°, 고무판 35°',
     options: ['유리판', '비닐', '나무판', '고무판', '사포'], answer: 5,
     traps: [{ a: 1, note: '먼저 미끄러지는(작은 각도) 면을 마찰력이 크다고 생각함 — 반대' }],
     explain: '마찰력이 클수록 더 많이 기울여야 미끄러져요 → 가장 큰 각도(40°)인 사포.' },
@@ -169,7 +170,7 @@ export const SCI_N40 = set('sci-n40', '마찰력', '40강', [
     options: ['기계에 윤활유를 바른다', '스키 바닥에 왁스를 칠한다', '등산화 바닥을 울퉁불퉁하게 만든다', '볼링장 레인에 기름을 바른다', '미끄럼틀 표면을 매끄럽게 만든다'], answer: 3,
     traps: [{ a: 1, note: '마찰력을 줄이는 예' }, { a: 2, note: '마찰력을 줄이는 예' }],
     explain: '울퉁불퉁한 바닥은 접촉면을 거칠게 해 미끄러지지 않게 해요. 나머지는 마찰력을 작게 하는 예예요.' },
-  { id: 'f40-7', area: 'sf8', text: '같은 바닥 위에서 빈 상자와, 책이 가득 든 같은 크기의 상자를 밀 때 마찰력에 대한 설명으로 옳은 것은?',
+  { id: 'f40-7', mix: '#5', area: 'sf8', text: '같은 바닥 위에서 빈 상자와, 책이 가득 든 같은 크기의 상자를 밀 때 마찰력에 대한 설명으로 옳은 것은?',
     options: ['빈 상자의 마찰력이 더 크다', '두 상자의 마찰력이 같다', '책이 든 상자의 마찰력이 더 크다', '두 상자 모두 마찰력이 없다', '상자 크기가 같으면 마찰력은 무게와 관계없다'], answer: 3,
     traps: [{ a: 2, note: '크기(접촉면)가 같으면 마찰력도 같다고 생각함 — 무게가 다름' }],
     explain: '무게가 클수록 마찰력이 커요 → 책이 든 상자를 밀기가 더 힘들어요.' },
