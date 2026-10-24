@@ -151,6 +151,8 @@ export function dailyCoach(TESTS: Record<string, any>, rows: any[], nowIso: stri
         L.push(`· ${esc(titleOf(T))} ${parts.join(' → ')}${dk ? ` (모르겠어요 ${dk})` : ''}`);
       }
     }
+    const fast = todays.reduce((n, x) => n + (x.fast_guesses || 0), 0);
+    if (fast) L.push(`⚡ 너무 빨리 찍어서 경고 ${fast}번 — 문제를 끝까지 읽고 연습장에 풀게 해 주세요`);
     // 아직 해결 못 한 문제지 (마지막 응시 기준)
     const open: { id: string; n: number }[] = [];
     for (const id of plan.sets) {

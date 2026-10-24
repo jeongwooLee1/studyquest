@@ -286,10 +286,20 @@
     setVal(q, v);
   }
 
+  // 처음 고르는 답인데 이 문제를 본 시간이 LT.FAST_SEC 초도 안 되면: 고르지 않고 경고, 아빠에게 알림
+  function fastPick(q) {
+    if (document.querySelector('.fastwarn')) return true;
+    if (S.answers[q.id]) return false;
+    var sec = (S.qtimes[q.id] || 0) + (document.hidden ? 0 : (Date.now() - S.shownAt) / 1000);
+    if (sec >= LT.FAST_SEC) return false;
+    LT.api('fast', { attemptId: S.attemptId, kidToken: S.kidToken, qid: q.id, sec: Math.round(sec * 10) / 10 }).catch(function () {});
+    LT.fastWarn(sec, function () { tickQuestionTime(); S.qtimes[q.id] = 0; S.shownAt = Date.now(); });
+    return true;
+  }
   $('qwrap').addEventListener('click', function (e) {
     var b = e.target.closest('button, .box'); if (!b) return;
     var q = S.qs[S.cur];
-    if (b.dataset.opt) { var o = Number(b.dataset.opt); if (S.answers[q.id] && S.answers[q.id].v === o) delete S.answers[q.id]; else S.answers[q.id] = { v: o }; markDirty(); renderQ(); }
+    if (b.dataset.opt) { var o = Number(b.dataset.opt); if (fastPick(q)) return; if (S.answers[q.id] && S.answers[q.id].v === o) delete S.answers[q.id]; else S.answers[q.id] = { v: o }; markDirty(); renderQ(); }
     else if (b.dataset.key) key(b.dataset.key);
     else if (b.dataset.box) { activeBox = Number(b.dataset.box); renderQ(); }
     else if (b.dataset.dk) { if (S.answers[q.id] && S.answers[q.id].dk) delete S.answers[q.id]; else S.answers[q.id] = { dk: true }; markDirty(); renderQ(); }
@@ -297,7 +307,7 @@
   document.addEventListener('keydown', function (e) {
     if ($('test').classList.contains('hidden') || $('modal-root').firstChild) return;
     var q = S.qs[S.cur];
-    if (/^[0-9]$/.test(e.key) && q.type === 'choice') { var n = Number(e.key); if (n >= 1 && n <= q.options.length) { S.answers[q.id] = { v: n }; markDirty(); renderQ(); } return; }
+    if (/^[0-9]$/.test(e.key) && q.type === 'choice') { var n = Number(e.key); if (n >= 1 && n <= q.options.length && !fastPick(q)) { S.answers[q.id] = { v: n }; markDirty(); renderQ(); } return; }
     if (/^[0-9./]$/.test(e.key)) { key(e.key); e.preventDefault(); }
     else if (e.key === '-') { key('−'); e.preventDefault(); }
     else if (e.key === 'Backspace') { key('⌫'); e.preventDefault(); }
