@@ -61,15 +61,17 @@
     { label: '📝 진단 테스트 (국어·영어·과학)', items: [{ id: 'kor-m1-diag', when: DIAG_WHEN }, { id: 'eng-m1-diag', when: DIAG_WHEN }, { id: 'sci-gas-diag', when: DIAG_WHEN }] },
     { label: '🔬 과학 · 뉴런 강의 확인 문제', items: [{ id: 'sci-n50' }, { id: 'sci-n54' }, { id: 'sci-gas-unit', when: '58·59강 정리 강의 들은 뒤' }, { id: 'sci-n37' }, { id: 'sci-n38' }, { id: 'sci-n39' }, { id: 'sci-n40' }, { id: 'sci-n41' }] },
     { label: '📖 국어 문제지', items: [{ id: 'kor-m1-grammar' }, { id: 'kor-m1-lit' }, { id: 'kor-m1-read' }] },
-    { label: '🔤 영어 문제지', items: [{ id: 'eng-m1-past' }, { id: 'eng-m1-modal' }] },
+    { label: '🔤 영어 문제지', items: [{ id: 'eng-m1-past' }, { id: 'eng-m1-modal' }, { id: 'eng-m1-inf' }, { id: 'eng-m1-comp' }] },
   ];
+  // 다연: 학원날(월·수·금) 국어 10분 세트
+  var DAYEON_EXTRA = M1_EXTRA.concat([{ label: '📖 국어 · 학원 가는 날 10분', items: [1, 2, 3, 4].map(function (i) { return { id: 'kor-m1-v5-' + i, when: '월·수·금 10분' }; }) }]);
   var E4_EXTRA = [
     { label: '📝 진단 테스트 (국어·영어)', items: [{ id: 'kor-e4-diag', when: DIAG_WHEN }, { id: 'eng-e4-diag', when: DIAG_WHEN }] },
     { label: '📖 국어 문제지', items: [{ id: 'kor-e4-read' }] },
   ];
   var STUDENTS = [
-    { name: '이다연', emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [GEO, MATH_M1], extra: M1_EXTRA },
-    { name: '이다혜', emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [GEO, MATH_M1], extra: M1_EXTRA },
+    { name: '이다연', emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'g-solid', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [GEO, MATH_M1], extra: DAYEON_EXTRA },
+    { name: '이다혜', emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'g-solid', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [GEO, MATH_M1], extra: M1_EXTRA },
     { name: '이다희', emoji: '🐥', setsLabel: '수학 보충 문제지', sets: ['h-frac', 'h-word', 'h-dec'], tests: [{ id: 'math-e4', when: '아빠가 말하면 풀기 · 45분' }], extra: E4_EXTRA },
   ];
   // 문제지를 풀기 전에 볼 EBS 강의 (EBS 초등 앱에서 교재 이름으로 검색 → 단원 이름 찾기). 단원평가·시험 문제 풀이 강의는 건너뛴다.
@@ -98,6 +100,9 @@
   LECTURES['sci-n40'] = 'EBS 중학 앱 「뉴런 과학1」 40강 (마찰력)';
   LECTURES['sci-n41'] = 'EBS 중학 앱 「뉴런 과학1」 41강 (부력)';
   LECTURES['eng-m1-modal'] = 'EBS 중학 프리미엄 중1 영어 문법 「조동사」·「미래 시제」 강의';
+  LECTURES['g-solid'] = '「만점왕 수학 6-1」 「각기둥과 각뿔」·「직육면체의 부피와 겉넓이」, 6-2 「원기둥, 원뿔, 구」 개념 강의';
+  LECTURES['eng-m1-inf'] = 'EBS 중학 프리미엄 중1 영어 문법 「to부정사」·「동명사」 강의';
+  LECTURES['eng-m1-comp'] = 'EBS 중학 프리미엄 중1 영어 문법 「비교급·최상급」 강의';
   LECTURES['eng-m1-past'] = 'EBS 중학 프리미엄 중1 영어 문법 「과거시제」 강의';
   LECTURES['sci-n50'] = 'EBS 중학 앱 「뉴런 과학1」 50강 (기체의 압력과 부피)';
   LECTURES['sci-n54'] = 'EBS 중학 앱 「뉴런 과학1」 54강 (기체의 온도와 부피)';
