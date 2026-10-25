@@ -1,10 +1,11 @@
 # HQ STATE (2026-10-25)
 
 NOW
-- 팀 운영 매뉴얼 적용 (D10): CLAUDE.md, docs/team/*, board/, .claude/agents·hooks.
-- T-9~12 합침(#63~66). 팀장 4명 세션 새로 엶 (10/25), 옛 세션 보관. 새 id는 docs/team/rules.md.
-- 열린 카드 T-1~8은 모두 아이들 응시 대기(blocked).
-- T-13 연습장 사진 피드백 배포(#68, lt-api v36, 버킷 lt-work, 표 lt_work). 실사진 시험 통과. 아이 이름 부르기 수정(#69).
+- 팀 운영 매뉴얼 적용 완료(D10). 팀장 4명 새 세션(10/25).
+- T-13 연습장 사진 피드백 배포(lt-work 버킷, lt_work 표). 실사진 시험 통과.
+- 찍기 경고 문항별 기준 fastSec(T-14~18) 배포. 경고 알림에 처음 고른 답 정답 여부.
+- 배포: lt-api는 main c2f0b80 기준(v40). 문제지 60종.
+- 열린 카드 T-1~8 모두 응시 대기. 테스트 기록 '테스트HQ' 삭제는 사용자 승인 대기.
 
 배포
 - lt-api 엔트리 = GitHub raw import(main 커밋 sha), verify_jwt false. 확인: net.http_post로 catalog → net._http_response.
