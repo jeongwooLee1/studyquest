@@ -21,6 +21,7 @@
 //   save    {attemptId, kidToken, answers, qtimes, tabLeaves}
 //   submit  {attemptId, kidToken, answers, qtimes, tabLeaves, auto}
 //   work    {attemptId, kidToken, image}  제출 뒤 연습장 풀이 사진(data URI, 응시당 3장까지) → AI 확인 피드백 + 아빠 텔레그램(사진+요약). work.ts
+//   chat / chatHistory / chatGreet {student, …}, chatResult {attemptId, kidToken}  아이와 AI 코치 1:1 대화 (lt_chat). chat.ts
 //   report  {r}                     학부모 상세 리포트(텔레그램 링크의 report_token)
 //   list    {key}                   학부모 전체 기록
 //   delete  {key, id}               기록 삭제
@@ -51,6 +52,7 @@ import { GEO_SETS } from './tests/geo_sets.ts';
 import { KOR_V5_SETS, KOR_V5_TWINS } from './tests/kor_m1_vocab5.ts';
 import { attemptCoach, dailyCoach, PLAN, SQ_USER, sqSummary } from './coach.ts';
 import { handleWork } from './work.ts';
+import { chatCounts, handleChat } from './chat.ts';
 
 const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, GEO_E, REC_1, REC_2, REC_3, REC_4, ...UNIT_SETS, ...E4_SETS, ...ENG_DIAG, ...ENG_GRAM_SETS, KOR_M1_DIAG, KOR_E4_DIAG, ...SCI_GAS_SETS, SCI_GAS_UNIT, ...SCI_FORCE_SETS, KOR_M1_GRAMMAR, KOR_E4_READ, KOR_M1_LIT, KOR_M1_READ, ...GEO_SETS, ...MATH_EQW_SETS, ...MATH_M2_SETS, ...ENG_VOC_SETS, ...ENG_SQ_SETS, ...KOR_V5_SETS].map((t) => [t.id, t]));
 const SITE = 'https://study.blissme.ai/leveltest/';
@@ -447,6 +449,12 @@ Deno.serve(async (req) => {
       return json(r.body, r.status);
     }
 
+    // AI 코치 대화: 아이 메시지마다 텔레그램은 보내지 않는다(밤 하루 정리에 횟수만)
+    if (action === 'chat' || action === 'chatHistory' || action === 'chatGreet' || action === 'chatResult') {
+      const r = await handleChat(sb, action, body, { TESTS, loadKid, testOf });
+      return json(r.body, r.status);
+    }
+
     if (action === 'report') {
       const r = String(body.r || '');
       if (!/^[0-9a-f]{36}$/.test(r)) return json({ error: '잘못된 링크예요' }, 400);
@@ -477,7 +485,9 @@ Deno.serve(async (req) => {
         ]);
         for (const [student, u] of Object.entries(SQ_USER)) sq[student] = sqSummary((logs || []).filter((r: any) => r.username === u), (pts || []).filter((r: any) => r.username === u), today);
       } catch (e) { console.error('sq summary', e); }
-      const messages = dailyCoach(TESTS, data || [], new Date().toISOString(), sq);
+      let chatN: Record<string, number> = {};
+      try { chatN = await chatCounts(sb, Date.now()); } catch (e) { console.error('chat counts', e); }
+      const messages = dailyCoach(TESTS, data || [], new Date().toISOString(), sq, chatN);
       if (body.send !== false) for (const m of messages) await tgSend(sb, m);
       return json({ ok: true, messages });
     }

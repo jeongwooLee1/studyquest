@@ -122,7 +122,7 @@
   var PASS = 0.8; // 이 비율 이상 맞히면 ⭐ 통과
   var app = document.getElementById('app');
   var params = new URLSearchParams(location.search);
-  var catalog = null;
+  var catalog = null, chatOpened = false;
   var avatars = null, avatarsP = null; // 사진은 저장소가 아니라 서버(lt_avatars)에서 받아 온다. 없으면 이모지
   function loadAvatars() {
     return avatarsP || (avatarsP = LT.api('avatars').then(function (r) { avatars = r.avatars || {}; }).catch(function () { avatars = {}; }));
@@ -214,7 +214,10 @@
     if (s.sets.length) h += '<div class="sec">' + (s.setsLabel || '수학 · 초등 복습 문제지') + '</div>' + sets.map(function (x, i) { return card(x, i + 1, s.name, progress[x.id]); }).join('');
     if (s.tests.length) h += '<div class="sec">수학 레벨테스트</div>' + s.tests.map(function (x, i) { return card(x, 'T', s.name, progress[x.id]); }).join('');
     app.innerHTML = h;
-    document.getElementById('switch').onclick = function () { LT.store('lt.hub.name', null); try { history.replaceState(null, '', location.pathname); } catch (e) {} pickName(); };
+    LT.coachFab(s.name);
+    app.style.paddingBottom = '88px'; // 고정 코치 버튼이 마지막 카드를 가리지 않게
+    if (params.get('chat') === '1' && !chatOpened) { chatOpened = true; LT.coachOpen(s.name); } // 결과 화면의 「코치랑 이야기하기」
+    document.getElementById('switch').onclick = function () { LT.coachFab(null); app.style.paddingBottom = ''; LT.store('lt.hub.name', null); try { history.replaceState(null, '', location.pathname); } catch (e) {} pickName(); };
   }
 
   // 문제를 풀고 뒤로 돌아왔을 때 최신 점수로

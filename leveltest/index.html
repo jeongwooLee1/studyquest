@@ -387,6 +387,7 @@
       '<p class="sub">' + LT.esc(j.test.title) + (j.status === 'expired' || auto ? ' · 시간 종료로 자동 제출됐어요' : ' · 제출 완료') + '</p>' +
       '<div class="big" style="margin-top:16px">' + r.score + ' <small>/ ' + r.total + '</small></div><p class="sub">' + LT.esc(r.overall) + '</p>' +
       '<p class="muted" style="margin-top:10px">자세한 결과와 공부할 순서는 부모님께 전달됐어요.</p></div>';
+    h += '<div id="coach-slot"></div>';
     h += '<div class="card"><h2>영역별 결과</h2>';
     r.areas.map(function (a) { return a.group; }).filter(function (g, i, arr) { return arr.indexOf(g) === i; }).forEach(function (g) {
       var as = r.areas.filter(function (a) { return a.group === g; }); if (!as.length) return;
@@ -409,6 +410,7 @@
       (IS_RETRY ? '' : '<button class="btn ghost sm" id="again">' + (j.test.practice ? '처음부터 다시 풀기' : '다시 응시하기') + '</button>') + '</div>';
     $('done').innerHTML = h;
     LT.workUpload($('work-slot'), S.attemptId, S.kidToken);
+    LT.coachCard($('coach-slot'), S.attemptId, S.kidToken, N_PARAM || j.student);
     show('done');
     var flt = $('rv-flt');
     if (flt) flt.onclick = function (e) {
