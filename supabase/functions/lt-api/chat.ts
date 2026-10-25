@@ -165,7 +165,31 @@ export function buildRequest(situation: string, msgs: Msg[]) {
     messages: normalize(msgs),
   };
 }
+// Claude 먼저, 실패하면(키 무효 등) Gemini로 대신 답한다
 export async function askCoach(situation: string, msgs: Msg[]): Promise<string | null> {
+  return (await askClaude(situation, msgs)) ?? (await askGemini(situation, msgs));
+}
+async function askGemini(situation: string, msgs: Msg[]): Promise<string | null> {
+  const key = Deno.env.get('GEMINI_API_KEY');
+  if (!key) return null;
+  const model = Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.5-flash';
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
+      method: 'POST', signal: AbortSignal.timeout(40000), headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: COACH_RULES + '\n\n' + situation }] },
+        contents: normalize(msgs).map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
+        generationConfig: { maxOutputTokens: 2048, temperature: 0.6 },
+      }),
+    });
+    const j = await r.json();
+    if (!r.ok) { console.error('chat gemini', r.status, JSON.stringify(j).slice(0, 300)); return null; }
+    const text = ((j.candidates || [])[0]?.content?.parts || []).map((p: any) => p.text || '').join('').trim();
+    if (!text) { console.error('chat gemini: 빈 답', JSON.stringify(j).slice(0, 200)); return null; }
+    return text.slice(0, 1500);
+  } catch (e) { console.error('chat gemini', e); return null; }
+}
+async function askClaude(situation: string, msgs: Msg[]): Promise<string | null> {
   const key = Deno.env.get('ANTHROPIC_API_KEY');
   if (!key) { console.error('chat: ANTHROPIC_API_KEY 없음'); return null; }
   try {
