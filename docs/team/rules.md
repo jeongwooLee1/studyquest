@@ -4,10 +4,10 @@
 | 이름 | id | 하는 일 | 쓰는 경로 |
 |---|---|---|---|
 | HQ | session_01V4mFvCHvv11eQHudQ4JKm4 | 계획, 작업 카드, 사용자 결정, main 합치기, 배포, 사용자 보고 | 전체 (보통 board/, docs/plan, docs/team, index.ts, coach.ts, hub.html) |
-| 국어팀장 | session_01EUydYt9qPnss5c3jSW5KVG | 국어 문제지·학습법 | tests/kor_*, docs/kor/, board/state/국어팀장.md |
-| 영어팀장 | session_01Xwdh8wvYCoaZpi87t5Kutu | 영어 문제지·학습법 | tests/eng_*, docs/eng/, board/state/영어팀장.md |
-| 수학팀장 | session_01N2AqUwvMtdWmk3kD6x2LT8 | 수학 문제지·유사문제 생성기 | tests/math_*·rec_*·geo_*·e4_*, twins.ts, docs/math/, hub.html·coach.ts의 다희 수학 줄, board/state/수학팀장.md |
-| 과학팀장 | session_01Ardj1Mx2em1DEab77f6nZZ | 과학 문제지·학습법 | tests/sci_*, docs/science/, board/state/과학팀장.md |
+| 국어팀장 | session_01RKHWsd53Q9rWpGtVTXAHYV | 국어 문제지·학습법 | tests/kor_*, docs/kor/, board/state/국어팀장.md |
+| 영어팀장 | session_01G1gwuLpSusuJNgSTEeFScb | 영어 문제지·학습법 | tests/eng_*, docs/eng/, board/state/영어팀장.md |
+| 수학팀장 | session_018QmzWZGjSAYUuTZuVT3VZo | 수학 문제지·유사문제 생성기 | tests/math_*·rec_*·geo_*·e4_*, twins.ts, docs/math/, hub.html·coach.ts의 다희 수학 줄, board/state/수학팀장.md |
+| 과학팀장 | session_01BnVYtqHotEt6sTSAzMDyxk | 과학 문제지·학습법 | tests/sci_*, docs/science/, board/state/과학팀장.md |
 
 tests/ = supabase/functions/lt-api/tests/. 세션을 새로 열면 HQ가 이 표의 id를 고친다.
 표에 없는 경로는 쓰지 않는다. 필요하면 HQ에 `[협의]`로 요청한다.
