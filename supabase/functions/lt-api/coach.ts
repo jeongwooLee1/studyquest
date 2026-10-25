@@ -166,7 +166,28 @@ export function attemptCoach(TESTS: Record<string, any>, base: any, row: any): s
 
 // ── 2) 하루 정리 ──
 const kstDay = (iso: string) => new Date(new Date(iso).getTime() + 9 * 3600e3).toISOString().slice(0, 10);
-export function dailyCoach(TESTS: Record<string, any>, rows: any[], nowIso: string): string[] {
+// 영단어 앱(StudyQuest) 계정 — sq_progress_log·sq_point_log 의 username
+export const SQ_USER: Record<string, string> = { '이다연': 'leedy', '이다혜': 'ldh', '이다희': 'oooooo' };
+export type SqDay = { newWords: number; minutes: number; weekNew: number; lastDay: string | null; level: string; wordPts: number; otherPts: number };
+// sq_progress_log(누적값, 하루 한 줄)·오늘 sq_point_log 로 오늘 한 양을 만든다
+export function sqSummary(logs: any[], points: any[], today: string): SqDay {
+  const rows = [...logs].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const last = rows[rows.length - 1], prev = rows.filter((r) => r.date < today).pop();
+  const t = rows.find((r) => r.date === today);
+  const weekAgo = rows.find((r) => r.date >= kstDayAdd(today, -7)) || rows[0];
+  const wordSrc = ['quiz', 'wrongnote', 'leveltest'];
+  return {
+    newWords: t && prev ? Math.max(0, (t.mastered || 0) - (prev.mastered || 0)) : 0,
+    minutes: t && prev ? Math.max(0, Math.round(((t.play_seconds || 0) - (prev.play_seconds || 0)) / 60)) : 0,
+    weekNew: last && weekAgo ? Math.max(0, (last.mastered || 0) - (weekAgo.mastered || 0)) : 0,
+    lastDay: last ? String(last.date) : null, level: last ? String(last.level || '') : '',
+    wordPts: points.filter((p) => wordSrc.includes(p.source)).reduce((s, p) => s + (p.amount || 0), 0),
+    otherPts: points.filter((p) => !wordSrc.includes(p.source) && p.source !== 'attendance' && p.source !== 'roulette').reduce((s, p) => s + (p.amount || 0), 0),
+  };
+}
+const kstDayAdd = (day: string, n: number) => new Date(Date.parse(day + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+
+export function dailyCoach(TESTS: Record<string, any>, rows: any[], nowIso: string, sq: Record<string, SqDay> = {}): string[] {
   const today = kstDay(nowIso), md = today.slice(5).replace('-', '/');
   const out: string[] = [];
   for (const [student, plan] of Object.entries(PLAN)) {
@@ -189,6 +210,13 @@ export function dailyCoach(TESTS: Record<string, any>, rows: any[], nowIso: stri
         }
         L.push(`· ${esc(titleOf(T))} ${parts.join(' → ')}${dk ? ` (모르겠어요 ${dk})` : ''}`);
       }
+    }
+    const s = sq[student];
+    if (s) {
+      const idle = s.lastDay ? Math.round((Date.parse(today) - Date.parse(s.lastDay)) / 864e5) : 99;
+      L.push(`📱 영단어 앱: 오늘 새 단어 ${s.newWords}개 · ${s.minutes}분 (단계 ${esc(s.level)}, 이번 주 +${s.weekNew})`);
+      if (idle >= 2) L.push(`⚠️ 영단어 앱 ${idle}일째 안 함`);
+      if (s.otherPts > 0 && s.otherPts > s.wordPts * 2) L.push(`⚠️ 오늘 포인트는 영단어가 아니라 사자성어·천자문으로 쌓음 (${s.otherPts}P, 영단어 ${s.wordPts}P)`);
     }
     const fast = todays.reduce((n, x) => n + (x.fast_guesses || 0), 0);
     if (fast) L.push(`⚡ 너무 빨리 찍어서 경고 ${fast}번 — 문제를 끝까지 읽고 연습장에 풀게 해 주세요`);
@@ -246,6 +274,8 @@ export function dailyCoach(TESTS: Record<string, any>, rows: any[], nowIso: stri
       if (todo.length >= MAX_TODO) break;
       todo.push(`「${titleOf(TESTS[untaken])}」 (${TESTS[untaken].minutes}분)`); kidTodo.push(`「${titleOf(TESTS[untaken])}」`);
     }
+    // 영단어 앱은 매일 (할 일 상한과 별도)
+    if (s) { todo.push('📱 영단어 앱 새 단어 10개 (사자성어 말고 영단어)'); kidTodo.push('📱 영단어 앱 새 단어 10개'); }
     const lecs = uniq(lec).slice(0, 4);
     if (lecs.length) L.push('', '<b>📺 들을 강의</b>', ...lecs.map((x) => '· ' + esc(x)));
     if (todo.length) L.push('', '<b>✅ 내일 할 일</b>', ...todo.map((x, i) => `${i + 1}. ${esc(x)}`));
