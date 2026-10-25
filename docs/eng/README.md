@@ -44,6 +44,16 @@
 - 다시 풀기 변형: `ENG_VOC_VARIANTS[원래 문항 id]` 3개씩.
 - 통합: index.ts TESTS에 `...ENG_VOC_SETS`, `VARIANTS`에 `...ENG_VOC_VARIANTS`, coach.ts 다희 PLAN·LECTURES.
 
+## 다희 영단어 앱 실력 확인 (`tests/eng_sq_check.ts`, T-19)
+| id | 문항·시간 | 내용 |
+|---|---|---|
+| eng-sq-check | 30·20분 | 앱에서 「외운」 단어만. 영역 b1 초5~6(10) · b2 중1(10) · b3 중2(10). 영역마다 영어→뜻 4 · 뜻→영어 3 · 빈칸 문장 3 |
+
+- 단어 출처: DB `sq_app`(id studyquest) HTML의 WORDS + `sq_accounts.word_stats`(oooooo). `sq_words` 테이블은 비어 있음.
+- 「외움」 = 앱 `isMastered`, 학년 구간 = 앱 `wordsForGrade`(밴드 안 CEFR·길이·철자 순 등분, 외래어 제외). 10/25 외운 수: 초5 249/249, 초6 246/246, 중1 724/724, 중2 309/724, 중3 37/722.
+- 보기도 같은 단계의 외운 단어. 영어→뜻·뜻→영어는 fastSec 2, 빈칸은 5초.
+- 변형: `ENG_SQ_VARIANTS` 3개씩(90). 결과 판단: 중2 80% 미만이면 앱 단계를 내림(카드 note).
+
 ## 찍기 경고 기준 (fastSec, T-15)
 - `fastSec: 2` = 단어 하나만 알면 바로 풀리는 문항. 2초 미만일 때만 경고(기본 5초).
 - 붙인 문항: eng-e4-v1 ev1-1~7(뜻 알기·영어 단어 고르기)과 그 변형 21개, 진단 en-v1-1·en-v1-2(단어 뜻), ee-w1-1·ee-w1-2·ee-w1-5(단어 뜻·요일·숫자).

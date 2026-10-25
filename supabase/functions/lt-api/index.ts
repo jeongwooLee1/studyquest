@@ -34,6 +34,7 @@ import { GEO_E } from './tests/geo_e.ts';
 import { ENG_DIAG, engReliability } from './tests/eng_diag.ts';
 import { ENG_GRAM_SETS, ENG_VARIANTS } from './tests/eng_gram.ts';
 import { ENG_VOC_SETS, ENG_VOC_VARIANTS } from './tests/eng_voc.ts';
+import { ENG_SQ_SETS, ENG_SQ_VARIANTS } from './tests/eng_sq_check.ts';
 import { MATH_EQW_SETS } from './tests/math_eqw.ts';
 import { MATH_M2_SETS } from './tests/math_m2.ts';
 import { grade } from './grade.ts';
@@ -51,7 +52,7 @@ import { KOR_V5_SETS, KOR_V5_TWINS } from './tests/kor_m1_vocab5.ts';
 import { attemptCoach, dailyCoach, PLAN, SQ_USER, sqSummary } from './coach.ts';
 import { handleWork } from './work.ts';
 
-const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, GEO_E, REC_1, REC_2, REC_3, REC_4, ...UNIT_SETS, ...E4_SETS, ...ENG_DIAG, ...ENG_GRAM_SETS, KOR_M1_DIAG, KOR_E4_DIAG, ...SCI_GAS_SETS, SCI_GAS_UNIT, ...SCI_FORCE_SETS, KOR_M1_GRAMMAR, KOR_E4_READ, KOR_M1_LIT, KOR_M1_READ, ...GEO_SETS, ...MATH_EQW_SETS, ...MATH_M2_SETS, ...ENG_VOC_SETS, ...KOR_V5_SETS].map((t) => [t.id, t]));
+const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, GEO_E, REC_1, REC_2, REC_3, REC_4, ...UNIT_SETS, ...E4_SETS, ...ENG_DIAG, ...ENG_GRAM_SETS, KOR_M1_DIAG, KOR_E4_DIAG, ...SCI_GAS_SETS, SCI_GAS_UNIT, ...SCI_FORCE_SETS, KOR_M1_GRAMMAR, KOR_E4_READ, KOR_M1_LIT, KOR_M1_READ, ...GEO_SETS, ...MATH_EQW_SETS, ...MATH_M2_SETS, ...ENG_VOC_SETS, ...ENG_SQ_SETS, ...KOR_V5_SETS].map((t) => [t.id, t]));
 const SITE = 'https://study.blissme.ai/leveltest/';
 const GRACE_MS = 2 * 60 * 1000; // 마감 후 네트워크 지연 허용
 
@@ -121,7 +122,7 @@ async function wrongSources(sb: any, student: string, base: any) {
   });
 }
 // 다시 풀기 문제 만들기: 수학은 twins.ts 생성기, 국어·영어·과학은 과목 파일의 변형 문항(<과목>_VARIANTS[원래 문항 id])
-const VARIANTS: Record<string, any[]> = { ...SCI_TWINS, ...SCI_FORCE_TWINS, ...SCI_GAS_UNIT_TWINS, ...ENG_VARIANTS, ...ENG_VOC_VARIANTS, ...KOR_GRAMMAR_TWINS, ...KOR_READ_TWINS, ...KOR_LIT_TWINS, ...KOR_READ_M1_TWINS, ...KOR_V5_TWINS };
+const VARIANTS: Record<string, any[]> = { ...SCI_TWINS, ...SCI_FORCE_TWINS, ...SCI_GAS_UNIT_TWINS, ...ENG_VARIANTS, ...ENG_VOC_VARIANTS, ...ENG_SQ_VARIANTS, ...KOR_GRAMMAR_TWINS, ...KOR_READ_TWINS, ...KOR_LIT_TWINS, ...KOR_READ_M1_TWINS, ...KOR_V5_TWINS };
 const canTwin = (id: string) => hasTwin(id) || !!VARIANTS[id]?.length;
 function twinOf(src: any, sd: number, used: string[] = []) {
   if (hasTwin(src.id)) { const t = makeTwin(src, sd); if (t && t.fastSec == null && src.fastSec != null) t.fastSec = src.fastSec; return t; } // 찍기 경고 기준은 변형도 원래 문항을 따른다
