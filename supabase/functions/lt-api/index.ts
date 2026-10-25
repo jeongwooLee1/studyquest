@@ -48,7 +48,7 @@ import { KOR_M1_LIT, KOR_LIT_TWINS } from './tests/kor_m1_lit.ts';
 import { KOR_M1_READ, KOR_READ_M1_TWINS } from './tests/kor_m1_read.ts';
 import { GEO_SETS } from './tests/geo_sets.ts';
 import { KOR_V5_SETS, KOR_V5_TWINS } from './tests/kor_m1_vocab5.ts';
-import { attemptCoach, dailyCoach, PLAN } from './coach.ts';
+import { attemptCoach, dailyCoach, PLAN, SQ_USER, sqSummary } from './coach.ts';
 import { handleWork } from './work.ts';
 
 const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, GEO_E, REC_1, REC_2, REC_3, REC_4, ...UNIT_SETS, ...E4_SETS, ...ENG_DIAG, ...ENG_GRAM_SETS, KOR_M1_DIAG, KOR_E4_DIAG, ...SCI_GAS_SETS, SCI_GAS_UNIT, ...SCI_FORCE_SETS, KOR_M1_GRAMMAR, KOR_E4_READ, KOR_M1_LIT, KOR_M1_READ, ...GEO_SETS, ...MATH_EQW_SETS, ...MATH_M2_SETS, ...ENG_VOC_SETS, ...KOR_V5_SETS].map((t) => [t.id, t]));
@@ -464,7 +464,18 @@ Deno.serve(async (req) => {
       await finalizeExpired(sb);
       const { data } = await sb.from('lt_attempts').select('test_id,student,status,started_at,score,total,result,fast_guesses').in('student', Object.keys(PLAN))
         .neq('status', 'in_progress').order('started_at', { ascending: true }).limit(1000);
-      const messages = dailyCoach(TESTS, data || [], new Date().toISOString());
+      // 영단어 앱 기록(같은 DB의 sq_*) — 실패해도 하루 정리는 보냄
+      const sq: Record<string, any> = {};
+      try {
+        const nowIso = new Date().toISOString(), today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+        const users = Object.values(SQ_USER);
+        const [{ data: logs }, { data: pts }] = await Promise.all([
+          sb.from('sq_progress_log').select('username,date,mastered,level,play_seconds').in('username', users).gte('date', new Date(Date.now() - 9 * 864e5).toISOString().slice(0, 10)),
+          sb.from('sq_point_log').select('username,source,amount').in('username', users).gte('at', new Date(Date.parse(today + 'T00:00:00+09:00')).toISOString()).lte('at', nowIso),
+        ]);
+        for (const [student, u] of Object.entries(SQ_USER)) sq[student] = sqSummary((logs || []).filter((r: any) => r.username === u), (pts || []).filter((r: any) => r.username === u), today);
+      } catch (e) { console.error('sq summary', e); }
+      const messages = dailyCoach(TESTS, data || [], new Date().toISOString(), sq);
       if (body.send !== false) for (const m of messages) await tgSend(sb, m);
       return json({ ok: true, messages });
     }
