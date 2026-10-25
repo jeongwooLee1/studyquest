@@ -2,7 +2,7 @@
 
 NOW
 - 팀 운영 매뉴얼 적용 (D10): CLAUDE.md, docs/team/*, board/, .claude/agents·hooks.
-- 팀장 4명에게 STATE 작성 카드(T-9~12) → 합친 뒤 세션 새로 열기 (대화 기록 22만~44만).
+- T-9~12 합침(#63~66). 팀장 4명 세션 새로 엶 (10/25), 옛 세션 보관. 새 id는 docs/team/rules.md.
 - 열린 카드 T-1~8은 모두 아이들 응시 대기(blocked).
 
 배포
