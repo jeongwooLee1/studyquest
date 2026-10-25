@@ -43,3 +43,10 @@
 
 - 다시 풀기 변형: `ENG_VOC_VARIANTS[원래 문항 id]` 3개씩.
 - 통합: index.ts TESTS에 `...ENG_VOC_SETS`, `VARIANTS`에 `...ENG_VOC_VARIANTS`, coach.ts 다희 PLAN·LECTURES.
+
+## 결정과 이유
+- 교과서 출판사 미확인(웹 검색 실패, 학교알리미 접속 차단) → 출판사와 무관한 2022 개정 성취기준 문법·어휘로 작성. 교과서 본문은 쓰지 않음.
+- 다시 풀기 변형은 문항 객체 밖 export 맵(`ENG_VARIANTS`, `ENG_VOC_VARIANTS`) — 문항 안에 두면 정답이 페이지로 나감.
+- 진단(practice:false)에는 변형을 만들지 않음(다시 풀기 없음).
+- 보류: eng-m1-pres(#36, T-1), eng-e4-v2~v4(#40~42, T-2) — 진단·eng-e4-v1 결과를 보고 HQ가 결정.
+- 시간: 다연 화·목 15분(학원 영어와 안 겹치는 약점만), 다혜 매일 25분, 다희 매일 15분.
