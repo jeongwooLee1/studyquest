@@ -267,6 +267,7 @@ window.LT = (function () {
 
   // 너무 빨리 찍었을 때 경고 — 3초 동안 닫을 수 없음
   var FAST_SEC = 5;
+  var FAST_WARN = false; // 찍기 경고 끔(아빠 결정 D11). 다시 켜려면 true — 서버 index.ts FAST_WARN도 같이
   function fastWarn(sec, onClose) {
     var root = document.createElement('div');
     root.className = 'modal fastwarn';
@@ -324,5 +325,5 @@ window.LT = (function () {
     };
   }
 
-  return { workUpload: workUpload, API: API, api: api, esc: esc, md: md, fmtNum: fmtNum, validNum: validNum, figure: figure, CIRC: CIRC, LEVEL: LEVEL, kst: kst, mmss: mmss, store: store, FAST_SEC: FAST_SEC, fastWarn: fastWarn };
+  return { workUpload: workUpload, API: API, api: api, esc: esc, md: md, fmtNum: fmtNum, validNum: validNum, figure: figure, CIRC: CIRC, LEVEL: LEVEL, kst: kst, mmss: mmss, store: store, FAST_SEC: FAST_SEC, FAST_WARN: FAST_WARN, fastWarn: fastWarn };
 })();

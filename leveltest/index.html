@@ -288,6 +288,7 @@
 
   // 처음 고르는 답인데 이 문제를 본 시간이 기준(문항 fastSec, 없으면 LT.FAST_SEC) 초도 안 되면: 고르지 않고 경고, 아빠에게 알림(처음 고른 답도 같이)
   function fastPick(q, v) {
+    if (!LT.FAST_WARN) return false;
     if (document.querySelector('.fastwarn')) return true;
     if (S.answers[q.id]) return false;
     var sec = (S.qtimes[q.id] || 0) + (document.hidden ? 0 : (Date.now() - S.shownAt) / 1000);
