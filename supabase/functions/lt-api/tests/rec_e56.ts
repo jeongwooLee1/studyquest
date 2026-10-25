@@ -263,7 +263,7 @@ export const REC_4 = {
       study: ['EBS 초등 만점왕 수학 6학년 「비례식과 비례배분」 강의', '비례식은 외항의 곱 = 내항의 곱, 비례배분은 전체 × (내 몫 / 비의 합)'] },
   ],
   questions: [
-    { id: 'r4-1', area: 'r4a', type: 'choice', text: '비 $3 : 5$ 에서 기준량은?',
+    { id: 'r4-1', area: 'r4a', type: 'choice', fastSec: 2, text: '비 $3 : 5$ 에서 기준량은?',
       options: ['3', '5', '8', '$[[3|5]]$', '$[[5|3]]$'], answer: 2,
       traps: [{ a: 1, note: '비교하는 양과 기준량을 혼동함' }],
       explain: '3 : 5 는 "5에 대한 3의 비" → 기준량은 뒤의 수 5' },
