@@ -282,5 +282,47 @@ window.LT = (function () {
     b.onclick = function () { root.remove(); if (onClose) onClose(); };
   }
 
-  return { API: API, api: api, esc: esc, md: md, fmtNum: fmtNum, validNum: validNum, figure: figure, CIRC: CIRC, LEVEL: LEVEL, kst: kst, mmss: mmss, store: store, FAST_SEC: FAST_SEC, fastWarn: fastWarn };
+  // 연습장 풀이 사진 올리기 카드 (제출 뒤 결과 화면·다시 풀기 끝 화면). 서버 action 'work' → 아이용 피드백
+  var WORK_MAX = 3;
+  function workShrink(file, cb, fail) {
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function () {
+      var k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight)), w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k));
+      var c = document.createElement('canvas'); c.width = w; c.height = h;
+      var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      cb(c.toDataURL('image/jpeg', 0.8));
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); fail(new Error('사진을 읽지 못했어요. 다른 사진으로 해 주세요')); };
+    img.src = url;
+  }
+  function workUpload(container, attemptId, kidToken) {
+    if (!container || !attemptId || !kidToken) return;
+    var n = 0;
+    container.innerHTML = '<div class="card center noprint" style="margin:14px 0"><h2>📸 연습장 사진 올리기</h2>' +
+      '<p class="sub">푼 과정을 쓴 연습장을 찍어 올리면 확인해 줄게요</p>' +
+      '<label class="btn" style="margin-top:12px;cursor:pointer"><span data-wl>📷 사진 찍기 · 고르기</span><input type="file" accept="image/*" capture="environment" style="display:none"></label>' +
+      '<div data-wst class="muted" style="margin-top:10px" aria-live="polite"></div><div data-wres style="text-align:left"></div></div>';
+    var lab = container.querySelector('label'), inp = container.querySelector('input'), st = container.querySelector('[data-wst]'), res = container.querySelector('[data-wres]');
+    inp.onchange = function () {
+      var f = inp.files && inp.files[0]; inp.value = '';
+      if (!f) return;
+      lab.style.opacity = '.5'; lab.style.pointerEvents = 'none'; st.textContent = '올리는 중… 확인하는 데 조금 걸려요';
+      var done = function (msg) { lab.style.opacity = ''; lab.style.pointerEvents = ''; st.textContent = msg || ''; if (n >= WORK_MAX) lab.style.display = 'none'; };
+      workShrink(f, function (dataUrl) {
+        api('work', { attemptId: attemptId, kidToken: kidToken, image: dataUrl }).then(function (j) {
+          n++;
+          var fb = j.feedback, h = '<div style="margin-top:12px;padding:12px;border-radius:12px;background:var(--brand-soft)">';
+          if (fb) {
+            h += '<div style="line-height:1.6">' + esc(fb.kid).replace(/\n/g, '<br>') + '</div>';
+            if (fb.items && fb.items.length) h += '<ul style="margin:10px 0 0;padding-left:20px;font-size:14px;color:var(--ink2)">' + fb.items.map(function (it) { return '<li><b>' + esc(it.no) + '번</b> ' + esc(it.note) + '</li>'; }).join('') + '</ul>';
+          } else h += esc(j.msg || '사진은 아빠한테 보냈어요');
+          res.insertAdjacentHTML('afterbegin', h + '</div>');
+          done(n >= WORK_MAX ? '사진은 ' + WORK_MAX + '장까지 올릴 수 있어요' : '');
+        }).catch(function (e) { done('⚠️ ' + (e.message || '올리지 못했어요')); });
+      }, function (e) { done('⚠️ ' + e.message); });
+    };
+  }
+
+  return { workUpload: workUpload, API: API, api: api, esc: esc, md: md, fmtNum: fmtNum, validNum: validNum, figure: figure, CIRC: CIRC, LEVEL: LEVEL, kst: kst, mmss: mmss, store: store, FAST_SEC: FAST_SEC, fastWarn: fastWarn };
 })();

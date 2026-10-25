@@ -20,6 +20,7 @@
 //   resume  {attemptId, kidToken}   새로고침·재접속 시 이어서 풀기
 //   save    {attemptId, kidToken, answers, qtimes, tabLeaves}
 //   submit  {attemptId, kidToken, answers, qtimes, tabLeaves, auto}
+//   work    {attemptId, kidToken, image}  제출 뒤 연습장 풀이 사진(data URI, 응시당 3장까지) → AI 확인 피드백 + 아빠 텔레그램(사진+요약). work.ts
 //   report  {r}                     학부모 상세 리포트(텔레그램 링크의 report_token)
 //   list    {key}                   학부모 전체 기록
 //   delete  {key, id}               기록 삭제
@@ -48,6 +49,7 @@ import { KOR_M1_READ, KOR_READ_M1_TWINS } from './tests/kor_m1_read.ts';
 import { GEO_SETS } from './tests/geo_sets.ts';
 import { KOR_V5_SETS, KOR_V5_TWINS } from './tests/kor_m1_vocab5.ts';
 import { attemptCoach, dailyCoach, PLAN } from './coach.ts';
+import { handleWork } from './work.ts';
 
 const TESTS: Record<string, any> = Object.fromEntries([MATH_M1, MATH_E4, GEO_E, REC_1, REC_2, REC_3, REC_4, ...UNIT_SETS, ...E4_SETS, ...ENG_DIAG, ...ENG_GRAM_SETS, KOR_M1_DIAG, KOR_E4_DIAG, ...SCI_GAS_SETS, SCI_GAS_UNIT, ...SCI_FORCE_SETS, KOR_M1_GRAMMAR, KOR_E4_READ, KOR_M1_LIT, KOR_M1_READ, ...GEO_SETS, ...MATH_EQW_SETS, ...MATH_M2_SETS, ...ENG_VOC_SETS, ...KOR_V5_SETS].map((t) => [t.id, t]));
 const SITE = 'https://study.blissme.ai/leveltest/';
@@ -428,6 +430,14 @@ Deno.serve(async (req) => {
       }
       return json({ status: row.status, student: row.student, test: testMeta(test), result: kidResult(row.result, test),
         mastery: row.questions && row.result && row.result.mastery ? masteryList(baseOf(row.test_id), row.result.mastery) : undefined });
+    }
+
+    // 연습장 풀이 사진: 제출한 뒤에만. 저장·AI 확인·텔레그램은 work.ts
+    if (action === 'work') {
+      const row = await loadKid(sb, body.attemptId, body.kidToken);
+      if (!row) return json({ error: '응시 기록을 찾을 수 없어요' }, 404);
+      const r = await handleWork(sb, body, row, testOf(row), { getSecret, escH });
+      return json(r.body, r.status);
     }
 
     if (action === 'report') {

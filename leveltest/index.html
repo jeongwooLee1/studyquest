@@ -396,6 +396,7 @@
       }).join('') + '</ul>';
     });
     h += '</div>';
+    h += '<div id="work-slot"></div>';
     if (r.review) h += reviewHtml(r.review);
     var wrongN = r.review ? r.review.filter(function (p) { return !p.correct; }).length : 0;
     var reUrl = 'retry.html?test=' + encodeURIComponent(BASE_ID) + '&n=' + encodeURIComponent(N_PARAM || j.student) + (FROM_HUB ? '&hub=1' : '') + '&new=1';
@@ -406,6 +407,7 @@
       (FROM_HUB ? '<a class="btn sm" href="' + HUB_URL + '">← 문제 목록으로</a>' : '') +
       (IS_RETRY ? '' : '<button class="btn ghost sm" id="again">' + (j.test.practice ? '처음부터 다시 풀기' : '다시 응시하기') + '</button>') + '</div>';
     $('done').innerHTML = h;
+    LT.workUpload($('work-slot'), S.attemptId, S.kidToken);
     show('done');
     var flt = $('rv-flt');
     if (flt) flt.onclick = function (e) {

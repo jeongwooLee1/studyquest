@@ -190,7 +190,8 @@
       }).join('') + '</ul>' +
       (stop.length ? '<p class="muted" style="text-align:left">⚠️ 유형은 아빠랑 같이 보고, 내일 문제 목록에서 「다시 풀기」로 한 번 더 도전해요.</p>'
         : '<p class="muted">3일 뒤에 원래 문제지를 「다시 풀기」로 한 번 더 확인하면 완벽해요.</p>') +
-      '<div class="acts">' + hubBtn() + '</div></div>';
+      '<div class="acts">' + hubBtn() + '</div></div><div id="work-slot"></div>';
+    LT.workUpload(document.getElementById('work-slot'), S.att && S.att.attemptId, S.att && S.att.kidToken);
     LT.store(KEY, null);
   }
 
