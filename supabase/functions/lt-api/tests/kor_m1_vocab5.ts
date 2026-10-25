@@ -306,4 +306,6 @@ const rot = (v: C, k: number): C => {
 // 바로 풀리는 짧은 문항은 찍기 경고를 2초 미만일 때만 띄운다(index.ts fastLimit). 번호: 0=원래 문항, 1~=변형 순서(마지막은 MORE)
 const FAST: Record<string, number[]> = { 'kv1-1': [0, 1, 2, 3], 'kv1-2': [0, 1, 2, 3], 'kv1-3': [0, 1, 2, 3], 'kv2-3': [0, 1, 2, 3], 'kv3-1': [0, 1, 2, 3], 'kv3-4': [0], 'kv4-1': [0, 1, 2, 3] };
 for (const x of [...SET1, ...SET2, ...SET3, ...SET4]) for (const i of FAST[x.q.id] || []) (i === 0 ? x.q : x.alts[i - 1] as any).fastSec = 2;
+// 원래 문항이 2초인데 태그 안 한 변형은 5초를 적어 둔다(twinOf가 원래 문항 값을 물려주므로)
+for (const x of [...SET1, ...SET2, ...SET3, ...SET4]) if ((x.q as any).fastSec) for (const v of x.alts) if (v.fastSec == null) v.fastSec = 5;
 export const KOR_V5_TWINS: Record<string, C[]> = Object.fromEntries([...SET1, ...SET2, ...SET3, ...SET4].map((x, j) => [x.q.id, x.alts.map((v, i) => rot(v, j + i + 1))]));
