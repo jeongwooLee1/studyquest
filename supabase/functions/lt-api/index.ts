@@ -121,10 +121,10 @@ async function wrongSources(sb: any, student: string, base: any) {
   });
 }
 // 다시 풀기 문제 만들기: 수학은 twins.ts 생성기, 국어·영어·과학은 과목 파일의 변형 문항(<과목>_VARIANTS[원래 문항 id])
-const VARIANTS: Record<string, any[]> = { ...SCI_TWINS, ...SCI_FORCE_TWINS, ...SCI_GAS_UNIT_TWINS, ...ENG_VARIANTS, ...KOR_GRAMMAR_TWINS, ...KOR_READ_TWINS, ...KOR_LIT_TWINS, ...KOR_READ_M1_TWINS, ...KOR_V5_TWINS };
+const VARIANTS: Record<string, any[]> = { ...SCI_TWINS, ...SCI_FORCE_TWINS, ...SCI_GAS_UNIT_TWINS, ...ENG_VARIANTS, ...ENG_VOC_VARIANTS, ...KOR_GRAMMAR_TWINS, ...KOR_READ_TWINS, ...KOR_LIT_TWINS, ...KOR_READ_M1_TWINS, ...KOR_V5_TWINS };
 const canTwin = (id: string) => hasTwin(id) || !!VARIANTS[id]?.length;
 function twinOf(src: any, sd: number, used: string[] = []) {
-  if (hasTwin(src.id)) return makeTwin(src, sd);
+  if (hasTwin(src.id)) { const t = makeTwin(src, sd); if (t && t.fastSec == null && src.fastSec != null) t.fastSec = src.fastSec; return t; } // 찍기 경고 기준은 변형도 원래 문항을 따른다
   const vs = VARIANTS[src.id]; if (!vs?.length) return null;
   const n = used.filter((id) => srcId(id) === src.id).length, k = n % vs.length, v = vs[k];
   // 변형을 다 쓰고 다시 낼 때만 보기 순서를 섞는다(같은 문제를 같은 자리로 외워 고르지 않게). keepOrder 보기(1개~5개처럼 순서가 있는 것)는 그대로
@@ -132,7 +132,7 @@ function twinOf(src: any, sd: number, used: string[] = []) {
   if (n >= vs.length && !v.keepOrder) { const r = makeRng(sd); for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; } }
   const pos = (a: number) => idx.indexOf(a - 1) + 1;
   return { id: `${src.id}~v${k}-${sd.toString(36)}`, src: src.id, area: src.area, type: 'choice', text: v.text, fig: v.fig, options: idx.map((i: number) => v.options[i]),
-    answer: pos(v.answer), traps: (v.traps || []).map((t: any) => ({ ...t, a: pos(t.a) })), explain: v.explain || '' };
+    answer: pos(v.answer), traps: (v.traps || []).map((t: any) => ({ ...t, a: pos(t.a) })), explain: v.explain || '', fastSec: v.fastSec ?? src.fastSec };
 }
 const publicQ = (q: any) => { const { answer: _a, traps: _t, explain: _e, ...rest } = q; return rest; };
 

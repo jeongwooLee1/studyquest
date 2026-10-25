@@ -2,7 +2,7 @@
 // 전부 객관식, 제출 후 정답·풀이 공개. 지문은 모두 직접 쓴 글이다.
 // 문항마다 같은 유형 문제 2개를 KOR_READ_M1_TWINS[원래 문항 id] 로 두어 「틀린 문제 다시 풀기」에 쓴다(index.ts twinOf).
 
-type C = { text: string; options: string[]; answer: number; traps?: { a: number; note: string }[]; explain: string; keepOrder?: boolean };
+type C = { text: string; options: string[]; answer: number; traps?: { a: number; note: string }[]; explain: string; keepOrder?: boolean; fastSec?: number };
 const c = (text: string, options: string[], answer: number, traps: { a: number; note: string }[], explain: string, keepOrder = false): C =>
   ({ text, options, answer, traps, explain, ...(keepOrder ? { keepOrder } : {}) });
 // 원래 문항과 다시 풀기용 변형을 함께 적고, 변형은 아래 KOR_READ_M1_TWINS 로 따로 내보낸다(문제에 정답이 실려 나가지 않게)
@@ -225,4 +225,7 @@ const MORE: Record<string, C> = {
     '곰팡이가 잘 자라는 조건을 알려 주는 글이니 정보를 전달(설명)하려는 목적이에요.'),
 };
 
+// 바로 풀리는 짧은 문항은 찍기 경고를 2초 미만일 때만 띄운다(index.ts fastLimit). 번호: 0=원래 문항, 1~=변형 순서(마지막은 MORE)
+const FAST: Record<string, number[]> = { 'sb-2': [2] };
+for (const x of ITEMS) for (const i of FAST[x.q.id] || []) ((i === 0 ? x.q : i <= x.alts.length ? x.alts[i - 1] : MORE[x.q.id]) as any).fastSec = 2;
 export const KOR_READ_M1_TWINS: Record<string, C[]> = Object.fromEntries(ITEMS.map((x) => [x.q.id, [...x.alts, MORE[x.q.id]]]));

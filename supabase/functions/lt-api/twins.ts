@@ -2241,9 +2241,15 @@ G['hp-10'] = (r) => { // 한 꼭짓점에서 그은 대각선
 };
 
 // 고정 문항: 생성기를 정해진 seed 로 돌려 문제지의 원래 문항을 만든다(같은 코드면 항상 같은 문제)
+// 규칙 하나로 바로 풀리는 유형: 찍기 경고 기준을 낮춘다(index.ts fastLimit). 원래 문항·다시 풀기 모두
+// rc-2·hf-3 분자가 같은 두 분수, hf-2 단위분수 중 가장 큰/작은, hf-4 분모가 같은 분수 중 가장 큰,
+// hf-10·hd-1 0.1/0.01이 n개, hd-2 소수의 자릿값, r4-1 비의 기준량(뒤의 수)
+const FAST: Record<string, number> = { 'rc-2': 2, 'hf-2': 2, 'hf-3': 2, 'hf-4': 2, 'hf-10': 2, 'hd-1': 2, 'hd-2': 2, 'r4-1': 2 };
+const fastOf = (id: string) => (FAST[id] ? { fastSec: FAST[id] } : {});
+
 export function makeFixed(id: string, area: string, seed: number) {
   const { _vals, ...rest } = G[id](makeRng(seed)) as any; void _vals;
-  return { id, area, type: 'choice', ...rest };
+  return { id, area, type: 'choice', ...rest, ...fastOf(id) };
 }
 
 export const TWIN_IDS = Object.keys(G);
@@ -2255,6 +2261,6 @@ export function makeTwin(src: any, seed: number) {
   const r = makeRng(seed);
   const t = gen(r);
   const { _vals, ...rest } = t as any; void _vals;
-  return { id: `${src.id}~${(seed >>> 0).toString(36)}`, src: src.id, area: src.area, type: 'choice', ...rest };
+  return { id: `${src.id}~${(seed >>> 0).toString(36)}`, src: src.id, area: src.area, type: 'choice', ...rest, ...fastOf(src.id) };
 }
 export function makeTwinWithVals(src: any, seed: number) { const gen = G[src.id]; return gen ? gen(makeRng(seed)) : null; } // 검증용

@@ -40,11 +40,11 @@ export const ENG_M1_DIAG = {
   ],
   questions: [
     // ── 어휘: 단어 뜻 ──
-    { id: 'en-v1-1', area: 'v1', type: 'choice', text: '다음 영어 단어의 뜻으로 알맞은 것은?\nborrow',
+    { id: 'en-v1-1', fastSec: 2, area: 'v1', type: 'choice', text: '다음 영어 단어의 뜻으로 알맞은 것은?\nborrow',
       options: ['빌려주다', '빌리다', '돌려주다', '사다', '잃어버리다'], answer: 2,
       traps: [{ a: 1, note: 'borrow(빌리다)와 lend(빌려주다)를 헷갈림' }, { a: 3, note: 'borrow와 return(돌려주다)을 헷갈림' }],
       explain: 'borrow는 「빌리다」, lend는 「빌려주다」예요. Can I borrow your pen? = 펜 좀 빌려도 될까?' },
-    { id: 'en-v1-2', area: 'v1', type: 'choice', text: '다음 우리말 뜻에 알맞은 영어 단어는?\n「연습하다」',
+    { id: 'en-v1-2', fastSec: 2, area: 'v1', type: 'choice', text: '다음 우리말 뜻에 알맞은 영어 단어는?\n「연습하다」',
       options: ['practice', 'prepare', 'present', 'protect', 'promise'], answer: 1,
       traps: [{ a: 2, note: '철자가 비슷한 prepare(준비하다)와 헷갈림' }],
       explain: 'practice = 연습하다. prepare 준비하다, present 발표하다·선물, protect 보호하다, promise 약속하다.' },
@@ -157,10 +157,10 @@ export const ENG_E4_DIAG = {
   ],
   questions: [
     // ── 어휘 ──
-    { id: 'ee-w1-1', area: 'w1', type: 'choice', text: '다음 영어 단어의 뜻은?\nkitchen',
+    { id: 'ee-w1-1', fastSec: 2, area: 'w1', type: 'choice', text: '다음 영어 단어의 뜻은?\nkitchen',
       options: ['거실', '침실', '욕실', '정원', '부엌'], answer: 5,
       explain: 'kitchen = 부엌. 거실 living room, 침실 bedroom, 욕실 bathroom, 정원 garden.' },
-    { id: 'ee-w1-2', area: 'w1', type: 'choice', text: '「목요일」을 영어로 하면?',
+    { id: 'ee-w1-2', fastSec: 2, area: 'w1', type: 'choice', text: '「목요일」을 영어로 하면?',
       options: ['Tuesday', 'Saturday', 'Wednesday', 'Thursday', 'Sunday'], answer: 4,
       traps: [{ a: 1, note: 'Tuesday(화요일)와 Thursday(목요일)를 헷갈림' }],
       explain: 'Thursday = 목요일. Tuesday 화요일, Wednesday 수요일, Saturday 토요일, Sunday 일요일.' },
@@ -170,7 +170,7 @@ export const ENG_E4_DIAG = {
     { id: 'ee-w1-4', area: 'w1', type: 'choice', text: '빈칸에 알맞은 말은?\nIt\'s cold. Put on your ______.',
       options: ['jacket', 'sunglasses', 'shorts', 'sandals', 'swimsuit'], answer: 1,
       explain: 'cold(추운) 날에는 jacket(재킷)을 입어요. 나머지는 더운 날 쓰는 것들이에요.' },
-    { id: 'ee-w1-5', area: 'w1', type: 'choice', text: '다음 영어 숫자에 맞는 수는?\nfifteen',
+    { id: 'ee-w1-5', fastSec: 2, area: 'w1', type: 'choice', text: '다음 영어 숫자에 맞는 수는?\nfifteen',
       options: ['5', '50', '15', '14', '16'], answer: 3,
       traps: [{ a: 2, note: 'fifteen(15)과 fifty(50)를 헷갈림' }],
       explain: 'fifteen = 15, fifty = 50. -teen은 십몇, -ty는 몇십이에요.' },
@@ -224,17 +224,18 @@ export const ENG_DIAG = [ENG_M1_DIAG, ENG_E4_DIAG];
 
 // 진단 신뢰도 — 빨리 찍은 답·「모르겠어요」가 많으면 점수가 실력을 덜 보여 준다.
 // grade() 결과(res)와 lt_attempts.fast_guesses 를 받아 리포트·코치 문구에 쓸 값을 돌려준다.
-// fastSec 은 index.ts FAST_SEC(5초)과 같게 둔다.
+// fastSec 은 index.ts FAST_SEC(5초)과 같게 둔다. 문항에 fastSec 이 있으면(단어 뜻처럼 바로 풀리는 문항) 그 값을 쓴다.
+const FAST_BY_ID: Record<string, number> = Object.fromEntries(ENG_DIAG.flatMap((t) => t.questions.filter((q: any) => q.fastSec).map((q: any) => [q.id, q.fastSec])));
 export function engReliability(res: any, fastGuesses = 0, fastSec = 5) {
   const qs = res.perQ || [], n = qs.length || 1;
-  const fast = qs.filter((p: any) => !p.dk && !p.blank && p.sec > 0 && p.sec < fastSec);
+  const fast = qs.filter((p: any) => !p.dk && !p.blank && p.sec > 0 && p.sec < (FAST_BY_ID[String(p.id).split('~')[0]] ?? fastSec));
   const fastWrong = fast.filter((p: any) => !p.correct).length;
   const dk = qs.filter((p: any) => p.dk).length;
   const fastN = Math.max(fast.length, fastGuesses);
   const level = fastN >= n * 0.25 || fastWrong >= 3 ? 'low' : fastN >= 2 || dk >= n * 0.4 ? 'mid' : 'high';
   const label = { high: '믿을 만함', mid: '참고용', low: '다시 보기 권장' }[level];
   const notes: string[] = [];
-  if (fastN) notes.push(`${fastSec}초 안에 고른 답 ${fastN}문항(그중 오답 ${fastWrong})`);
+  if (fastN) notes.push(`너무 빨리 고른 답 ${fastN}문항(그중 오답 ${fastWrong})`);
   if (dk) notes.push(`모르겠어요 ${dk}문항`);
   return { level, label, fast: fastN, fastWrong, dk, note: notes.join(' · ') };
 }
