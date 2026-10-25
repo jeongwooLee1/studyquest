@@ -30,7 +30,7 @@ JSON 하나만 돌려줘(다른 글 없이):
 - wrote: 풀이 과정을 실제로 썼으면 true. 답만 썼거나 빈 종이면 false.
 - readable: 사진 글씨를 알아볼 수 있으면 true.
 - items: 틀린 문항을 먼저, 최대 6개. 사진에서 보이는 풀이와 문제 번호를 맞춰서 어디서 틀렸는지(계산 실수, 식 세우기, 부호, 단위 등) 한 줄로.
-- kid: 아이에게 2~3줄. 반말로 다정하게. 다음에 고칠 습관 하나를 콕 집어서.
+- kid: 아이에게 2~3줄. 아이 이름을 불러서 반말로 다정하게. 다음에 고칠 습관 하나를 콕 집어서.
 - dad: 아빠용 2~3줄 요약(풀이를 썼는지, 어떤 문항에서 어떻게 틀렸는지, 지도 포인트).
 - 사진이 이 문제지와 무관하면 wrote=false로 하고 kid는 "이 문제지 풀이 사진을 올려줘".
 
@@ -127,7 +127,7 @@ export async function handleWork(sb: any, body: any, row: any, test: any, deps: 
   const ins = await sb.from('lt_work').insert({ attempt_id: row.id, student: row.student, test_id: row.test_id, path }).select('id').single();
   if (ins.error) throw ins.error;
 
-  const prompt = PROMPT_HEAD + `${test.title}\n\n` + questionsText(test, (row.result && row.result.perQ) || []);
+  const prompt = PROMPT_HEAD + `${test.title}\n아이 이름: ${String(row.student || '').replace(/^이(?=..)/, '')}\n\n` + questionsText(test, (row.result && row.result.perQ) || []);
   let fb = await askClaude(prompt, mime, b64);
   if (!fb) fb = await askGemini(prompt, mime, b64);
   if (fb) await sb.from('lt_work').update({ feedback: fb }).eq('id', ins.data.id);
