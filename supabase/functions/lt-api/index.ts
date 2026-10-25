@@ -174,14 +174,17 @@ async function tgSend(sb: any, text: string, button?: { text: string; url: strin
   } catch (e) { console.error('telegram', e); return false; }
 }
 // 찍기 경고: 횟수를 올리고 첫 번째, 그다음은 3번마다 텔레그램으로 알림
-async function fastGuess(sb: any, row: any, test: any, sec: number) {
+// q·v가 있으면 처음 고른 답이 맞았는지도 알림에 적는다(규칙으로 바로 풀 수 있는 문제를 빨리 맞힌 경우 구분용)
+async function fastGuess(sb: any, row: any, test: any, sec: number, q?: any, v?: unknown) {
   const n = (row.fast_guesses || 0) + 1;
   await sb.from('lt_attempts').update({ fast_guesses: n }).eq('id', row.id).eq('status', 'in_progress');
   if (!row.no_notify && (n === 1 || n % 3 === 1)) {
-    await tgSend(sb, `⚡ <b>${escH(row.student)}</b> · ${escH(test.title)}\n문제를 ${Math.max(0, Math.round(sec))}초 만에 찍어서 경고했어요 (이 문제지에서 ${n}번째)`);
+    const pick = q && q.type === 'choice' && Number(v) > 0 ? `\n처음 고른 답 ${Number(v)}번 — ${Number(v) === q.answer ? '정답이었어요' : '틀린 답이었어요'}` : '';
+    await tgSend(sb, `⚡ <b>${escH(row.student)}</b> · ${escH(test.title)}\n문제를 ${Math.max(0, Math.round(sec))}초 만에 찍어서 경고했어요 (이 문제지에서 ${n}번째)${pick}`);
   }
   return n;
 }
+const fastLimit = (q: any) => (q && Number(q.fastSec) > 0 ? Number(q.fastSec) : FAST_SEC);
 const kst = (iso: string) => { const d = new Date(new Date(iso).getTime() + 9 * 3600e3); const p = (n: number) => String(n).padStart(2, '0'); return `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`; };
 const mmss = (sec: number) => `${Math.floor(sec / 60)}분 ${sec % 60}초`;
 const LV = { pass: '🟢', weak: '🟡', focus: '🔴' } as Record<string, string>;
@@ -345,8 +348,8 @@ Deno.serve(async (req) => {
       if (row.status !== 'in_progress') return json({ error: '이미 끝난 다시 풀기예요' }, 409);
       const q = row.questions.find((x: any) => x.id === String(body.qid || ''));
       if (!q) return json({ error: '문제를 찾을 수 없어요' }, 404);
-      if (!body.dk && !(row.answers || {})[q.id] && Number(body.sec) < FAST_SEC) {
-        const n = await fastGuess(sb, row, testOf(row), Number(body.sec) || 0);
+      if (!body.dk && !(row.answers || {})[q.id] && Number(body.sec) < fastLimit(q)) {
+        const n = await fastGuess(sb, row, testOf(row), Number(body.sec) || 0, q, body.v);
         return json({ fast: true, fastCount: n });
       }
       const answers = { ...(row.answers || {}) }, qtimes = { ...(row.qtimes || {}) };
@@ -378,7 +381,9 @@ Deno.serve(async (req) => {
       const row = await loadKid(sb, body.attemptId, body.kidToken);
       if (!row) return json({ error: '응시 기록을 찾을 수 없어요' }, 404);
       if (row.status !== 'in_progress') return json({ ok: true });
-      const n = await fastGuess(sb, row, testOf(row), Number(body.sec) || 0);
+      const test = testOf(row), q = test.questions.find((x: any) => x.id === String(body.qid || ''));
+      if (q && Number(body.sec) >= fastLimit(q)) return json({ ok: true });
+      const n = await fastGuess(sb, row, test, Number(body.sec) || 0, q, body.v);
       return json({ ok: true, fastCount: n });
     }
 
