@@ -64,6 +64,7 @@ const RE = ':re';
 const MAX_SRC = 6, STREAK = 2, MAX_TRIES = 6;
 // 문제가 나오고 이 시간(초) 안에 고른 답은 '찍은 것'으로 보고 아이에게 경고 + 아빠에게 알림
 const FAST_SEC = 5;
+const FAST_WARN = false; // 찍기 경고 끔(아빠 결정 D11, 2026-10-25). 다시 켜려면 true
 const baseOf = (id: string) => TESTS[String(id || '').replace(/:re$/, '')];
 const retryTest = (base: any, questions: any[]) => ({ ...base, id: base.id + RE, title: base.title + ' · 틀린 문제 다시 풀기', minutes: 90, questions });
 // 응시 행이 쓰는 시험: 다시 풀기는 행에 저장된 문제로
@@ -185,7 +186,7 @@ async function fastGuess(sb: any, row: any, test: any, sec: number, q?: any, v?:
   }
   return n;
 }
-const fastLimit = (q: any) => (q && Number(q.fastSec) > 0 ? Number(q.fastSec) : FAST_SEC);
+const fastLimit = (q: any) => (!FAST_WARN ? 0 : q && Number(q.fastSec) > 0 ? Number(q.fastSec) : FAST_SEC);
 const kst = (iso: string) => { const d = new Date(new Date(iso).getTime() + 9 * 3600e3); const p = (n: number) => String(n).padStart(2, '0'); return `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`; };
 const mmss = (sec: number) => `${Math.floor(sec / 60)}분 ${sec % 60}초`;
 const LV = { pass: '🟢', weak: '🟡', focus: '🔴' } as Record<string, string>;
