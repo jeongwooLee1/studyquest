@@ -325,5 +325,84 @@ window.LT = (function () {
     };
   }
 
-  return { workUpload: workUpload, API: API, api: api, esc: esc, md: md, fmtNum: fmtNum, validNum: validNum, figure: figure, CIRC: CIRC, LEVEL: LEVEL, kst: kst, mmss: mmss, store: store, FAST_SEC: FAST_SEC, FAST_WARN: FAST_WARN, fastWarn: fastWarn };
+  // ── AI 코치 (서버 lt-api chat.ts) ──
+  // coachCard: 결과 화면의 「코치 한마디」 카드, coachOpen: 대화창, coachFab: 허브 아래 고정 버튼
+  var coachCss = false;
+  function coachStyle() {
+    if (coachCss) return; coachCss = true;
+    var st = document.createElement('style');
+    st.textContent = '.coach-fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:40;box-shadow:0 4px 16px rgba(16,24,40,.25);padding:14px 20px;font-size:17px}' +
+      '.cch .sheet{display:flex;flex-direction:column;height:min(640px,calc(100vh - 32px));max-height:calc(100dvh - 32px);padding:0;overflow:hidden;max-width:520px}' +
+      '.cch-h{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);font-weight:800;font-size:17px}' +
+      '.cch-l{flex:1;overflow-y:auto;padding:14px 12px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}' +
+      '.cch-b{max-width:84%;padding:10px 13px;border-radius:16px;line-height:1.6;font-size:16px;word-break:break-word;white-space:pre-wrap}' +
+      '.cch-b.a{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:4px}' +
+      '.cch-b.u{align-self:flex-end;background:var(--brand);color:var(--brand-ink);border-bottom-right-radius:4px}' +
+      '.cch-b.w{color:var(--muted)}' +
+      '.cch-f{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);align-items:flex-end}' +
+      '.cch-f textarea{flex:1;resize:none;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:10px 12px;font:inherit;font-size:16px;max-height:110px}' +
+      '.cch-f textarea:focus{outline:2px solid var(--brand);border-color:transparent}';
+    document.head.appendChild(st);
+  }
+  function bubbleHtml(role, text, cls) { return '<div class="cch-b ' + (role === 'user' ? 'u' : 'a') + (cls ? ' ' + cls : '') + '">' + esc(text) + '</div>'; }
+
+  function coachOpen(student) {
+    if (!student || document.querySelector('.cch')) return;
+    coachStyle();
+    var root = document.createElement('div');
+    root.className = 'modal cch';
+    root.innerHTML = '<div class="sheet" role="dialog" aria-label="코치와 대화"><div class="cch-h"><span>🤖 코치</span><button class="btn ghost sm" data-x>닫기</button></div>' +
+      '<div class="cch-l" aria-live="polite"><div class="muted" style="text-align:center;margin-top:20px">코치를 부르는 중…</div></div>' +
+      '<div class="cch-f"><textarea rows="1" maxlength="500" placeholder="코치에게 물어봐" aria-label="메시지"></textarea><button class="btn" data-s>보내기</button></div></div>';
+    document.body.appendChild(root);
+    var list = root.querySelector('.cch-l'), ta = root.querySelector('textarea'), send = root.querySelector('[data-s]'), busy = false;
+    var down = function () { list.scrollTop = list.scrollHeight; };
+    var close = function () { root.remove(); document.removeEventListener('keydown', onKey); };
+    var onKey = function (e) { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', onKey);
+    root.querySelector('[data-x]').onclick = close;
+    root.addEventListener('click', function (e) { if (e.target === root) close(); });
+    // 열 때: 오늘 인사(하루 한 번 만들어 저장) → 최근 대화
+    api('chatGreet', { student: student }).catch(function () {}).then(function () { return api('chatHistory', { student: student }); }).then(function (j) {
+      var ms = j.messages || [];
+      list.innerHTML = ms.length ? ms.map(function (m) { return bubbleHtml(m.role, m.content); }).join('') : bubbleHtml('assistant', '안녕! 나는 공부 코치야. 오늘 할 일, 모르는 문제, 연습문제 뭐든 물어봐 😊');
+      down();
+    }).catch(function () { list.innerHTML = bubbleHtml('assistant', '코치가 잠깐 쉬고 있어. 조금 뒤에 다시 열어 줘!'); });
+    function doSend() {
+      var msg = ta.value.trim(); if (!msg || busy) return;
+      busy = true; send.disabled = true; ta.value = ''; ta.style.height = '';
+      list.insertAdjacentHTML('beforeend', bubbleHtml('user', msg) + bubbleHtml('assistant', '코치가 생각하는 중… ✍️', 'w'));
+      var wait = list.lastChild; down();
+      api('chat', { student: student, message: msg }).then(function (j) { wait.outerHTML = bubbleHtml('assistant', j.reply); })
+        .catch(function (e) { wait.outerHTML = bubbleHtml('assistant', '⚠️ ' + (e.message || '보내지 못했어. 다시 해 봐!')); if (!ta.value) ta.value = msg; })
+        .then(function () { busy = false; send.disabled = false; down(); ta.focus(); });
+    }
+    send.onclick = doSend;
+    ta.onkeydown = function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && window.matchMedia('(hover:hover)').matches) { e.preventDefault(); doSend(); } };
+    ta.oninput = function () { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 110) + 'px'; };
+  }
+
+  // 허브 아래 고정 버튼 (student 가 null 이면 지움)
+  function coachFab(student) {
+    var b = document.getElementById('coach-fab');
+    if (!student) { if (b) b.remove(); return; }
+    coachStyle();
+    if (!b) { b = document.createElement('button'); b.id = 'coach-fab'; b.className = 'btn coach-fab noprint'; b.textContent = '🤖 코치'; document.body.appendChild(b); }
+    b.onclick = function () { coachOpen(student); };
+  }
+
+  // 결과 화면 「코치 한마디」 카드. 제출 응답을 늦추지 않으려고 따로 부른다. 실패하면 카드를 지운다
+  function coachCard(container, attemptId, kidToken, student) {
+    if (!container || !attemptId || !kidToken) return;
+    container.innerHTML = '<div class="card noprint" style="margin:14px 0"><h2>🤖 코치 한마디</h2><div data-cc class="muted" aria-live="polite">코치가 결과를 보고 있어…</div></div>';
+    var box = container.querySelector('[data-cc]');
+    api('chatResult', { attemptId: attemptId, kidToken: kidToken }).then(function (j) {
+      if (j.failed || !j.reply) { container.innerHTML = ''; return; }
+      box.className = '';
+      box.innerHTML = '<div style="line-height:1.7;white-space:pre-wrap">' + esc(j.reply) + '</div>' +
+        '<a class="btn soft sm" style="margin-top:12px" href="hub.html?n=' + encodeURIComponent(student || '') + '&chat=1">코치랑 이야기하기 →</a>';
+    }).catch(function () { container.innerHTML = ''; });
+  }
+
+  return { coachCard: coachCard, coachOpen: coachOpen, coachFab: coachFab, workUpload: workUpload, API: API, api: api, esc: esc, md: md, fmtNum: fmtNum, validNum: validNum, figure: figure, CIRC: CIRC, LEVEL: LEVEL, kst: kst, mmss: mmss, store: store, FAST_SEC: FAST_SEC, FAST_WARN: FAST_WARN, fastWarn: fastWarn };
 })();

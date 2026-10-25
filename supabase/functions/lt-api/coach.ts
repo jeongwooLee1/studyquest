@@ -83,23 +83,23 @@ const ADVICE: [RegExp, string][] = [
   [/배|규칙/, '수 사이에 "+몇", "×몇"을 직접 적어 보고 규칙 확인'],
 ];
 // 문제지 전에 할 것: 강의(📺) 또는 강의 없는 문제지의 약속(✏️)
-const prep = (id: string) => (LECTURES[id] || '').startsWith('강의 없이') ? '✏️ ' + LECTURES[id].replace(/^강의 없이 — /, '') : '📺 ' + (LECTURES[id] || '강의');
+export const prep = (id: string) => (LECTURES[id] || '').startsWith('강의 없이') ? '✏️ ' + LECTURES[id].replace(/^강의 없이 — /, '') : '📺 ' + (LECTURES[id] || '강의');
 const adviceOf = (note: string) => (ADVICE.find(([re]) => re.test(note)) || [, ''])[1] as string;
 
 // 문제 표기($…$, [[1|5]] 분수)를 알림용 글자로
 const plain = (s: unknown) => String(s ?? '').replace(/\[\[(\d+)\|(\d+)\]\]/g, '$1/$2').replace(/\$/g, '');
-const esc = (s: unknown) => plain(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+export const esc = (s: unknown) => plain(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const srcId = (qid: string) => String(qid).split('~')[0];
 const hasJong = (s: string) => { const c = s.charCodeAt(s.length - 1); return c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 > 0; };
 const firstName = (s: string) => (s.length === 3 ? s.slice(1) : s);
 const callName = (s: string) => { const n = firstName(s); return n + (hasJong(n) ? '아' : '야'); };
-const titleOf = (t: any) => t.title.replace(/ · 틀린 문제 다시 풀기$/, '');
+export const titleOf = (t: any) => t.title.replace(/ · 틀린 문제 다시 풀기$/, '');
 const uniq = <T>(a: T[]) => [...new Set(a)];
 // 같은 말로 시작하는 조언은 하나만
 const addAdv = (out: string[], a: string) => { if (a && !out.some((x) => x.slice(0, 12) === a.slice(0, 12))) out.push(a); };
 
 // 한 번의 응시(원래 문제지 또는 다시 풀기)에서 부족한 영역·습관·강의
-function diagnose(base: any, row: any) {
+export function diagnose(base: any, row: any) {
   const r = row.result || {}, isRe = String(row.test_id).endsWith(':re');
   const perQ: any[] = r.perQ || [];
   const unresolved: string[] = r.mastery ? Object.entries(r.mastery).filter(([, o]: any) => !o.mastered).map(([id]) => id)
@@ -166,7 +166,7 @@ export function attemptCoach(TESTS: Record<string, any>, base: any, row: any): s
 }
 
 // ── 2) 하루 정리 ──
-const kstDay = (iso: string) => new Date(new Date(iso).getTime() + 9 * 3600e3).toISOString().slice(0, 10);
+export const kstDay = (iso: string) => new Date(new Date(iso).getTime() + 9 * 3600e3).toISOString().slice(0, 10);
 // 영단어 앱(StudyQuest) 계정 — sq_progress_log·sq_point_log 의 username
 export const SQ_USER: Record<string, string> = { '이다연': 'leedy', '이다혜': 'ldh', '이다희': 'oooooo' };
 export type SqDay = { newWords: number; minutes: number; weekNew: number; lastDay: string | null; level: string; wordPts: number; otherPts: number };
@@ -188,7 +188,41 @@ export function sqSummary(logs: any[], points: any[], today: string): SqDay {
 }
 const kstDayAdd = (day: string, n: number) => new Date(Date.parse(day + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
 
-export function dailyCoach(TESTS: Record<string, any>, rows: any[], nowIso: string, sq: Record<string, SqDay> = {}): string[] {
+// 아직 해결 못 한 문제지 (마지막 응시 기준). mine = 끝난 응시를 오래된 순으로
+export function openSets(TESTS: Record<string, any>, plan: { sets: string[] }, mine: any[]): { id: string; n: number }[] {
+  const open: { id: string; n: number }[] = [];
+  for (const id of plan.sets) {
+    const last = mine.filter((x) => x.test_id === id || x.test_id === id + ':re').pop(); if (!last) continue;
+    const d = diagnose(TESTS[id], last); if (d.unresolved.length) open.push({ id, n: d.unresolved.length });
+  }
+  return open;
+}
+// 할 일 목록: 다시 풀기 2개까지 + 과목마다 안 푼 다음 문제지 하나 + 안 푼 진단 + 영단어 앱(hasSq). lec 에는 새 문제지 강의가 앞에 붙는다
+export function buildTodo(TESTS: Record<string, any>, plan: { sets: string[]; wait?: string[]; tests: string[] }, mine: any[], open: { id: string; n: number }[], hasSq: boolean, lec: string[]) {
+  const todo: string[] = [], kidTodo: string[] = [];
+  for (const o of open) {
+    if (todo.length >= 2) break;
+    todo.push(`「${titleOf(TESTS[o.id])}」 틀린 문제 다시 풀기 (남은 유형 ${o.n}개)`); kidTodo.push(`「${titleOf(TESTS[o.id])}」 다시 풀기`);
+  }
+  // 과목마다 아직 안 푼 다음 문제지 하나씩 (wait 은 빼고)
+  const subj = (id: string) => (/^kor-/.test(id) ? '국어' : /^eng-/.test(id) ? '영어' : /^sci-/.test(id) ? '과학' : '수학');
+  const seen = new Set<string>();
+  for (const fresh of plan.sets.filter((id) => !(plan.wait || []).includes(id) && TESTS[id] && !mine.some((x) => x.test_id === id))) {
+    if (todo.length >= MAX_TODO || seen.has(subj(fresh))) continue; seen.add(subj(fresh));
+    const pre = prep(fresh), isLec = pre.startsWith('📺');
+    todo.push(`${pre} → 「${titleOf(TESTS[fresh])}」 문제지`); kidTodo.push(isLec ? `📺 강의 보고 「${titleOf(TESTS[fresh])}」 풀기` : `「${titleOf(TESTS[fresh])}」 풀기 (${pre})`);
+    if (isLec) lec.unshift(LECTURES[fresh]);
+  }
+  for (const untaken of plan.tests.filter((id) => id !== 'math-m1' && TESTS[id] && !mine.some((x) => x.test_id === id)).slice(0, 2)) {
+    if (todo.length >= MAX_TODO) break;
+    todo.push(`「${titleOf(TESTS[untaken])}」 (${TESTS[untaken].minutes}분)`); kidTodo.push(`「${titleOf(TESTS[untaken])}」`);
+  }
+  // 영단어 앱은 매일 (할 일 상한과 별도)
+  if (hasSq) { todo.push('📱 영단어 앱 새 단어 10개 (사자성어 말고 영단어)'); kidTodo.push('📱 영단어 앱 새 단어 10개'); }
+  return { todo, kidTodo };
+}
+
+export function dailyCoach(TESTS: Record<string, any>, rows: any[], nowIso: string, sq: Record<string, SqDay> = {}, chatN: Record<string, number> = {}): string[] {
   const today = kstDay(nowIso), md = today.slice(5).replace('-', '/');
   const out: string[] = [];
   for (const [student, plan] of Object.entries(PLAN)) {
@@ -219,14 +253,11 @@ export function dailyCoach(TESTS: Record<string, any>, rows: any[], nowIso: stri
       if (idle >= 2) L.push(`⚠️ 영단어 앱 ${idle}일째 안 함`);
       if (s.otherPts > 0 && s.otherPts > s.wordPts * 2) L.push(`⚠️ 오늘 포인트는 영단어가 아니라 사자성어·천자문으로 쌓음 (${s.otherPts}P, 영단어 ${s.wordPts}P)`);
     }
+    if (chatN[student] != null) L.push(`🤖 코치와 대화 ${chatN[student]}번`);
     const fast = todays.reduce((n, x) => n + (x.fast_guesses || 0), 0);
     if (fast) L.push(`⚡ 너무 빨리 찍어서 경고 ${fast}번 — 문제를 끝까지 읽고 연습장에 풀게 해 주세요`);
     // 아직 해결 못 한 문제지 (마지막 응시 기준)
-    const open: { id: string; n: number }[] = [];
-    for (const id of plan.sets) {
-      const last = mine.filter((x) => x.test_id === id || x.test_id === id + ':re').pop(); if (!last) continue;
-      const d = diagnose(TESTS[id], last); if (d.unresolved.length) open.push({ id, n: d.unresolved.length });
-    }
+    const open = openSets(TESTS, plan, mine);
     // 부족한 점·습관: 오늘 응시 + 아직 해결 못 한 문제지 + 가장 최근 진단 테스트
     const weak: string[] = [], habits: Record<string, number> = {}, lec: string[] = [], adv: string[] = [];
     let dkSum = 0;
@@ -256,27 +287,8 @@ export function dailyCoach(TESTS: Record<string, any>, rows: any[], nowIso: stri
     for (const [k] of hs) addAdv(adv, adviceOf(k));
     if (dkSum >= 3) adv.unshift(`「모르겠어요」가 ${dkSum}문제 — 잊었거나 안 배운 단원이에요. 강의를 먼저 보고 풀기`);
     if (adv.length) L.push('', '<b>💡 조언</b>', ...adv.slice(0, 3).map((a) => '· ' + esc(a)));
-    // 내일 할 일 (최대 3개)
-    const todo: string[] = [], kidTodo: string[] = [];
-    for (const o of open) {
-      if (todo.length >= 2) break;
-      todo.push(`「${titleOf(TESTS[o.id])}」 틀린 문제 다시 풀기 (남은 유형 ${o.n}개)`); kidTodo.push(`「${titleOf(TESTS[o.id])}」 다시 풀기`);
-    }
-    // 과목마다 아직 안 푼 다음 문제지 하나씩 (wait 은 빼고)
-    const subj = (id: string) => (/^kor-/.test(id) ? '국어' : /^eng-/.test(id) ? '영어' : /^sci-/.test(id) ? '과학' : '수학');
-    const seen = new Set<string>();
-    for (const fresh of plan.sets.filter((id) => !(plan.wait || []).includes(id) && TESTS[id] && !mine.some((x) => x.test_id === id))) {
-      if (todo.length >= MAX_TODO || seen.has(subj(fresh))) continue; seen.add(subj(fresh));
-      const pre = prep(fresh), isLec = pre.startsWith('📺');
-      todo.push(`${pre} → 「${titleOf(TESTS[fresh])}」 문제지`); kidTodo.push(isLec ? `📺 강의 보고 「${titleOf(TESTS[fresh])}」 풀기` : `「${titleOf(TESTS[fresh])}」 풀기 (${pre})`);
-      if (isLec) lec.unshift(LECTURES[fresh]);
-    }
-    for (const untaken of plan.tests.filter((id) => id !== 'math-m1' && TESTS[id] && !mine.some((x) => x.test_id === id)).slice(0, 2)) {
-      if (todo.length >= MAX_TODO) break;
-      todo.push(`「${titleOf(TESTS[untaken])}」 (${TESTS[untaken].minutes}분)`); kidTodo.push(`「${titleOf(TESTS[untaken])}」`);
-    }
-    // 영단어 앱은 매일 (할 일 상한과 별도)
-    if (s) { todo.push('📱 영단어 앱 새 단어 10개 (사자성어 말고 영단어)'); kidTodo.push('📱 영단어 앱 새 단어 10개'); }
+    // 내일 할 일 (최대 MAX_TODO개) — 아이 코치 대화(chat.ts)도 같은 규칙을 쓴다
+    const { todo, kidTodo } = buildTodo(TESTS, plan, mine, open, !!s, lec);
     const lecs = uniq(lec).slice(0, 4);
     if (lecs.length) L.push('', '<b>📺 들을 강의</b>', ...lecs.map((x) => '· ' + esc(x)));
     if (todo.length) L.push('', '<b>✅ 내일 할 일</b>', ...todo.map((x, i) => `${i + 1}. ${esc(x)}`));
