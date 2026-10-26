@@ -7,6 +7,7 @@
 // 저장: public.lt_chat (RLS 켜고 정책 없음). 텔레그램은 보내지 않는다 — 밤 하루 정리에 대화 횟수 한 줄만(coach.ts).
 import { buildTodo, diagnose, kstDay, openSets, PLAN, SQ_USER, sqSummary, titleOf, type SqDay } from './coach.ts';
 import { questionsText } from './work.ts';
+import { profileOf, toStored } from './students.ts';
 
 export const CHAT_MODEL = 'claude-sonnet-5-5';
 export const MAX_TOKENS = 700;
@@ -60,23 +61,16 @@ const dayStartIso = (ms: number) => new Date(Date.parse(kstIso(ms) + 'T00:00:00+
 const plain = (s: unknown) => String(s ?? '').replace(/\[\[(\d+)\|(\d+)\]\]/g, '$1/$2').replace(/\$/g, '');
 const uniq = <T>(a: T[]) => [...new Set(a)];
 
-// 학생 정보 (CLAUDE.md·DECISIONS D8)
-const PROFILE: Record<string, { grade: string; school: string; academy: string }> = {
-  '이다연': { grade: '중1', school: '도농중', academy: '월·수·금 영어·수학 학원' },
-  '이다혜': { grade: '중1', school: '도농중', academy: '학원 없음' },
-  '이다희': { grade: '초4', school: '도농초', academy: '학원 없음' },
-};
-
 // ── 오늘 상황 블록 ──
 export interface Situation { student: string; rows: any[]; TESTS: Record<string, any>; sq: SqDay | null; work: any | null; nowMs: number }
 export function situationBlock(x: Situation): string {
-  const { student, TESTS, sq, work, nowMs } = x, plan = PLAN[student], pf = PROFILE[student];
+  const { student, TESTS, sq, work, nowMs } = x, plan = PLAN[student], pf = profileOf(student);
   const today = kstIso(nowMs), wd = WEEK[kstDate(nowMs).getUTCDay()];
   const rows = x.rows.slice().sort((a, b) => String(a.started_at).localeCompare(String(b.started_at)));
   const done = rows.filter((r) => r.status !== 'in_progress' && r.result);
   const L: string[] = [`[오늘 상황] ${today} (${wd}요일)`];
-  const academyDay = student === '이다연' && ['월', '수', '금'].includes(wd);
-  L.push(`아이: ${student} (${pf.grade}, ${pf.school}). 학원: ${pf.academy}${academyDay ? ' — 오늘은 학원 가는 날' : ''}.`);
+  const academyDay = !!pf && (pf.academyDays || []).includes(wd);
+  L.push(`아이: ${student} (${[pf?.grade, pf?.school].filter(Boolean).join(', ')}).${pf?.academy ? ` 학원: ${pf.academy}${academyDay ? ' — 오늘은 학원 가는 날' : ''}.` : ''}`);
   const nm = (r: any) => { const T = TESTS[String(r.test_id).replace(/:re$/, '')]; return T ? `「${titleOf(T)}」${String(r.test_id).endsWith(':re') ? ' 다시 풀기' : ''}` : String(r.test_id); };
 
   // 오늘 할 일 (하루 정리와 같은 규칙: coach.ts buildTodo)
@@ -239,7 +233,8 @@ const todayUserCount = async (sb: any, student: string, nowMs: number) => {
   return count || 0;
 };
 const bubble = (r: any) => ({ id: r.id, role: r.role, content: r.content, at: r.created_at, kind: r.ctx && r.ctx.kind || null });
-const cleanStudent = (v: unknown) => { const s = String(v || '').replace(/\s+/g, ' ').trim(); return PLAN[s] ? s : null; };
+// 코드(k1~) 또는 옛 이름 → DB 에 저장된 값. 학생이 아니면 null
+const cleanStudent = (v: unknown) => { const s = toStored(String(v || '').replace(/\s+/g, ' ').trim()); return s && PLAN[s] ? s : null; };
 const BAD_STUDENT: Res = { status: 400, body: { error: '이름을 확인해 주세요' } };
 
 // 밤 하루 정리용: 오늘 아이가 보낸 메시지 수 (이름 → 개수)
