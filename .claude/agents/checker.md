@@ -1,7 +1,7 @@
 ---
 name: checker
 description: 문제지의 정답·보기·해설·유사문제를 독립적으로 검산한다. 읽기 전용.
-model: opus
+model: sonnet
 effort: high
 tools: Read, Grep, Glob, Bash
 ---
