@@ -50,6 +50,7 @@ import { KOR_M1_LIT, KOR_LIT_TWINS } from './tests/kor_m1_lit.ts';
 import { KOR_M1_READ, KOR_READ_M1_TWINS } from './tests/kor_m1_read.ts';
 import { GEO_SETS } from './tests/geo_sets.ts';
 import { KOR_V5_SETS, KOR_V5_TWINS } from './tests/kor_m1_vocab5.ts';
+import { health, NO_PROFILE, pubOf, toStored } from './students.ts';
 import { attemptCoach, dailyCoach, PLAN, SQ_USER, sqSummary } from './coach.ts';
 import { handleWork } from './work.ts';
 import { chatCounts, handleChat } from './chat.ts';
@@ -285,7 +286,7 @@ async function loadKid(sb: any, attemptId: unknown, kidToken: unknown) {
   return row;
 }
 
-const attemptSummary = (r: any) => ({ id: r.id, testId: r.test_id, student: r.student, status: r.status, startedAt: r.started_at, submittedAt: r.submitted_at,
+const attemptSummary = (r: any) => ({ id: r.id, testId: r.test_id, student: pubOf(r.student), status: r.status, startedAt: r.started_at, submittedAt: r.submitted_at,
   score: r.score, total: r.total, tabLeaves: r.tab_leaves, reportToken: r.report_token,
   areas: r.result ? r.result.areas.map((a: any) => ({ id: a.id, name: a.name, level: a.level, correct: a.correct, total: a.total })) : null });
 
@@ -298,12 +299,14 @@ Deno.serve(async (req) => {
     const sb = admin();
     const now = Date.now();
 
+    if (action === 'health') return json(health()); // 학생 설정(STUDENT_PROFILES)이 들어갔는지만 — 값은 내보내지 않음
     if (action === 'catalog') return json({ tests: Object.values(TESTS).map(testMeta) });
     // 배포본 확인용: 시험별 내용 해시(저장소의 tests/*.ts 와 같은지 비교)
     if (action === 'version') return json({ tests: Object.fromEntries(await Promise.all(Object.values(TESTS).map(async (t: any) => [t.id, await sha256(JSON.stringify(t))]))) });
 
     if (action === 'progress') {
-      const student = String(body.student || '').replace(/\s+/g, ' ').trim().slice(0, 20);
+      const student = toStored(String(body.student || '').replace(/\s+/g, ' ').trim().slice(0, 20));
+      if (student === null) return json({ error: NO_PROFILE }, 503);
       if (!student) return json({ error: '이름이 필요해요' }, 400);
       await finalizeExpired(sb);
       const { data } = await sb.from('lt_attempts').select('test_id,status,score,total,started_at,submitted_at,result').eq('student', student).order('started_at', { ascending: false }).limit(300);
@@ -326,18 +329,19 @@ Deno.serve(async (req) => {
         progress[id].retry = { wrong, locked, inProgress: rows.some((r: any) => r.test_id === base.id + RE && r.status === 'in_progress'),
           rounds: rows.filter((r: any) => r.test_id === base.id + RE && r.status !== 'in_progress').length };
       }
-      return json({ student, progress });
+      return json({ student: pubOf(student), progress });
     }
 
     if (action === 'avatars') {
       const { data } = await sb.from('lt_avatars').select('student,image');
-      return json({ avatars: Object.fromEntries((data || []).map((r: any) => [r.student, r.image])) });
+      return json({ avatars: Object.fromEntries((data || []).map((r: any) => [pubOf(r.student), r.image])) });
     }
 
     if (action === 'retryInfo') {
       const base = baseOf(String(body.testId || ''));
-      const student = String(body.student || '').replace(/\s+/g, ' ').trim().slice(0, 20);
+      const student = toStored(String(body.student || '').replace(/\s+/g, ' ').trim().slice(0, 20));
       if (!base || !base.practice) return json({ error: '시험을 찾을 수 없어요' }, 404);
+      if (student === null) return json({ error: NO_PROFILE }, 503);
       if (!student) return json({ error: '이름이 필요해요' }, 400);
       await finalizeExpired(sb);
       const srcs = await wrongSources(sb, student, base);
@@ -395,7 +399,8 @@ Deno.serve(async (req) => {
       const tid = String(body.testId || ''), isRetry = tid.endsWith(RE);
       let test = isRetry ? baseOf(tid) : TESTS[tid];
       if (!test || (isRetry && !test.practice)) return json({ error: '시험을 찾을 수 없어요' }, 404);
-      const student = String(body.student || '').replace(/\s+/g, ' ').trim().slice(0, 20);
+      const student = toStored(String(body.student || '').replace(/\s+/g, ' ').trim().slice(0, 20));
+      if (student === null) return json({ error: NO_PROFILE }, 503);
       if (!student) return json({ error: '이름을 입력해 주세요' }, 400);
       await finalizeExpired(sb);
       let questions: any[] | null = null;
@@ -433,11 +438,11 @@ Deno.serve(async (req) => {
         row = await finalize(sb, row, row.answers, row.qtimes, row.tab_leaves, 'expired');
       }
       if (row.status === 'in_progress') {
-        return json({ status: 'in_progress', startedAt: row.started_at, deadlineAt: row.deadline_at, serverNow: new Date().toISOString(), student: row.student,
+        return json({ status: 'in_progress', startedAt: row.started_at, deadlineAt: row.deadline_at, serverNow: new Date().toISOString(), student: pubOf(row.student),
           answers: row.answers, qtimes: row.qtimes, tabLeaves: row.tab_leaves, test: testMeta(test), questions: publicQuestions(test),
           mastery: row.questions ? masteryList(baseOf(row.test_id), masteryOf(row.questions, row.answers)) : undefined });
       }
-      return json({ status: row.status, student: row.student, test: testMeta(test), result: kidResult(row.result, test),
+      return json({ status: row.status, student: pubOf(row.student), test: testMeta(test), result: kidResult(row.result, test),
         mastery: row.questions && row.result && row.result.mastery ? masteryList(baseOf(row.test_id), row.result.mastery) : undefined });
     }
 

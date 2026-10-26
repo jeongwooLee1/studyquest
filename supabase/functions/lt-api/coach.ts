@@ -1,14 +1,20 @@
 // 피드백 — 부족한 점 · 조언 · 들을 EBS 강의 · 다음 할 일 · 아이에게 보낼 카톡 문구
 // 1) 문제지를 낼 때마다 텔레그램 결과 알림 끝에 붙인다 (attemptCoach)
 // 2) 매일 밤 아이별 하루 정리 (dailyCoach, lt-api 'daily' 액션 ← pg_cron)
+import { CODES, PROFILES } from './students.ts';
 
 // 아이별 진도 (hub.html STUDENTS 와 같은 순서)
 // wait: 학교에서 아직 안 배운 단원 — 다음 문제지로 권하지 않는다
-export const PLAN: Record<string, { emoji: string; sets: string[]; wait?: string[]; tests: string[] }> = {
-  '이다연': { emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'm2-solid', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'kor-m1-v5-1', 'kor-m1-v5-2', 'kor-m1-v5-3', 'kor-m1-v5-4', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
-  '이다혜': { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'm2-solid', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'eng-m1-past', 'eng-m1-modal', 'eng-m1-inf', 'eng-m1-comp', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
-  '이다희': { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec', 'h-tri', 'h-quad', 'h-graph', 'h-poly', 'kor-e4-read', 'eng-sq-check', 'eng-e4-v1'], tests: ['math-e4', 'eng-e4-diag', 'kor-e4-diag'] },
+const PLAN_BY_CODE: Record<string, { emoji: string; sets: string[]; wait?: string[]; tests: string[] }> = {
+  k1: { emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'm2-solid', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'kor-m1-v5-1', 'kor-m1-v5-2', 'kor-m1-v5-3', 'kor-m1-v5-4', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
+  k2: { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'm2-solid', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'eng-m1-past', 'eng-m1-modal', 'eng-m1-inf', 'eng-m1-comp', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
+  k3: { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec', 'h-tri', 'h-quad', 'h-graph', 'h-poly', 'kor-e4-read', 'eng-sq-check', 'eng-e4-v1'], tests: ['math-e4', 'eng-e4-diag', 'kor-e4-diag'] },
 };
+// 아래 둘은 DB 에 저장된 학생 값(실명, secret STUDENT_PROFILES 의 name)이 키다 — 코드에는 이름이 없고 시작할 때 채운다
+export const PLAN: Record<string, { emoji: string; sets: string[]; wait?: string[]; tests: string[] }> = {};
+// 영단어 앱(StudyQuest) 계정 — sq_progress_log·sq_point_log 의 username
+export const SQ_USER: Record<string, string> = {};
+for (const c of CODES) { const p = PROFILES[c]; if (!p) continue; PLAN[p.name] = PLAN_BY_CODE[c]; if (p.sqUser) SQ_USER[p.name] = p.sqUser; }
 // 이 레벨테스트의 부족한 영역은 이미 문제지로 만들어져 있다
 const COVERED = ['math-m1', 'math-e4'];
 // 하루 정리의 '내일 할 일' 최대 개수 (다시 풀기 2 + 과목별 새 문제지 + 진단)
@@ -167,8 +173,6 @@ export function attemptCoach(TESTS: Record<string, any>, base: any, row: any): s
 
 // ── 2) 하루 정리 ──
 export const kstDay = (iso: string) => new Date(new Date(iso).getTime() + 9 * 3600e3).toISOString().slice(0, 10);
-// 영단어 앱(StudyQuest) 계정 — sq_progress_log·sq_point_log 의 username
-export const SQ_USER: Record<string, string> = { '이다연': 'leedy', '이다혜': 'ldh', '이다희': 'oooooo' };
 export type SqDay = { newWords: number; minutes: number; weekNew: number; lastDay: string | null; level: string; wordPts: number; otherPts: number };
 // sq_progress_log(누적값, 하루 한 줄)·오늘 sq_point_log 로 오늘 한 양을 만든다
 export function sqSummary(logs: any[], points: any[], today: string): SqDay {
