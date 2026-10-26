@@ -1,4 +1,4 @@
-// 중1 국어 5문항 세트 4개 — 다연이 학원 가는 월·수·금에 10분만 푸는 어휘·문법 문제지. 전부 객관식, 제출 후 정답·풀이 공개.
+// 중1 국어 5문항 세트 4개 — 학원 가는 월·수·금에 10분만 푸는 어휘·문법 문제지. 전부 객관식, 제출 후 정답·풀이 공개.
 // 세트마다 어휘 3문항 + 문법 복습 2문항. 문항마다 같은 유형 문제 3개를 KOR_V5_TWINS[원래 문항 id] 로 두어 「틀린 문제 다시 풀기」에 쓴다(index.ts twinOf).
 
 type C = { text: string; options: string[]; answer: number; traps?: { a: number; note: string }[]; explain: string; keepOrder?: boolean; fastSec?: number };

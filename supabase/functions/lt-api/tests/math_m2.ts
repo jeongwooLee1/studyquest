@@ -1,4 +1,4 @@
-// 중1 2학기 단원 문제지 — 작년 도농중 1학년 2학기 기말 유형에 맞춤. 문항은 twins.ts 생성기를 정해진 seed 로 돌려 만든다.
+// 중1 2학기 단원 문제지 — 작년 학교 1학년 2학기 기말 유형에 맞춤. 문항은 twins.ts 생성기를 정해진 seed 로 돌려 만든다.
 // m2-basic: 「기본 도형」 점·선·면·각, 위치 관계, 평행선의 성질 (기출 7~9·12번: 평행선 동위각·엇각, 점 사이 거리, 꼬인 위치)
 // m2-cons: 「작도와 합동」 작도, 삼각형의 결정 조건, 합동 조건 (기출 11·13번: 작도 순서, 정삼각형 2개 SAS 빈칸)
 // m2-poly: 「다각형」 대각선의 개수, 삼각형의 내각·외각, 다각형의 내각·외각의 합 (기출 10·14번: 정다각형 대각선 수, 외각)
@@ -94,7 +94,7 @@ export const M2_SOLID = set('m2-solid', '입체도형', '중1 2학기 「입체�
 
 export const MATH_M2_SETS_UNITS = [M2_BASIC, M2_CONS, M2_POLY, M2_CIRC, M2_SOLID];
 
-// ── 기출형 종합 모의고사 (작년 도농중 1학년 2학기 기말 순서: 1~6 문자와 식·일차방정식, 7~9·12 기본 도형, 11·13 작도와 합동, 10·14·15 평면도형, 16~19 입체도형, 20 서술형) ──
+// ── 기출형 종합 모의고사 (작년 학교 1학년 2학기 기말 순서: 1~6 문자와 식·일차방정식, 7~9·12 기본 도형, 11·13 작도와 합동, 10·14·15 평면도형, 16~19 입체도형, 20 서술형) ──
 // 단원 문제지와 같은 생성기를 다른 seed 로 돌려 만든다(같은 문제가 나오지 않음). 틀린 문제 다시 풀기도 같은 생성기.
 const FIN_AREAS = [
   { id: 'fa', group: M1, name: '문자와 식·일차방정식', unit: '중1 「문자와 식」·「일차방정식」', why: '기말 앞쪽 1~6번이 이 단원이에요.', study: ['틀린 유형은 「문장을 식으로 · 일차방정식 활용」 문제지로 다시'] },
@@ -104,7 +104,7 @@ const FIN_AREAS = [
   { id: 'fe', group: M1, name: '입체도형', unit: '중1 「입체도형」', why: '다면체, 회전체, 겉넓이·부피(16~19번)', study: ['틀린 유형은 「입체도형」 문제지로 다시'] },
 ];
 const fin = (id: string, title: string, items: [string, string, number][]) => ({
-  id, title, subtitle: '중1 2학기 기말 대비 — 작년 도농중 기출 순서 · 20문항', minutes: 60, practice: true, pace: { [M1]: 150 }, areas: FIN_AREAS,
+  id, title, subtitle: '중1 2학기 기말 대비 — 작년 학교 기출 순서 · 20문항', minutes: 60, practice: true, pace: { [M1]: 150 }, areas: FIN_AREAS,
   questions: items.map(([qid, area, seed]) => makeFixed(qid, area, seed)),
 });
 export const M2_FINAL1 = fin('m2-final1', '기말 대비 종합 1회', [

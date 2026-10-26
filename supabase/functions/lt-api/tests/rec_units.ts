@@ -127,7 +127,7 @@ export const U_PROP = unit('u-prop', '비례식과 비례배분', '초6-2', REC_
     explain: '큰 쪽은 전체의 $[[3|5]]$ → 전체 = 27 ÷ 3 × 5 = 45 (작은 쪽 18)' },
 ]);
 
-// 다혜: u-red 의 분수 크기 비교를 빨리 찍어서 통과(5문항 47초) → 크기 비교만 다시 확인하는 5문항. 문항은 twins.ts 생성기(rc-*)로 만든다.
+// 중1 한 아이: u-red 의 분수 크기 비교를 빨리 찍어서 통과(5문항 47초) → 크기 비교만 다시 확인하는 5문항. 문항은 twins.ts 생성기(rc-*)로 만든다.
 export const U_RED_CMP = {
   id: 'u-red-cmp', title: '분수 크기 비교 다시 확인', subtitle: '초5-1 「약분과 통분」 · 천천히, 통분해서 비교', minutes: 10, practice: true, pace: { [E]: 120 },
   areas: [{ id: 'rca', group: E, name: '분수 크기 비교', unit: '초5-1 「약분과 통분」 — 분수의 크기 비교',
