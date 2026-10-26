@@ -64,17 +64,17 @@
     { label: '🔤 영어 문제지', items: [{ id: 'eng-m1-past' }, { id: 'eng-m1-modal' }, { id: 'eng-m1-inf' }, { id: 'eng-m1-comp' }] },
     { label: '🏁 수학 기말 모의고사', items: [{ id: 'm2-final1', when: '중1 2학기 수학 문제지 5개(기본 도형~입체도형) 끝난 뒤 · 60분' }, { id: 'm2-final2', when: '기말고사 1주 전 · 60분' }] },
   ];
-  // 다연: 학원날(월·수·금) 국어 10분 세트
-  var DAYEON_EXTRA = M1_EXTRA.concat([{ label: '📖 국어 · 학원 가는 날 10분', items: [1, 2, 3, 4].map(function (i) { return { id: 'kor-m1-v5-' + i, when: '월·수·금 10분' }; }) }]);
+  // k1: 학원날(월·수·금) 국어 10분 세트
+  var K1_EXTRA = M1_EXTRA.concat([{ label: '📖 국어 · 학원 가는 날 10분', items: [1, 2, 3, 4].map(function (i) { return { id: 'kor-m1-v5-' + i, when: '월·수·금 10분' }; }) }]);
   var E4_EXTRA = [
     { label: '📝 진단 테스트 (국어·영어)', items: [{ id: 'kor-e4-diag', when: DIAG_WHEN }, { id: 'eng-e4-diag', when: DIAG_WHEN }] },
     { label: '📖 국어 문제지', items: [{ id: 'kor-e4-read' }] },
     { label: '🔤 영어 단어', items: [{ id: 'eng-sq-check', when: '영단어 앱 실력 확인 · 20분' }, { id: 'eng-e4-v1' }] },
   ];
   var STUDENTS = [
-    { name: '이다연', emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'm2-solid', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [GEO, MATH_M1], extra: DAYEON_EXTRA },
-    { name: '이다혜', emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'm2-solid', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [GEO, MATH_M1], extra: M1_EXTRA },
-    { name: '이다희', emoji: '🐥', setsLabel: '수학 보충 문제지', sets: ['h-frac', 'h-word', 'h-dec', 'h-tri', 'h-quad', 'h-graph', 'h-poly'], tests: [{ id: 'math-e4', when: '아빠가 말하면 풀기 · 45분' }], extra: E4_EXTRA },
+    { code: 'k1', nick: '토끼', emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'm2-solid', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [GEO, MATH_M1], extra: K1_EXTRA },
+    { code: 'k2', nick: '곰', emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'm2-solid', 'u-fdiv', 'u-ddiv', 'u-ratio', 'u-prop'], tests: [GEO, MATH_M1], extra: M1_EXTRA },
+    { code: 'k3', nick: '병아리', emoji: '🐥', setsLabel: '수학 보충 문제지', sets: ['h-frac', 'h-word', 'h-dec', 'h-tri', 'h-quad', 'h-graph', 'h-poly'], tests: [{ id: 'math-e4', when: '아빠가 말하면 풀기 · 45분' }], extra: E4_EXTRA },
   ];
   // 문제지를 풀기 전에 볼 EBS 강의 (EBS 초등 앱에서 교재 이름으로 검색 → 단원 이름 찾기). 단원평가·시험 문제 풀이 강의는 건너뛴다.
   var LECTURES = {
@@ -128,18 +128,18 @@
     return avatarsP || (avatarsP = LT.api('avatars').then(function (r) { avatars = r.avatars || {}; }).catch(function () { avatars = {}; }));
   }
   function face(s) {
-    var src = avatars && avatars[s.name];
+    var src = avatars && avatars[s.code];
     return src && /^data:image\/(jpeg|png|webp);base64,/.test(src) ? '<img class="face" src="' + src + '" alt="">' : '<span>' + s.emoji + '</span>';
   }
 
   function pickName() {
     document.title = '공부 문제지';
     app.innerHTML = '<div class="card"><h1>📚 공부 문제지</h1><p class="sub">누구인지 골라 주세요</p><div class="names">' +
-      STUDENTS.map(function (s, i) { return '<button data-i="' + i + '">' + face(s) + LT.esc(s.name) + '</button>'; }).join('') + '</div></div>';
+      STUDENTS.map(function (s, i) { return '<button data-i="' + i + '">' + face(s) + LT.esc(s.nick) + '</button>'; }).join('') + '</div></div>';
     var names = app.querySelector('.names');
     names.onclick = function (e) {
       var b = e.target.closest('button'); if (!b) return;
-      choose(STUDENTS[Number(b.dataset.i)].name);
+      choose(STUDENTS[Number(b.dataset.i)].code);
     };
     // 사진이 나중에 오면 아직 이 화면일 때만 다시 그림
     if (!avatars) loadAvatars().then(function () { if (names.isConnected) pickName(); });
@@ -151,7 +151,7 @@
   }
 
   function load(name) {
-    var s = STUDENTS.find(function (x) { return x.name === name; });
+    var s = STUDENTS.find(function (x) { return x.code === name; });
     if (!s) return pickName();
     app.innerHTML = '<div style="padding-top:80px"><div class="spin"></div></div>';
     Promise.all([catalog ? Promise.resolve(catalog) : LT.api('catalog'), LT.api('progress', { student: name }), loadAvatars()]).then(function (r) {
@@ -199,24 +199,24 @@
   }
 
   function render(s, progress) {
-    document.title = s.name + ' · 공부 문제지';
+    document.title = s.nick + ' · 공부 문제지';
     var sets = s.sets.map(function (id) { return { id: id, when: WHEN[id] }; });
     var doneN = sets.filter(function (x) { return progress[x.id] && progress[x.id].done > 0; }).length;
-    var h = '<div class="card"><div class="top"><h1>' + face(s) + LT.esc(s.name) + '</h1><button class="switch" id="switch">이름 바꾸기</button></div>' +
+    var h = '<div class="card"><div class="top"><h1>' + face(s) + LT.esc(s.nick) + '</h1><button class="switch" id="switch">이름 바꾸기</button></div>' +
       (s.sets.length ? '<div class="sum"><b>' + (s.setsLabel || '수학 · 초등 복습 문제지') + ' ' + s.sets.length + '개 중 ' + doneN + '개 완료</b>' + (doneN === s.sets.length ? ' 🎉' : '') +
       '<div class="bar"><i style="width:' + Math.max(3, doneN / s.sets.length * 100) + '%"></i></div></div>' +
       '<p class="muted" style="margin:12px 0 0">위에서부터 하나씩! 그 단원 EBS 강의 먼저 보고 → 문제지 풀기 → 틀린 문제는 풀이 보고 다시. 3일 뒤에 「다시 풀기」로 한 번 더 풀어요.</p>'
       : '<p class="muted" style="margin:12px 0 0">레벨테스트로 어디가 약한지 먼저 알아볼게요. 연습장과 연필 준비하고, 모르는 건 찍지 말고 「잘 모르겠어요」!</p>') + '</div>';
     (s.extra || []).forEach(function (g) {
-      var cards = g.items.map(function (x) { return card(x, '✎', s.name, progress[x.id]); }).filter(Boolean);
+      var cards = g.items.map(function (x) { return card(x, '✎', s.code, progress[x.id]); }).filter(Boolean);
       if (cards.length) h += '<div class="sec">' + LT.esc(g.label) + '</div>' + cards.join('');
     });
-    if (s.sets.length) h += '<div class="sec">' + (s.setsLabel || '수학 · 초등 복습 문제지') + '</div>' + sets.map(function (x, i) { return card(x, i + 1, s.name, progress[x.id]); }).join('');
-    if (s.tests.length) h += '<div class="sec">수학 레벨테스트</div>' + s.tests.map(function (x, i) { return card(x, 'T', s.name, progress[x.id]); }).join('');
+    if (s.sets.length) h += '<div class="sec">' + (s.setsLabel || '수학 · 초등 복습 문제지') + '</div>' + sets.map(function (x, i) { return card(x, i + 1, s.code, progress[x.id]); }).join('');
+    if (s.tests.length) h += '<div class="sec">수학 레벨테스트</div>' + s.tests.map(function (x, i) { return card(x, 'T', s.code, progress[x.id]); }).join('');
     app.innerHTML = h;
-    LT.coachFab(s.name);
+    LT.coachFab(s.code);
     app.style.paddingBottom = '88px'; // 고정 코치 버튼이 마지막 카드를 가리지 않게
-    if (params.get('chat') === '1' && !chatOpened) { chatOpened = true; LT.coachOpen(s.name); } // 결과 화면의 「코치랑 이야기하기」
+    if (params.get('chat') === '1' && !chatOpened) { chatOpened = true; LT.coachOpen(s.code); } // 결과 화면의 「코치랑 이야기하기」
     document.getElementById('switch').onclick = function () { LT.coachFab(null); app.style.paddingBottom = ''; LT.store('lt.hub.name', null); try { history.replaceState(null, '', location.pathname); } catch (e) {} pickName(); };
   }
 
@@ -224,7 +224,7 @@
   window.addEventListener('pageshow', function (e) { if (e.persisted) { var n = params.get('n') || LT.store('lt.hub.name'); if (n) load(n); } });
 
   var n = (params.get('n') || '').trim() || LT.store('lt.hub.name');
-  if (n && STUDENTS.some(function (x) { return x.name === n; })) load(n); else pickName();
+  if (n && STUDENTS.some(function (x) { return x.code === n; })) load(n); else pickName();
 })();
 </script>
 </body>

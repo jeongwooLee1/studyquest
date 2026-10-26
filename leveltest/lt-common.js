@@ -404,5 +404,9 @@ window.LT = (function () {
     }).catch(function () { container.innerHTML = ''; });
   }
 
-  return { coachCard: coachCard, coachOpen: coachOpen, coachFab: coachFab, workUpload: workUpload, API: API, api: api, esc: esc, md: md, fmtNum: fmtNum, validNum: validNum, figure: figure, CIRC: CIRC, LEVEL: LEVEL, kst: kst, mmss: mmss, store: store, FAST_SEC: FAST_SEC, FAST_WARN: FAST_WARN, fastWarn: fastWarn };
+  // 학생 코드 → 화면에 보이는 별칭 (실명은 서버 secret 에만 있다). 코드가 아니면(직접 적은 이름) 그대로
+  var NICK = { k1: '🐰 토끼', k2: '🐻 곰', k3: '🐥 병아리' };
+  function nick(v) { return NICK[v] || v; }
+
+  return { nick: nick, coachCard: coachCard, coachOpen: coachOpen, coachFab: coachFab, workUpload: workUpload, API: API, api: api, esc: esc, md: md, fmtNum: fmtNum, validNum: validNum, figure: figure, CIRC: CIRC, LEVEL: LEVEL, kst: kst, mmss: mmss, store: store, FAST_SEC: FAST_SEC, FAST_WARN: FAST_WARN, fastWarn: fastWarn };
 })();

@@ -383,7 +383,7 @@
 
   function renderDone(j, auto) {
     var r = j.result;
-    var h = '<div class="card center"><div style="font-size:44px">🎉</div><h1>' + LT.esc(j.student) + ', 수고했어요!</h1>' +
+    var h = '<div class="card center"><div style="font-size:44px">🎉</div><h1>' + LT.esc(LT.nick(j.student)) + ', 수고했어요!</h1>' +
       '<p class="sub">' + LT.esc(j.test.title) + (j.status === 'expired' || auto ? ' · 시간 종료로 자동 제출됐어요' : ' · 제출 완료') + '</p>' +
       '<div class="big" style="margin-top:16px">' + r.score + ' <small>/ ' + r.total + '</small></div><p class="sub">' + LT.esc(r.overall) + '</p>' +
       '<p class="muted" style="margin-top:10px">자세한 결과와 공부할 순서는 부모님께 전달됐어요.</p></div>';
@@ -467,7 +467,7 @@
     $('t-chips').innerHTML = (IS_RETRY ? '<li>🔁 틀린 문제와 비슷한 문제</li>' : '') + '<li>' + meta.count + '문항</li><li>제한 ' + meta.minutes + '분</li>' + (meta.practice ? '<li>제출하면 정답·풀이 확인</li>' : '') +
       Object.keys(groups).map(function (g) { return '<li>' + g + ' ' + groups[g] + '개 영역</li>'; }).join('');
     var n = (params.get('n') || '').trim();
-    if (n) { $('who').textContent = '👋 ' + n + ' 학생'; $('who').classList.remove('hidden'); $('name-field').classList.add('hidden'); $('name').value = n; }
+    if (n) { $('who').textContent = '👋 ' + LT.nick(n) + ' 학생'; $('who').classList.remove('hidden'); $('name-field').classList.add('hidden'); $('name').value = n; }
     else { var last = LT.store('lt.name'); if (last) $('name').value = last; }
     if (FROM_HUB) { $('hub-back').href = HUB_URL; $('hub-back').classList.remove('hidden'); }
     if (meta.practice) $('start-btn').textContent = '문제 풀기 시작';
