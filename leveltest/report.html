@@ -76,8 +76,8 @@
     var at = j.attempt, res = j.result, test = j.test;
     var areaMeta = {}; test.areas.forEach(function (a) { areaMeta[a.id] = a; });
     var qById = {}; test.questions.forEach(function (q) { qById[q.id] = q; });
-    document.title = at.student + ' · ' + test.title;
-    var h = '<div class="card"><div class="head"><div><h1>' + LT.esc(at.student) + ' · ' + LT.esc(test.title) + '</h1>' +
+    document.title = LT.nick(at.student) + ' · ' + test.title;
+    var h = '<div class="card"><div class="head"><div><h1>' + LT.esc(LT.nick(at.student)) + ' · ' + LT.esc(test.title) + '</h1>' +
       '<p class="sub">' + LT.esc(STATUS[at.status] || at.status) + ' · ' + LT.esc(LT.kst(at.startedAt)) + ' 시작</p></div>' +
       '<div class="row noprint"><button class="btn ghost sm" onclick="print()">인쇄</button><a class="btn ghost sm" href="report.html">전체 기록</a></div></div>';
     if (!res) { h += '<p class="sub" style="margin-top:14px">아직 응시 중이에요. 제출되거나 시간이 끝나면 결과가 나와요 (마감 ' + LT.esc(LT.kst(at.deadlineAt)) + ').</p></div>'; app.innerHTML = h + history(j); return; }
@@ -166,7 +166,7 @@
 
   function history(j) {
     if (!j.history || j.history.length < 2) return '';
-    return '<div class="card"><h2>' + LT.esc(j.attempt.student) + '의 응시 기록</h2><div class="scroll"><table class="list"><tr><th>날짜</th><th>점수</th><th>영역</th><th></th></tr>' +
+    return '<div class="card"><h2>' + LT.esc(LT.nick(j.attempt.student)) + '의 응시 기록</h2><div class="scroll"><table class="list"><tr><th>날짜</th><th>점수</th><th>영역</th><th></th></tr>' +
       j.history.map(function (x) {
         return '<tr class="' + (x.id === j.attempt.id ? 'me' : '') + '"><td>' + LT.esc(LT.kst(x.startedAt)) + '</td><td>' + (x.score != null ? x.score + '/' + x.total : LT.esc(STATUS[x.status])) + '</td><td>' + dots(x) + '</td>' +
           '<td>' + (x.id === j.attempt.id ? '보는 중' : '<a href="report.html?r=' + x.reportToken + '">열기</a>') + '</td></tr>';
@@ -194,9 +194,9 @@
     h += '<div class="card"><h2>응시 기록</h2>';
     if (!j.attempts.length) h += '<p class="sub">아직 기록이 없어요.</p>';
     else h += '<div class="scroll"><table class="list"><tr><th>학생</th><th>시작</th><th>상태</th><th>점수</th><th>영역</th><th></th></tr>' + j.attempts.map(function (x) {
-      return '<tr><td><b>' + LT.esc(x.student) + '</b><br><span class="muted">' + LT.esc(titles[x.testId] || x.testId) + '</span></td><td>' + LT.esc(LT.kst(x.startedAt)) + '</td><td>' + LT.esc(STATUS[x.status] || x.status) +
+      return '<tr><td><b>' + LT.esc(LT.nick(x.student)) + '</b><br><span class="muted">' + LT.esc(titles[x.testId] || x.testId) + '</span></td><td>' + LT.esc(LT.kst(x.startedAt)) + '</td><td>' + LT.esc(STATUS[x.status] || x.status) +
         (x.tabLeaves ? '<br><span class="muted">이탈 ' + x.tabLeaves + '회</span>' : '') + '</td><td>' + (x.score != null ? '<b>' + x.score + '</b>/' + x.total : '—') + '</td><td>' + dots(x) + '</td>' +
-        '<td style="white-space:nowrap"><a class="btn soft sm" href="report.html?r=' + x.reportToken + '">리포트</a> <button class="btn ghost sm" data-del="' + x.id + '" data-nm="' + LT.esc(x.student) + '">삭제</button></td></tr>';
+        '<td style="white-space:nowrap"><a class="btn soft sm" href="report.html?r=' + x.reportToken + '">리포트</a> <button class="btn ghost sm" data-del="' + x.id + '" data-nm="' + LT.esc(LT.nick(x.student)) + '">삭제</button></td></tr>';
     }).join('') + '</table></div>';
     h += '</div><p class="center muted noprint" style="text-align:center"><a href="#" id="logout">학부모 키 지우기</a></p>';
     app.innerHTML = h;
