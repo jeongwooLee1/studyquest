@@ -8,7 +8,7 @@ import { CODES, PROFILES } from './students.ts';
 const PLAN_BY_CODE: Record<string, { emoji: string; sets: string[]; wait?: string[]; tests: string[] }> = {
   k1: { emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'm2-solid', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'kor-m1-v5-1', 'kor-m1-v5-2', 'kor-m1-v5-3', 'kor-m1-v5-4', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
   k2: { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'm2-solid', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'eng-m1-past', 'eng-m1-modal', 'eng-m1-inf', 'eng-m1-comp', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
-  k3: { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec', 'h-tri', 'h-quad', 'h-graph', 'h-poly', 'kor-e4-read', 'eng-sq-check', 'eng-e4-v1'], tests: ['math-e4', 'eng-e4-diag', 'kor-e4-diag'] },
+  k3: { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec', 'h-tri', 'h-quad', 'h-graph', 'h-poly', 'kor-e4-read', 'eng-sq-check', 'eng-e4-v1', 'eng-e4-v2', 'eng-e4-v3', 'eng-e4-v4'], tests: ['math-e4', 'eng-e4-diag', 'kor-e4-diag'] },
 };
 // 아래 둘은 DB 에 저장된 학생 값(실명, secret STUDENT_PROFILES 의 name)이 키다 — 코드에는 이름이 없고 시작할 때 채운다
 export const PLAN: Record<string, { emoji: string; sets: string[]; wait?: string[]; tests: string[] }> = {};
@@ -47,6 +47,9 @@ export const LECTURES: Record<string, string> = {
   'm2-basic': 'EBS 중학 「뉴런 수학1(하)」 → 「기본 도형」(점·선·면·각, 위치 관계, 평행선) 강의',
   'm-eq-word': 'EBS 중학 「뉴런 수학1(상)」 → 「문자와 식」, 「일차방정식의 활용」 강의',
   'eng-e4-v1': 'EBS 초등 「초등 영어 4학년」 단어 복습 — 학교·가족',
+  'eng-e4-v2': 'EBS 초등 「초등 영어 4학년」 단어 복습 — 음식·동물',
+  'eng-e4-v3': 'EBS 초등 「초등 영어 4학년」 단어 복습 — 시간·날씨·요일',
+  'eng-e4-v4': 'EBS 초등 「초등 영어 4학년」 단어 복습 — 동작·감정',
   'g-solid': 'EBS 초등 「만점왕 수학 6-1」 「각기둥과 각뿔」·「직육면체의 부피와 겉넓이」, 6-2 「원기둥, 원뿔, 구」 개념 강의',
   'eng-m1-inf': 'EBS 중학 프리미엄 중1 영어 문법 「to부정사」·「동명사」 강의',
   'eng-m1-comp': 'EBS 중학 프리미엄 중1 영어 문법 「비교급·최상급」 강의',
