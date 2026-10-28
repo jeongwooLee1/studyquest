@@ -1,8 +1,9 @@
 // 초4 영어 어휘 문제지 — 출판사와 상관없는 초3·4 필수 단어(2022 개정 성취기준). 전부 5지선다, practice:true.
 //   eng-e4-v1  학교·가족 단어(10): 뜻 알기 · 영어 단어 고르기 · 문장·글 속 단어(끝까지 읽기)
+//   eng-e4-v2  음식·동물 단어(10): 뜻 알기 · 영어 단어 고르기·분류 · 문장·글 속 단어(좋아한다/좋아하지 않는다, 누구)
 // 다시 풀기용 변형 문항은 ENG_VOC_VARIANTS[원래 문항 id] 에 3개씩(sci_gas.ts·eng_gram.ts 와 같은 형식).
 // fastSec: 2 = 단어 하나만 알면 바로 풀리는 문항(뜻 알기·영어 단어 고르기). 찍기 경고를 2초 미만일 때만 띄운다. 문장·글을 읽는 문항은 기본 5초.
-// 표기: 줄바꿈 \n, 강조 <b>…</b>. '$'는 쓰지 않는다. 문항 id 는 세트마다 접두어(학교·가족 'ev1-').
+// 표기: 줄바꿈 \n, 강조 <b>…</b>. '$'는 쓰지 않는다. 문항 id 는 세트마다 접두어(학교·가족 'ev1-', 음식·동물 'ev2-').
 
 const G = '어휘';
 const set = (id: string, title: string, subtitle: string, minutes: number, practice: boolean, areas: any[], questions: any[]) => ({
@@ -48,7 +49,31 @@ export const ENG_E4_V1 = set('eng-e4-v1', '학교·가족 단어', '초4 영어 
     traps: [{ a: 1, note: N_WHO }, { a: 3, note: N_WHO }], explain: 'My mom is a teacher. → 선생님. 요리사(cook)는 아빠, 학생은 형(오빠)·남동생이에요.' },
 ]);
 
-export const ENG_VOC_SETS = [ENG_E4_V1];
+// ── 음식·동물 ──
+const N_NOT = '「아닌 것」을 묻는데 맞는 것을 고름 (질문을 끝까지 읽지 않음)';
+const N_LIKE = 'like(좋아한다)와 don\'t / doesn\'t like(좋아하지 않는다)를 거꾸로 읽음';
+
+export const ENG_E4_V2 = set('eng-e4-v2', '음식·동물 단어', '초4 영어 어휘 · 과일·채소·음식, 동물', 10, true, [
+  area('a1', '뜻 알기', '단어를 보고 뜻이 바로 떠올라야 문장이 읽혀요.', ['EBS 초등 「초등 영어 4학년」 단어 복습', '단어 카드 앞(영어)·뒤(우리말)로 하루 5개씩 소리 내어 읽기']),
+  area('a2', '영어 단어 고르기·분류', '우리말을 보고 영어 단어를 떠올리고, 과일·채소·동물로 나눌 수 있어야 해요.', ['EBS 초등 「초등 영어 4학년」 단어 복습', '과일·채소·동물·마실 것 네 칸 표에 아는 단어 써 넣기']),
+  area('a3', '문장·글 속 단어', '좋아한다/좋아하지 않는다, 누구의 이야기인지를 끝까지 읽고 골라야 해요.', ['짧은 글에서 don\'t like 에 밑줄, 질문의 사람 이름에 동그라미', '답을 고른 뒤 글에서 근거 단어를 손가락으로 짚기']),
+], [
+  { id: 'ev2-1', area: 'a1', text: '다음 영어 단어의 뜻은?\nrabbit', options: ['거북', '토끼', '다람쥐', '쥐', '오리'], answer: 2, explain: 'rabbit = 토끼. 거북 turtle, 오리 duck.' },
+  { id: 'ev2-2', area: 'a1', text: '다음 영어 단어의 뜻은?\ncarrot', options: ['감자', '양파', '당근', '오이', '옥수수'], answer: 3, explain: 'carrot = 당근. 감자 potato, 양파 onion, 옥수수 corn.' },
+  { id: 'ev2-3', area: 'a1', text: '다음 영어 단어의 뜻은?\nbread', options: ['빵', '밥', '국수', '과자', '우유'], answer: 1, explain: 'bread = 빵. 밥 rice, 국수 noodles, 우유 milk.' },
+  { id: 'ev2-4', area: 'a1', text: '다음 영어 단어의 뜻은?\ngiraffe', options: ['코끼리', '얼룩말', '하마', '캥거루', '기린'], answer: 5, explain: 'giraffe = 기린. 코끼리 elephant, 얼룩말 zebra.' },
+  { id: 'ev2-5', area: 'a2', text: '「사과」를 영어로 하면?', options: ['banana', 'grape', 'peach', 'apple', 'orange'], answer: 4, explain: '사과 = apple. 포도 grape, 복숭아 peach.' },
+  { id: 'ev2-6', area: 'a2', text: '「물고기」를 영어로 하면?', options: ['bird', 'frog', 'snake', 'horse', 'fish'], answer: 5, explain: '물고기 = fish. 새 bird, 개구리 frog, 뱀 snake, 말 horse.' },
+  { id: 'ev2-7', area: 'a2', text: '다음 중 <b>동물</b>이 <b>아닌</b> 것은?', options: ['lion', 'horse', 'banana', 'sheep', 'cow'], answer: 3,
+    traps: [{ a: 1, note: N_NOT }], explain: 'banana(바나나)는 과일. 사자·말·양·소는 동물이에요.' },
+  { id: 'ev2-8', area: 'a3', text: '빈칸에 알맞은 말은?\nA monkey likes ______.', options: ['bananas', 'pencils', 'shoes', 'books', 'chairs'], answer: 1, explain: '원숭이(monkey)는 바나나(bananas)를 좋아해요.' },
+  { id: 'ev2-9', area: 'a3', text: '글을 읽고 질문에 답하세요.\n\nI like apples. I don\'t like carrots. I like milk.\n\nQ. 내가 <b>좋아하지 않는</b> 것은?', options: ['사과', '당근', '우유', '바나나', '빵'], answer: 2,
+    traps: [{ a: 1, note: N_LIKE }, { a: 3, note: N_LIKE }], explain: 'I don\'t like carrots. → 당근. 사과·우유는 좋아해요.' },
+  { id: 'ev2-10', area: 'a3', text: '글을 읽고 질문에 답하세요.\n\nI have a dog. My sister has a cat. My friend Jisu has a turtle.\n\nQ. <b>지수</b>가 기르는 동물은?', options: ['개', '고양이', '거북', '토끼', '햄스터'], answer: 3,
+    traps: [{ a: 1, note: N_WHO }, { a: 2, note: N_WHO }], explain: 'Jisu has a turtle. → 거북. 개는 나, 고양이는 언니(누나)·여동생이에요.' },
+]);
+
+export const ENG_VOC_SETS = [ENG_E4_V1, ENG_E4_V2];
 
 type V = { fastSec?: number; text: string; options: string[]; answer: number; traps?: { a: number; note: string }[]; explain: string };
 export const ENG_VOC_VARIANTS: Record<string, V[]> = {
@@ -119,5 +144,64 @@ export const ENG_VOC_VARIANTS: Record<string, V[]> = {
       traps: [{ a: 1, note: N_WHO }, { a: 2, note: N_WHO }], explain: 'My dad is 45. → 45살. 70살은 할머니, 15살은 언니(누나)예요.' },
     { text: '글을 읽고 질문에 답하세요.\n\nMy uncle lives in Busan. My aunt lives in Seoul. My grandparents live in Jeju.\n\nQ. <b>삼촌</b>이 사는 곳은?', options: ['부산', '서울', '제주', '대구', '인천'], answer: 1,
       traps: [{ a: 2, note: N_WHO }, { a: 3, note: N_WHO }], explain: 'My uncle lives in Busan. → 부산. 서울은 이모(고모), 제주는 조부모님이에요.' },
+  ],
+  'ev2-1': [
+    { text: '다음 영어 단어의 뜻은?\nturtle', options: ['토끼', '오리', '거북', '개구리', '뱀'], answer: 3, explain: 'turtle = 거북.' },
+    { text: '다음 영어 단어의 뜻은?\nduck', options: ['닭', '고양이', '거위', '펭귄', '오리'], answer: 5, explain: 'duck = 오리. 닭 chicken, 거위 goose.' },
+    { text: '다음 영어 단어의 뜻은?\nmonkey', options: ['원숭이', '곰', '사자', '호랑이', '기린'], answer: 1, explain: 'monkey = 원숭이.' },
+  ],
+  'ev2-2': [
+    { text: '다음 영어 단어의 뜻은?\npotato', options: ['감자', '고구마', '당근', '양파', '토마토'], answer: 1, explain: 'potato = 감자.' },
+    { text: '다음 영어 단어의 뜻은?\nonion', options: ['오이', '양파', '마늘', '당근', '감자'], answer: 2, explain: 'onion = 양파.' },
+    { text: '다음 영어 단어의 뜻은?\ncorn', options: ['쌀', '콩', '밀', '옥수수', '감자'], answer: 4, explain: 'corn = 옥수수.' },
+  ],
+  'ev2-3': [
+    { text: '다음 영어 단어의 뜻은?\nmilk', options: ['물', '주스', '우유', '차', '콜라'], answer: 3, explain: 'milk = 우유. 물 water, 차 tea.' },
+    { text: '다음 영어 단어의 뜻은?\nrice', options: ['빵', '국수', '떡', '밥(쌀)', '죽'], answer: 4, explain: 'rice = 밥, 쌀.' },
+    { text: '다음 영어 단어의 뜻은?\nnoodles', options: ['밥', '빵', '수프', '피자', '국수'], answer: 5, explain: 'noodles = 국수. 수프 soup.' },
+  ],
+  'ev2-4': [
+    { text: '다음 영어 단어의 뜻은?\nelephant', options: ['코끼리', '기린', '하마', '코뿔소', '곰'], answer: 1, explain: 'elephant = 코끼리.' },
+    { text: '다음 영어 단어의 뜻은?\nzebra', options: ['말', '당나귀', '얼룩말', '기린', '소'], answer: 3, explain: 'zebra = 얼룩말. 말은 horse.' },
+    { text: '다음 영어 단어의 뜻은?\ntiger', options: ['사자', '표범', '곰', '호랑이', '늑대'], answer: 4, explain: 'tiger = 호랑이. 사자는 lion.' },
+  ],
+  'ev2-5': [
+    { text: '「포도」를 영어로 하면?', options: ['grape', 'strawberry', 'pear', 'melon', 'lemon'], answer: 1, explain: '포도 = grape. 배 pear.' },
+    { text: '「딸기」를 영어로 하면?', options: ['cherry', 'watermelon', 'strawberry', 'tomato', 'kiwi'], answer: 3, explain: '딸기 = strawberry. 체리 cherry.' },
+    { text: '「수박」을 영어로 하면?', options: ['melon', 'lemon', 'mango', 'peach', 'watermelon'], answer: 5, explain: '수박 = watermelon(water 물 + melon).' },
+  ],
+  'ev2-6': [
+    { text: '「새」를 영어로 하면?', options: ['bird', 'bear', 'bee', 'bat', 'bug'], answer: 1, explain: '새 = bird. 곰 bear, 벌 bee, 박쥐 bat, 벌레 bug.' },
+    { text: '「돼지」를 영어로 하면?', options: ['cow', 'sheep', 'pig', 'dog', 'hen'], answer: 3, explain: '돼지 = pig. 소 cow, 양 sheep, 암탉 hen.' },
+    { text: '「곰」을 영어로 하면?', options: ['bee', 'bird', 'pig', 'bear', 'bat'], answer: 4, explain: '곰 = bear.' },
+  ],
+  'ev2-7': [
+    { text: '다음 중 <b>과일</b>이 <b>아닌</b> 것은?', options: ['apple', 'pear', 'cherry', 'lemon', 'potato'], answer: 5,
+      traps: [{ a: 1, note: N_NOT }], explain: 'potato(감자)는 채소. 사과·배·체리·레몬은 과일이에요.' },
+    { text: '다음 중 <b>채소</b>가 <b>아닌</b> 것은?', options: ['carrot', 'onion', 'grape', 'potato', 'corn'], answer: 3,
+      traps: [{ a: 1, note: N_NOT }], explain: 'grape(포도)는 과일. 당근·양파·감자·옥수수는 채소예요.' },
+    { text: '다음 중 <b>마실 것</b>이 <b>아닌</b> 것은?', options: ['milk', 'water', 'juice', 'bread', 'tea'], answer: 4,
+      traps: [{ a: 1, note: N_NOT }], explain: 'bread(빵)는 먹는 것. 우유·물·주스·차는 마시는 것이에요.' },
+  ],
+  'ev2-8': [
+    { text: '빈칸에 알맞은 말은?\nCows give us ______.', options: ['juice', 'milk', 'bread', 'eggs', 'rice'], answer: 2, explain: '소(cows)는 우유(milk)를 줘요.' },
+    { text: '빈칸에 알맞은 말은?\nHens give us ______.', options: ['milk', 'juice', 'apples', 'eggs', 'shoes'], answer: 4, explain: '암탉(hens)은 달걀(eggs)을 낳아요.' },
+    { text: '빈칸에 알맞은 말은?\nI\'m hungry. I want some ______.', options: ['water', 'sleep', 'pizza', 'shoes', 'music'], answer: 3, explain: 'hungry(배고픈) → 먹을 것 pizza.' },
+  ],
+  'ev2-9': [
+    { text: '글을 읽고 질문에 답하세요.\n\nMina likes dogs. She doesn\'t like cats. She likes rabbits.\n\nQ. 미나가 <b>좋아하지 않는</b> 동물은?', options: ['개', '토끼', '고양이', '새', '물고기'], answer: 3,
+      traps: [{ a: 1, note: N_LIKE }, { a: 2, note: N_LIKE }], explain: 'She doesn\'t like cats. → 고양이.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nMy brother doesn\'t like fish. He likes chicken and pizza.\n\nQ. 형(오빠·남동생)이 <b>좋아하지 않는</b> 음식은?', options: ['생선', '치킨', '피자', '빵', '밥'], answer: 1,
+      traps: [{ a: 2, note: N_LIKE }, { a: 3, note: N_LIKE }], explain: 'He doesn\'t like fish. → 생선. 치킨·피자는 좋아해요.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nI like summer. I like watermelons. But I don\'t like bugs.\n\nQ. 내가 <b>좋아하지 않는</b> 것은?', options: ['여름', '수박', '바다', '아이스크림', '벌레'], answer: 5,
+      traps: [{ a: 1, note: N_LIKE }, { a: 2, note: N_LIKE }], explain: 'But I don\'t like bugs. → 벌레. 여름·수박은 좋아해요.' },
+  ],
+  'ev2-10': [
+    { text: '글을 읽고 질문에 답하세요.\n\nDad likes coffee. Mom likes tea. I like hot chocolate.\n\nQ. <b>엄마</b>가 좋아하는 것은?', options: ['커피', '차', '핫초코', '우유', '주스'], answer: 2,
+      traps: [{ a: 1, note: N_WHO }, { a: 3, note: N_WHO }], explain: 'Mom likes tea. → 차. 커피는 아빠, 핫초코는 나예요.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nTom eats bread for breakfast. Ben eats rice. Sam eats cereal.\n\nQ. <b>벤(Ben)</b>이 아침에 먹는 것은?', options: ['밥', '빵', '시리얼', '국수', '과일'], answer: 1,
+      traps: [{ a: 2, note: N_WHO }, { a: 3, note: N_WHO }], explain: 'Ben eats rice. → 밥. 빵은 Tom, 시리얼은 Sam이에요.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nMy grandma has three hens. My grandpa has two cows. My uncle has a horse.\n\nQ. <b>할아버지</b>가 기르는 동물은?', options: ['암탉', '말', '개', '소', '돼지'], answer: 4,
+      traps: [{ a: 1, note: N_WHO }, { a: 2, note: N_WHO }], explain: 'My grandpa has two cows. → 소. 암탉은 할머니, 말은 삼촌이에요.' },
   ],
 };
