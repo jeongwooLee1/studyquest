@@ -1,5 +1,6 @@
 // lt-api work — 연습장 풀이 사진: 저장(비공개 버킷 lt-work) → AI 확인(Claude, 없거나 실패하면 Gemini) → 아이 피드백 + 아빠 텔레그램(사진+요약)
 // 호출은 index.ts 의 action 'work' 가 하고, 아이 확인(loadKid)은 index.ts 에서 끝낸 뒤 row 를 넘겨 준다.
+import { emptyReason } from './claude.ts';
 const MAX_BYTES = 2.5 * 1024 * 1024;
 const MAX_PHOTOS = 3;
 const MIMES: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
@@ -57,12 +58,14 @@ async function askClaude(prompt: string, mime: string, b64: string): Promise<Wor
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST', signal: AbortSignal.timeout(45000),
       headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens: 1200, messages: [{ role: 'user', content: [
+      body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens: 4096, output_config: { effort: 'medium' }, messages: [{ role: 'user', content: [
         { type: 'image', source: { type: 'base64', media_type: mime, data: b64 } }, { type: 'text', text: prompt }] }] }),
     });
     const j = await r.json();
     if (!r.ok) { console.error('work claude', r.status, JSON.stringify(j).slice(0, 300)); return null; }
-    return parseFeedback((j.content || []).filter((c: any) => c.type === 'text').map((c: any) => c.text).join(''));
+    const text = (j.content || []).filter((c: any) => c.type === 'text').map((c: any) => c.text).join('');
+    if (!text.trim()) { console.error('work claude:', emptyReason(j)); return null; }
+    return parseFeedback(text);
   } catch (e) { console.error('work claude', e); return null; }
 }
 

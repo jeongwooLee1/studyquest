@@ -8,9 +8,11 @@
 import { buildTodo, diagnose, kstDay, openSets, PLAN, SQ_USER, sqSummary, titleOf, type SqDay } from './coach.ts';
 import { questionsText } from './work.ts';
 import { profileOf, toStored } from './students.ts';
+import { emptyReason } from './claude.ts';
 
 export const CHAT_MODEL = 'claude-sonnet-5-5';
-export const MAX_TOKENS = 700;
+// 생각 토큰도 max_tokens 에 들어간다(700 일 때 생각만 하다 끝난 적 있음). 실제 답은 3~6줄이라 짧다 — 여유만 둔다
+export const MAX_TOKENS = 4096;
 export const DAILY_LIMIT = 60; // 학생당 하루 아이 메시지 수
 export const MAX_CHARS = 500;
 export const CONTEXT_MSGS = 40; // 최근 20턴(아이+코치)
@@ -152,6 +154,7 @@ export function normalize(msgs: Msg[]): Msg[] {
 export function buildRequest(situation: string, msgs: Msg[]) {
   return {
     model: CHAT_MODEL, max_tokens: MAX_TOKENS,
+    output_config: { effort: 'medium' }, // 생각은 켠 채(끌 수 없음) 깊이만 낮춤. 정답 지키기 규칙 때문에 low 까지는 안 내림
     system: [
       { type: 'text', text: COACH_RULES, cache_control: { type: 'ephemeral' } }, // 고정 규칙은 캐시, 아이 상황은 매번 달라서 캐시 밖
       { type: 'text', text: situation },
@@ -195,7 +198,7 @@ async function askClaude(situation: string, msgs: Msg[]): Promise<string | null>
     const j = await r.json();
     if (!r.ok) { console.error('chat claude', r.status, JSON.stringify(j).slice(0, 300)); return null; }
     const text = (j.content || []).filter((c: any) => c.type === 'text').map((c: any) => c.text).join('').trim();
-    if (!text) { console.error('chat claude: 빈 답', JSON.stringify(j).slice(0, 200)); return null; }
+    if (!text) { console.error('chat claude:', emptyReason(j)); return null; }
     return text.slice(0, 1500);
   } catch (e) { console.error('chat claude', e); return null; }
 }
