@@ -1,9 +1,10 @@
 // 초4 영어 어휘 문제지 — 출판사와 상관없는 초3·4 필수 단어(2022 개정 성취기준). 전부 5지선다, practice:true.
 //   eng-e4-v1  학교·가족 단어(10): 뜻 알기 · 영어 단어 고르기 · 문장·글 속 단어(끝까지 읽기)
 //   eng-e4-v2  음식·동물 단어(10): 뜻 알기 · 영어 단어 고르기·분류 · 문장·글 속 단어(좋아한다/좋아하지 않는다, 누구)
+//   eng-e4-v3  시간·날씨·요일 단어(10): 요일·달·계절·날씨·숫자 · 시각 읽기 · 요일 순서 · No 뒤 끝까지 읽기
 // 다시 풀기용 변형 문항은 ENG_VOC_VARIANTS[원래 문항 id] 에 3개씩(sci_gas.ts·eng_gram.ts 와 같은 형식).
 // fastSec: 2 = 단어 하나만 알면 바로 풀리는 문항(뜻 알기·영어 단어 고르기). 찍기 경고를 2초 미만일 때만 띄운다. 문장·글을 읽는 문항은 기본 5초.
-// 표기: 줄바꿈 \n, 강조 <b>…</b>. '$'는 쓰지 않는다. 문항 id 는 세트마다 접두어(학교·가족 'ev1-', 음식·동물 'ev2-').
+// 표기: 줄바꿈 \n, 강조 <b>…</b>. '$'는 쓰지 않는다. 문항 id 는 세트마다 접두어(학교·가족 'ev1-', 음식·동물 'ev2-', 시간·날씨 'ev3-').
 
 const G = '어휘';
 const set = (id: string, title: string, subtitle: string, minutes: number, practice: boolean, areas: any[], questions: any[]) => ({
@@ -73,7 +74,41 @@ export const ENG_E4_V2 = set('eng-e4-v2', '음식·동물 단어', '초4 영어 
     traps: [{ a: 1, note: N_WHO }, { a: 2, note: N_WHO }], explain: 'Jisu has a turtle. → 거북. 개는 나, 고양이는 언니(누나)·여동생이에요.' },
 ]);
 
-export const ENG_VOC_SETS = [ENG_E4_V1, ENG_E4_V2];
+// ── 시간·날씨·요일 ──
+const N_DAY = '요일 이름을 헷갈림 (Tuesday 화 / Thursday 목, Saturday 토 / Sunday 일)';
+const N_TEEN = '-teen(십몇)과 -ty(몇십)를 헷갈림 (fifteen 15 / fifty 50)';
+const N_TIME = '시각 읽기를 헷갈림 (seven thirty = 7시 30분, o\'clock = 정각)';
+const N_WEATHER = '날씨 단어를 헷갈림 (rainy 비 / snowy 눈 / cloudy 흐림)';
+const N_ORDER = '요일 순서(어제·내일)를 거꾸로 셈';
+const N_NO = '「No, it isn\'t.」(아니)를 놓치고 질문에 나온 날씨를 답으로 고름';
+const N_WHAT = '질문이 묻는 일·사람을 확인하지 않고 다른 내용을 고름 (끝까지 읽기)';
+
+export const ENG_E4_V3 = set('eng-e4-v3', '시간·날씨·요일 단어', '초4 영어 어휘 · 요일·달·계절, 날씨, 숫자·시각', 10, true, [
+  area('a1', '뜻 알기', '요일·날씨·숫자는 매일 쓰는 말이라 바로 떠올라야 해요.', ['EBS 초등 「초등 영어 4학년」 단어 복습', '달력을 보며 요일·달을 영어로 소리 내어 읽기']),
+  area('a2', '영어 단어 고르기', '비슷하게 생긴 요일 이름(Tuesday/Thursday)을 구분해야 해요.', ['EBS 초등 「초등 영어 4학년」 단어 복습', '월~일 요일을 순서대로 영어로 써 보기, -teen / -ty 숫자 짝 맞추기']),
+  area('a3', '문장·대화 속 단어', '시각·요일 순서를 계산하고, 대화의 No 뒤 내용을 끝까지 읽어야 해요.', ['대화에서 No, Yes 뒤 문장에 밑줄', '질문이 묻는 일(수영? 미술?)에 동그라미 치고 글에서 찾기']),
+], [
+  { id: 'ev3-1', area: 'a1', text: '다음 영어 단어의 뜻은?\nWednesday', options: ['수요일', '화요일', '월요일', '목요일', '금요일'], answer: 1,
+    traps: [{ a: 2, note: N_DAY }, { a: 4, note: N_DAY }], explain: 'Wednesday = 수요일. 화요일 Tuesday, 목요일 Thursday.' },
+  { id: 'ev3-2', area: 'a1', text: '다음 영어 단어의 뜻은?\nrainy', options: ['맑은', '눈 오는', '바람 부는', '흐린', '비 오는'], answer: 5,
+    traps: [{ a: 2, note: N_WEATHER }], explain: 'rainy = 비 오는(rain 비). 눈 오는 snowy, 흐린 cloudy, 맑은 sunny.' },
+  { id: 'ev3-3', area: 'a1', text: '다음 영어 숫자에 맞는 수는?\nforty', options: ['4', '40', '14', '44', '400'], answer: 2,
+    traps: [{ a: 3, note: N_TEEN }], explain: 'forty = 40. fourteen = 14.' },
+  { id: 'ev3-4', area: 'a1', text: '다음 영어 단어의 뜻은?\nDecember', options: ['10월', '11월', '1월', '12월', '2월'], answer: 4, explain: 'December = 12월. 10월 October, 11월 November.' },
+  { id: 'ev3-5', area: 'a2', text: '「일요일」을 영어로 하면?', options: ['Monday', 'Saturday', 'Friday', 'Sunday', 'Tuesday'], answer: 4,
+    traps: [{ a: 2, note: N_DAY }], explain: '일요일 = Sunday(sun 해). Saturday는 토요일.' },
+  { id: 'ev3-6', area: 'a2', text: '「여름」을 영어로 하면?', options: ['spring', 'winter', 'summer', 'fall', 'sunny'], answer: 3, explain: '여름 = summer. 봄 spring, 가을 fall, 겨울 winter.' },
+  { id: 'ev3-7', area: 'a3', text: '다음 시각을 영어로 바르게 나타낸 것은?\n「7시 30분」', options: ['It\'s seven thirteen.', 'It\'s seven thirty.', 'It\'s thirty seven.', 'It\'s seven o\'clock.', 'It\'s three seventy.'], answer: 2,
+    traps: [{ a: 1, note: N_TEEN }, { a: 3, note: N_TIME }, { a: 4, note: N_TIME }], explain: '시 → 분 순서로 읽어요. 7시 30분 = seven thirty.' },
+  { id: 'ev3-8', area: 'a3', text: '빈칸에 알맞은 요일은?\nToday is Monday. Tomorrow is ______.', options: ['Tuesday', 'Sunday', 'Wednesday', 'Thursday', 'Friday'], answer: 1,
+    traps: [{ a: 2, note: N_ORDER }, { a: 4, note: N_DAY }], explain: '오늘 월요일 → 내일(tomorrow)은 화요일 Tuesday.' },
+  { id: 'ev3-9', area: 'a3', text: '대화를 읽고 질문에 답하세요.\n\nA: Is it hot in Busan?\nB: No, it isn\'t. It\'s cool and windy.\n\nQ. 부산의 날씨는?', options: ['덥고 맑음', '춥고 눈 옴', '덥고 비 옴', '따뜻하고 흐림', '시원하고 바람 붊'], answer: 5,
+    traps: [{ a: 1, note: N_NO }], explain: 'No, it isn\'t.(덥지 않아) It\'s cool and windy. → 시원하고 바람이 불어요.' },
+  { id: 'ev3-10', area: 'a3', text: '글을 읽고 질문에 답하세요.\n\nI have piano lessons on Monday. I play soccer on Wednesday. I go swimming on Friday.\n\nQ. <b>수영</b>하러 가는 요일은?', options: ['월요일', '수요일', '금요일', '토요일', '일요일'], answer: 3,
+    traps: [{ a: 1, note: N_WHAT }, { a: 2, note: N_WHAT }], explain: 'I go swimming on Friday. → 금요일. 월요일은 피아노, 수요일은 축구예요.' },
+]);
+
+export const ENG_VOC_SETS = [ENG_E4_V1, ENG_E4_V2, ENG_E4_V3];
 
 type V = { fastSec?: number; text: string; options: string[]; answer: number; traps?: { a: number; note: string }[]; explain: string };
 export const ENG_VOC_VARIANTS: Record<string, V[]> = {
@@ -203,5 +238,78 @@ export const ENG_VOC_VARIANTS: Record<string, V[]> = {
       traps: [{ a: 2, note: N_WHO }, { a: 3, note: N_WHO }], explain: 'Ben eats rice. → 밥. 빵은 Tom, 시리얼은 Sam이에요.' },
     { text: '글을 읽고 질문에 답하세요.\n\nMy grandma has three hens. My grandpa has two cows. My uncle has a horse.\n\nQ. <b>할아버지</b>가 기르는 동물은?', options: ['암탉', '말', '개', '소', '돼지'], answer: 4,
       traps: [{ a: 1, note: N_WHO }, { a: 2, note: N_WHO }], explain: 'My grandpa has two cows. → 소. 암탉은 할머니, 말은 삼촌이에요.' },
+  ],
+  'ev3-1': [
+    { text: '다음 영어 단어의 뜻은?\nThursday', options: ['월요일', '화요일', '수요일', '목요일', '토요일'], answer: 4,
+      traps: [{ a: 2, note: N_DAY }], explain: 'Thursday = 목요일. Tuesday는 화요일.' },
+    { text: '다음 영어 단어의 뜻은?\nTuesday', options: ['화요일', '목요일', '수요일', '일요일', '금요일'], answer: 1,
+      traps: [{ a: 2, note: N_DAY }], explain: 'Tuesday = 화요일. Thursday는 목요일.' },
+    { text: '다음 영어 단어의 뜻은?\nSaturday', options: ['일요일', '금요일', '월요일', '목요일', '토요일'], answer: 5,
+      traps: [{ a: 1, note: N_DAY }], explain: 'Saturday = 토요일. Sunday는 일요일.' },
+  ],
+  'ev3-2': [
+    { text: '다음 영어 단어의 뜻은?\ncloudy', options: ['맑은', '비 오는', '흐린', '바람 부는', '더운'], answer: 3,
+      traps: [{ a: 2, note: N_WEATHER }], explain: 'cloudy = 흐린(cloud 구름).' },
+    { text: '다음 영어 단어의 뜻은?\nwindy', options: ['바람 부는', '눈 오는', '흐린', '추운', '비 오는'], answer: 1, explain: 'windy = 바람 부는(wind 바람).' },
+    { text: '다음 영어 단어의 뜻은?\nsnowy', options: ['비 오는', '맑은', '바람 부는', '눈 오는', '따뜻한'], answer: 4,
+      traps: [{ a: 1, note: N_WEATHER }], explain: 'snowy = 눈 오는(snow 눈).' },
+  ],
+  'ev3-3': [
+    { text: '다음 영어 숫자에 맞는 수는?\nthirteen', options: ['3', '13', '30', '33', '31'], answer: 2,
+      traps: [{ a: 3, note: N_TEEN }], explain: 'thirteen = 13. thirty = 30.' },
+    { text: '다음 영어 숫자에 맞는 수는?\nsixty', options: ['6', '16', '66', '600', '60'], answer: 5,
+      traps: [{ a: 2, note: N_TEEN }], explain: 'sixty = 60. sixteen = 16.' },
+    { text: '다음 영어 숫자에 맞는 수는?\neighteen', options: ['18', '80', '8', '88', '81'], answer: 1,
+      traps: [{ a: 2, note: N_TEEN }], explain: 'eighteen = 18. eighty = 80.' },
+  ],
+  'ev3-4': [
+    { text: '다음 영어 단어의 뜻은?\nMarch', options: ['3월', '5월', '4월', '1월', '6월'], answer: 1, explain: 'March = 3월. 4월 April, 5월 May.' },
+    { text: '다음 영어 단어의 뜻은?\nAugust', options: ['4월', '8월', '6월', '7월', '10월'], answer: 2, explain: 'August = 8월. 7월 July, 6월 June.' },
+    { text: '다음 영어 단어의 뜻은?\nMay', options: ['3월', '4월', '6월', '7월', '5월'], answer: 5, explain: 'May = 5월.' },
+  ],
+  'ev3-5': [
+    { text: '「금요일」을 영어로 하면?', options: ['Friday', 'Monday', 'Sunday', 'Thursday', 'Tuesday'], answer: 1,
+      traps: [{ a: 4, note: N_DAY }], explain: '금요일 = Friday.' },
+    { text: '「월요일」을 영어로 하면?', options: ['Sunday', 'Tuesday', 'Monday', 'Wednesday', 'Friday'], answer: 3,
+      traps: [{ a: 1, note: N_DAY }], explain: '월요일 = Monday(moon 달).' },
+    { text: '「토요일」을 영어로 하면?', options: ['Sunday', 'Thursday', 'Tuesday', 'Saturday', 'Friday'], answer: 4,
+      traps: [{ a: 1, note: N_DAY }], explain: '토요일 = Saturday. Sunday는 일요일.' },
+  ],
+  'ev3-6': [
+    { text: '「겨울」을 영어로 하면?', options: ['winter', 'summer', 'spring', 'snowy', 'fall'], answer: 1, explain: '겨울 = winter. snowy는 「눈 오는」.' },
+    { text: '「봄」을 영어로 하면?', options: ['summer', 'fall', 'winter', 'spring', 'sunny'], answer: 4, explain: '봄 = spring.' },
+    { text: '「가을」을 영어로 하면?', options: ['spring', 'summer', 'winter', 'windy', 'fall'], answer: 5, explain: '가을 = fall(autumn 이라고도 해요).' },
+  ],
+  'ev3-7': [
+    { text: '다음 시각을 영어로 바르게 나타낸 것은?\n「9시」', options: ['It\'s nine thirty.', 'It\'s ninety.', 'It\'s nine o\'clock.', 'It\'s nineteen.', 'It\'s o\'clock nine.'], answer: 3,
+      traps: [{ a: 1, note: N_TIME }, { a: 2, note: N_TEEN }, { a: 4, note: N_TEEN }, { a: 5, note: N_TIME }], explain: '정각은 o\'clock → nine o\'clock.' },
+    { text: '다음 시각을 영어로 바르게 나타낸 것은?\n「4시 15분」', options: ['It\'s four fifty.', 'It\'s fifteen four.', 'It\'s four o\'clock.', 'It\'s four fifteen.', 'It\'s forty-five.'], answer: 4,
+      traps: [{ a: 1, note: N_TEEN }, { a: 2, note: N_TIME }, { a: 3, note: N_TIME }], explain: '시 → 분: four fifteen. fifty는 50이에요.' },
+    { text: '다음 시각을 영어로 바르게 나타낸 것은?\n「11시 40분」', options: ['It\'s eleven forty.', 'It\'s eleven fourteen.', 'It\'s forty eleven.', 'It\'s eleven o\'clock.', 'It\'s seven forty.'], answer: 1,
+      traps: [{ a: 2, note: N_TEEN }, { a: 3, note: N_TIME }, { a: 4, note: N_TIME }], explain: '시 → 분: eleven forty. fourteen은 14예요.' },
+  ],
+  'ev3-8': [
+    { text: '빈칸에 알맞은 요일은?\nToday is Friday. Tomorrow is ______.', options: ['Thursday', 'Sunday', 'Saturday', 'Monday', 'Friday'], answer: 3,
+      traps: [{ a: 1, note: N_ORDER }], explain: '오늘 금요일 → 내일은 토요일 Saturday.' },
+    { text: '빈칸에 알맞은 요일은?\nToday is Wednesday. Yesterday was ______.', options: ['Tuesday', 'Thursday', 'Monday', 'Friday', 'Sunday'], answer: 1,
+      traps: [{ a: 2, note: N_ORDER }], explain: '오늘 수요일 → 어제(yesterday)는 화요일 Tuesday.' },
+    { text: '빈칸에 알맞은 요일은?\nToday is Saturday. Tomorrow is ______.', options: ['Friday', 'Monday', 'Saturday', 'Sunday', 'Tuesday'], answer: 4,
+      traps: [{ a: 1, note: N_ORDER }], explain: '오늘 토요일 → 내일은 일요일 Sunday.' },
+  ],
+  'ev3-9': [
+    { text: '대화를 읽고 질문에 답하세요.\n\nA: Is it rainy today?\nB: No, it isn\'t. It\'s sunny.\n\nQ. 오늘 날씨는?', options: ['비 옴', '눈 옴', '맑음', '흐림', '바람 붊'], answer: 3,
+      traps: [{ a: 1, note: N_NO }], explain: 'No, it isn\'t.(비 안 와) It\'s sunny. → 맑아요.' },
+    { text: '대화를 읽고 질문에 답하세요.\n\nA: Is it cold outside?\nB: No. It\'s warm and sunny.\n\nQ. 밖의 날씨는?', options: ['춥고 눈 옴', '춥고 맑음', '덥고 비 옴', '따뜻하고 맑음', '시원하고 흐림'], answer: 4,
+      traps: [{ a: 1, note: N_NO }, { a: 2, note: N_NO }], explain: 'No.(춥지 않아) It\'s warm and sunny. → 따뜻하고 맑아요.' },
+    { text: '대화를 읽고 질문에 답하세요.\n\nA: Is it snowing in Jeju?\nB: No, it isn\'t. It\'s raining.\n\nQ. 제주의 날씨는?', options: ['비가 옴', '눈이 옴', '맑음', '바람만 붊', '흐리기만 함'], answer: 1,
+      traps: [{ a: 2, note: N_NO }], explain: 'No, it isn\'t.(눈 안 와) It\'s raining. → 비가 와요.' },
+  ],
+  'ev3-10': [
+    { text: '글을 읽고 질문에 답하세요.\n\nMy birthday is in May. My mom\'s birthday is in July. My dad\'s birthday is in October.\n\nQ. <b>아빠</b> 생일은 몇 월?', options: ['5월', '7월', '8월', '10월', '12월'], answer: 4,
+      traps: [{ a: 1, note: N_WHAT }, { a: 2, note: N_WHAT }], explain: 'My dad\'s birthday is in October. → 10월. 5월은 나, 7월은 엄마예요.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nWe have English on Tuesday and Thursday. We have music on Monday. We have art on Friday.\n\nQ. <b>미술</b> 수업이 있는 요일은?', options: ['월요일', '화요일', '목요일', '수요일', '금요일'], answer: 5,
+      traps: [{ a: 1, note: N_WHAT }, { a: 2, note: N_WHAT }, { a: 3, note: N_WHAT }], explain: 'We have art on Friday. → 금요일. 월요일은 음악, 화·목은 영어예요.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nI get up at seven. I have lunch at twelve. I go to bed at ten.\n\nQ. <b>잠자리에 드는</b> 시각은?', options: ['10시', '7시', '12시', '9시', '11시'], answer: 1,
+      traps: [{ a: 2, note: N_WHAT }, { a: 3, note: N_WHAT }], explain: 'I go to bed at ten. → 10시. 7시는 일어나는 시각, 12시는 점심이에요.' },
   ],
 };
