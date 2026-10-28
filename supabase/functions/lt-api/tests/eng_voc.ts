@@ -142,7 +142,63 @@ export const ENG_E4_V4 = set('eng-e4-v4', '동작·감정 단어', '초4 영어 
     traps: [{ a: 1, note: N_WHAT }, { a: 3, note: N_WHAT }], explain: 'Mom is reading a book. → 책 읽기. 요리는 아빠, 잠은 형(오빠·남동생)이에요.' },
 ]);
 
-export const ENG_VOC_SETS = [ENG_E4_V1, ENG_E4_V2, ENG_E4_V3, ENG_E4_V4];
+
+// ── 한 단어 두 가지 뜻 (다의어·숙어) ──
+const N_MULTI = '단어의 첫 번째 뜻만 외워서, 문장 속에서 쓰인 다른 뜻을 고르지 못함';
+const N_ONOFF = 'on(입다·켜다)과 off(벗다·끄다)를 거꾸로 읽음';
+const N_UPDOWN = 'up(올리다·키우다)과 down(내리다·줄이다)을 거꾸로 읽음';
+const N_LOOK = '비슷하게 생긴 숙어와 헷갈림 (look for 찾다 / look after 돌보다 / look up 찾아보다)';
+
+const areaM = (id: string, name: string, why: string, study: string[]) => ({ id, group: G, name, unit: '뜻이 여러 개인 말', why, study });
+
+export const ENG_E4_V5 = set('eng-e4-v5', '한 단어 두 가지 뜻', '초4 영어 어휘 · 뜻이 여러 개인 단어와 숙어', 12, true, [
+  areaM('a1', '한 단어, 여러 뜻', '같은 단어도 자리에 따라 뜻이 달라져요. 첫 번째 뜻만 외우면 문장이 안 읽혀요.', ['단어장에 뜻이 두 개 이상 적힌 단어는 뜻마다 예문 하나씩 적기', '영단어 앱에서 play·light·right 처럼 뜻이 여러 개인 단어 찾아보기']),
+  areaM('a2', '문장 보고 뜻 고르기', '어느 뜻인지는 앞뒤 단어가 알려 줘요. 혼자 보지 말고 문장째로 봐요.', ['문장에서 그 단어 앞뒤 두 단어에 동그라미 치고 뜻 고르기', '같은 단어로 뜻이 다른 문장 두 개를 직접 만들어 보기']),
+  areaM('a3', '숙어', '단어는 다 아는데 붙여 놓으면 뜻이 달라지는 말이에요. 통째로 외워요.', ['take off·turn down 처럼 짝이 되는 숙어(put on·turn up)를 함께 외우기', '영단어 앱 숙어 표현 하루 5개씩 소리 내어 읽기']),
+], [
+  { id: 'ev5-1', fastSec: 2, area: 'a1', text: 'play 는 뜻이 여러 개예요. 다음 문장에서 play 의 뜻은?\nI <b>play</b> the piano every day.',
+    options: ['놀다', '연주하다', '경기하다', '일하다', '노래하다'], answer: 2,
+    traps: [{ a: 1, note: N_MULTI }, { a: 3, note: N_MULTI }],
+    explain: 'play + the + 악기 → 연주하다. play soccer(경기하다), play with my friends(놀다)와 구별해요.' },
+  { id: 'ev5-2', fastSec: 2, area: 'a1', text: 'watch 는 뜻이 두 개예요. 다음 문장에서 watch 의 뜻은?\nMy <b>watch</b> is new.',
+    options: ['보다', '손목시계', '시계탑', '거울', '지켜보다'], answer: 2,
+    traps: [{ a: 1, note: N_MULTI }, { a: 5, note: N_MULTI }],
+    explain: 'watch = 보다(동사), 손목시계(명사). 앞에 My 가 붙고 is 가 따라오니 물건 → 손목시계.' },
+  { id: 'ev5-3', fastSec: 2, area: 'a1', text: 'light 는 뜻이 두 개예요. 다음 문장에서 light 의 뜻은?\nThis box is <b>light</b>.',
+    options: ['무거운', '가벼운', '빛', '어두운', '불을 켜다'], answer: 2,
+    traps: [{ a: 3, note: N_MULTI }],
+    explain: 'light = 빛(명사), 가벼운(형용사). is 뒤에서 상자의 상태를 말하니 → 가벼운. 무거운은 heavy.' },
+  { id: 'ev5-4', area: 'a1', text: '두 문장에서 <b>right</b> 의 뜻을 바르게 짝지은 것은?\n① Turn <b>right</b> at the bank.\n② Your answer is <b>right</b>.',
+    options: ['① 오른쪽 ② 오른쪽', '① 옳은 ② 옳은', '① 오른쪽 ② 옳은', '① 옳은 ② 오른쪽', '① 바로 ② 오른쪽'], answer: 3,
+    traps: [{ a: 1, note: N_MULTI }, { a: 2, note: N_MULTI }],
+    explain: 'Turn right = 오른쪽으로 돌다. is right = 옳다, 맞다. 같은 단어지만 자리가 다르면 뜻도 달라요.' },
+  { id: 'ev5-5', area: 'a2', text: 'book 이 「예약하다」로 쓰인 문장은?',
+    options: ['I read a <b>book</b>.', 'This <b>book</b> is fun.', 'I want to <b>book</b> a room.', 'Put the <b>book</b> here.', 'She has many <b>books</b>.'], answer: 3,
+    traps: [{ a: 1, note: N_MULTI }],
+    explain: 'to 뒤에 와서 「방을 book 하다」 → 예약하다. 나머지는 모두 「책」이에요.' },
+  { id: 'ev5-6', area: 'a2', text: '밑줄 친 fall 의 뜻은?\nI like <b>fall</b>. The leaves are red and yellow.',
+    options: ['떨어지다', '가을', '넘어지다', '봄', '겨울'], answer: 2,
+    traps: [{ a: 1, note: N_MULTI }, { a: 3, note: N_MULTI }],
+    explain: 'fall = 떨어지다(동사), 가을(명사). like 뒤에 오고 잎이 빨갛다고 했으니 → 가을.' },
+  { id: 'ev5-7', area: 'a3', text: 'take off 는 뜻이 두 개예요. 다음 문장에서는 어느 뜻일까요?\nPlease <b>take off</b> your shoes.',
+    options: ['이륙하다', '벗다', '신다', '가져가다', '치우다'], answer: 2,
+    traps: [{ a: 1, note: N_MULTI }, { a: 3, note: N_ONOFF }],
+    explain: '신발을 take off → 벗다. 비행기가 주어면 The plane takes off.(이륙하다). 반대말은 put on(입다·신다).' },
+  { id: 'ev5-8', area: 'a3', text: 'turn down 은 뜻이 두 개예요. 다음 문장에서는 어느 뜻일까요?\nIt is too loud. Can you <b>turn down</b> the music?',
+    options: ['소리를 키우다', '소리를 줄이다', '거절하다', '음악을 끄다', '음악을 틀다'], answer: 2,
+    traps: [{ a: 1, note: N_UPDOWN }, { a: 3, note: N_MULTI }],
+    explain: 'turn down = ① 소리를 줄이다 ② 거절하다. too loud(너무 시끄러워)가 앞에 있으니 → 소리를 줄이다. 키우는 건 turn up.' },
+  { id: 'ev5-9', area: 'a3', text: 'look 으로 만든 숙어의 뜻이 <b>바르게</b> 짝지어진 것은?',
+    options: ['look for — 돌보다', 'look after — 찾다', 'look up — 찾아보다', 'look like — 둘러보다', 'look around — ~처럼 보이다'], answer: 3,
+    traps: [{ a: 1, note: N_LOOK }, { a: 2, note: N_LOOK }],
+    explain: 'look up = (사전에서) 찾아보다. look for 찾다, look after 돌보다, look like ~처럼 보이다, look around 둘러보다.' },
+  { id: 'ev5-10', area: 'a3', text: '글을 읽고 질문에 답하세요.\n\nMom said, "<b>Turn off</b> the TV." Then she said, "<b>Put on</b> your coat. We are going out."\n\nQ. 내가 해야 할 일 두 가지는?',
+    options: ['TV를 켜고, 코트를 벗기', 'TV를 끄고, 코트를 입기', 'TV를 끄고, 코트를 벗기', 'TV를 켜고, 코트를 입기', '불을 끄고, 신발을 신기'], answer: 2,
+    traps: [{ a: 1, note: N_ONOFF }, { a: 3, note: N_ONOFF }, { a: 4, note: N_ONOFF }],
+    explain: 'turn off = 끄다(turn on 켜다), put on = 입다(take off 벗다). off 는 끄고·벗고, on 은 켜고·입고예요.' },
+]);
+
+export const ENG_VOC_SETS = [ENG_E4_V1, ENG_E4_V2, ENG_E4_V3, ENG_E4_V4, ENG_E4_V5];
 
 type V = { fastSec?: number; text: string; options: string[]; answer: number; traps?: { a: number; note: string }[]; explain: string };
 export const ENG_VOC_VARIANTS: Record<string, V[]> = {
@@ -422,5 +478,91 @@ export const ENG_VOC_VARIANTS: Record<string, V[]> = {
       traps: [{ a: 1, note: N_WHAT }, { a: 2, note: N_WHAT }], explain: 'Sam is writing a letter. → 편지 쓰기.' },
     { text: '글을 읽고 질문에 답하세요.\n\nGrandpa is happy. Grandma is tired. My cousin is angry.\n\nQ. <b>할머니</b>는 어떤 기분인가요?', options: ['피곤함', '기쁨', '화남', '슬픔', '배고픔'], answer: 1,
       traps: [{ a: 2, note: N_WHAT }, { a: 3, note: N_WHAT }], explain: 'Grandma is tired. → 피곤함. 기쁨은 할아버지, 화남은 사촌이에요.' },
+  ],
+  'ev5-1': [
+    { text: '다음 문장에서 play 의 뜻은?\nThey <b>play</b> soccer after school.', options: ['놀다', '연주하다', '경기하다', '일하다', '달리다'], answer: 3,
+      traps: [{ a: 2, note: N_MULTI }], explain: 'play + 운동 이름 → (경기를) 하다. play the piano 는 연주하다.' },
+    { text: '다음 문장에서 play 의 뜻은?\nI <b>play</b> with my dog in the park.', options: ['놀다', '연주하다', '경기하다', '기르다', '산책하다'], answer: 1,
+      traps: [{ a: 2, note: N_MULTI }], explain: 'play with ~ → ~와 놀다.' },
+    { text: '다음 문장에서 play 의 뜻은?\nShe can <b>play</b> the violin very well.', options: ['놀다', '경기하다', '연주하다', '만들다', '듣다'], answer: 3,
+      traps: [{ a: 1, note: N_MULTI }], explain: 'play + the + 악기 → 연주하다.' },
+  ],
+  'ev5-2': [
+    { text: '다음 문장에서 watch 의 뜻은?\nI <b>watch</b> TV with my family.', options: ['손목시계', '보다', '듣다', '고치다', '켜다'], answer: 2,
+      traps: [{ a: 1, note: N_MULTI }], explain: 'I watch TV. → 보다(동사). My watch is new. 는 손목시계.' },
+    { text: '다음 문장에서 watch 의 뜻은?\nMy dad gave me a new <b>watch</b>.', options: ['보다', '손목시계', '사진', '가방', '지켜보다'], answer: 2,
+      traps: [{ a: 1, note: N_MULTI }], explain: 'a new watch → 새 손목시계(물건).' },
+    { text: '다음 문장에서 glasses 의 뜻은?\nI can\'t read it. Where are my <b>glasses</b>?', options: ['유리컵', '안경', '유리', '거울', '창문'], answer: 2,
+      traps: [{ a: 1, note: N_MULTI }], explain: 'glass 는 유리·유리컵, glasses(복수)는 안경. 읽을 수 없다고 했으니 → 안경.' },
+  ],
+  'ev5-3': [
+    { text: '다음 문장에서 light 의 뜻은?\nTurn on the <b>light</b>, please.', options: ['가벼운', '빛(전등)', '무거운', '어두운', '창문'], answer: 2,
+      traps: [{ a: 1, note: N_MULTI }], explain: 'Turn on the light → 전등을 켜다. the 가 붙었으니 물건(명사).' },
+    { text: '다음 문장에서 light 의 뜻은?\nMy bag is very <b>light</b>. I can carry it.', options: ['빛', '가벼운', '무거운', '큰', '새것인'], answer: 2,
+      traps: [{ a: 1, note: N_MULTI }], explain: 'is 뒤에서 가방의 상태 → 가벼운. 들 수 있다고 했어요.' },
+    { text: '다음 문장에서 hard 의 뜻은?\nThis math question is too <b>hard</b>.', options: ['딱딱한', '어려운', '쉬운', '열심히', '단단히'], answer: 2,
+      traps: [{ a: 1, note: N_MULTI }], explain: 'hard = 딱딱한 · 어려운 · 열심히. 수학 문제 이야기니 → 어려운.' },
+  ],
+  'ev5-4': [
+    { text: '두 문장에서 <b>left</b> 의 뜻을 바르게 짝지은 것은?\n① Turn <b>left</b> at the park.\n② He <b>left</b> his bag at home.',
+      options: ['① 왼쪽 ② 왼쪽', '① 두고 갔다 ② 왼쪽', '① 왼쪽 ② 두고 갔다', '① 왼쪽 ② 가져왔다', '① 오른쪽 ② 두고 갔다'], answer: 3,
+      traps: [{ a: 1, note: N_MULTI }], explain: 'Turn left = 왼쪽으로 돌다. left 는 leave(떠나다·두고 가다)의 과거형이기도 해요.' },
+    { text: '두 문장에서 <b>can</b> 의 뜻을 바르게 짝지은 것은?\n① I <b>can</b> swim.\n② Open the <b>can</b>, please.',
+      options: ['① ~할 수 있다 ② 깡통', '① 깡통 ② ~할 수 있다', '① ~할 수 있다 ② ~할 수 있다', '① 깡통 ② 깡통', '① 하고 싶다 ② 병'], answer: 1,
+      traps: [{ a: 3, note: N_MULTI }], explain: 'can = ~할 수 있다(조동사), 깡통(명사). the 가 붙으면 물건이에요.' },
+    { text: '두 문장에서 <b>orange</b> 의 뜻을 바르게 짝지은 것은?\n① I eat an <b>orange</b>.\n② I like <b>orange</b> shoes.',
+      options: ['① 주황색 ② 오렌지', '① 오렌지 ② 주황색', '① 오렌지 ② 오렌지', '① 주황색 ② 주황색', '① 과일 ② 신발'], answer: 2,
+      traps: [{ a: 1, note: N_MULTI }], explain: 'an orange = 오렌지(과일). orange shoes = 주황색 신발(색깔).' },
+  ],
+  'ev5-5': [
+    { text: 'park 가 「주차하다」로 쓰인 문장은?', options: ['We play in the <b>park</b>.', 'The <b>park</b> is big.', 'You can\'t <b>park</b> here.', 'I go to the <b>park</b>.', 'The <b>park</b> has many trees.'], answer: 3,
+      traps: [{ a: 1, note: N_MULTI }], explain: 'can\'t 뒤에 와서 「여기에 park 하면 안 된다」 → 주차하다. 나머지는 공원.' },
+    { text: 'water 가 「물을 주다」로 쓰인 문장은?', options: ['I drink <b>water</b>.', 'The <b>water</b> is cold.', 'I <b>water</b> the flowers every day.', 'Give me some <b>water</b>.', 'Fish live in <b>water</b>.'], answer: 3,
+      traps: [{ a: 1, note: N_MULTI }], explain: '꽃에 water 한다 → 물을 주다(동사). 나머지는 물(명사).' },
+    { text: 'cook 이 「요리사」로 쓰인 문장은?', options: ['I <b>cook</b> dinner.', 'My dad is a <b>cook</b>.', 'Let\'s <b>cook</b> together.', 'She <b>cooks</b> well.', 'He will <b>cook</b> soup.'], answer: 2,
+      traps: [{ a: 1, note: N_MULTI }], explain: 'is a cook → 요리사(사람). 나머지는 요리하다(동사).' },
+  ],
+  'ev5-6': [
+    { text: '밑줄 친 fall 의 뜻은?\nBe careful! You will <b>fall</b>.', options: ['가을', '넘어지다', '달리다', '날다', '앉다'], answer: 2,
+      traps: [{ a: 1, note: N_MULTI }], explain: 'will 뒤에 와서 「넘어질 것이다」 → 넘어지다·떨어지다.' },
+    { text: '밑줄 친 spring 의 뜻은?\nFlowers grow in <b>spring</b>.', options: ['샘물', '용수철', '봄', '여름', '가을'], answer: 3,
+      traps: [{ a: 2, note: N_MULTI }], explain: 'spring = 봄 · 샘 · 용수철. 꽃이 핀다고 했으니 → 봄.' },
+    { text: '밑줄 친 cold 의 뜻은?\nI have a <b>cold</b>. I can\'t go to school.', options: ['추운', '감기', '차가운', '얼음', '열'], answer: 2,
+      traps: [{ a: 1, note: N_MULTI }], explain: 'have a cold → 감기에 걸리다. It is cold.(춥다)와 달라요.' },
+  ],
+  'ev5-7': [
+    { text: 'take off 의 뜻으로 알맞은 것은?\nThe plane will <b>take off</b> at six.', options: ['벗다', '이륙하다', '착륙하다', '기다리다', '멈추다'], answer: 2,
+      traps: [{ a: 1, note: N_MULTI }], explain: '비행기가 주어면 take off = 이륙하다.' },
+    { text: '빈칸에 알맞은 말은?\nIt is cold. ______ your coat.', options: ['Take off', 'Put on', 'Turn off', 'Give up', 'Look for'], answer: 2,
+      traps: [{ a: 1, note: N_ONOFF }], explain: '춥다고 했으니 코트를 입어야 해요 → Put on(입다). Take off 는 벗다.' },
+    { text: '밑줄 친 말의 뜻은?\nShe <b>put on</b> her hat and went out.', options: ['벗었다', '썼다(입었다)', '잃어버렸다', '샀다', '던졌다'], answer: 2,
+      traps: [{ a: 1, note: N_ONOFF }], explain: 'put on = 입다·쓰다·신다. 반대는 take off(벗다).' },
+  ],
+  'ev5-8': [
+    { text: 'turn down 의 뜻으로 알맞은 것은?\nHe <b>turned down</b> my idea.', options: ['소리를 줄였다', '거절했다', '받아들였다', '잊어버렸다', '보냈다'], answer: 2,
+      traps: [{ a: 1, note: N_MULTI }], explain: '생각(idea)을 turn down → 거절하다. 소리에 쓰면 「줄이다」예요.' },
+    { text: '빈칸에 알맞은 말은?\nI can\'t hear it. Please ______ the sound.', options: ['turn down', 'turn up', 'turn off', 'take off', 'put on'], answer: 2,
+      traps: [{ a: 1, note: N_UPDOWN }], explain: '안 들린다고 했으니 소리를 키워야 해요 → turn up.' },
+    { text: '밑줄 친 말의 뜻은?\nDon\'t <b>give up</b>. You can do it!', options: ['포기하다', '일어나다', '올려 주다', '돌려주다', '시작하다'], answer: 1,
+      explain: 'give up = 포기하다. 「할 수 있어」라고 했으니 포기하지 말라는 말이에요.' },
+  ],
+  'ev5-9': [
+    { text: '빈칸에 알맞은 말은?\nI can\'t find my key. I have to ______ it.', options: ['look after', 'look for', 'look up', 'look like', 'look around'], answer: 2,
+      traps: [{ a: 1, note: N_LOOK }], explain: '열쇠를 찾지 못했으니 → look for(찾다). look after 는 돌보다.' },
+    { text: '빈칸에 알맞은 말은?\nMy mom will ______ my baby brother today.', options: ['look for', 'look after', 'look up', 'look out', 'look like'], answer: 2,
+      traps: [{ a: 1, note: N_LOOK }], explain: '아기 동생을 → look after(돌보다).' },
+    { text: '밑줄 친 말의 뜻은?\nYou <b>look like</b> your sister.', options: ['~을 찾다', '~처럼 보이다(닮다)', '~을 돌보다', '~을 찾아보다', '둘러보다'], answer: 2,
+      traps: [{ a: 1, note: N_LOOK }], explain: 'look like ~ = ~처럼 보이다, 닮았다.' },
+  ],
+  'ev5-10': [
+    { text: '글을 읽고 질문에 답하세요.\n\nIt is dark. Dad said, "<b>Turn on</b> the light." Then he said, "<b>Take off</b> your wet socks."\n\nQ. 내가 해야 할 일 두 가지는?',
+      options: ['불을 끄고, 양말을 신기', '불을 켜고, 양말을 벗기', '불을 끄고, 양말을 벗기', '불을 켜고, 양말을 신기', '창문을 닫고, 양말을 벗기'], answer: 2,
+      traps: [{ a: 1, note: N_ONOFF }, { a: 4, note: N_ONOFF }], explain: 'turn on = 켜다, take off = 벗다.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nThe movie is starting. Mom said, "<b>Turn off</b> your phone and <b>sit down</b>."\n\nQ. 내가 해야 할 일 두 가지는?',
+      options: ['전화를 켜고, 일어서기', '전화를 끄고, 앉기', '전화를 끄고, 일어서기', '전화를 켜고, 앉기', '전화를 걸고, 앉기'], answer: 2,
+      traps: [{ a: 1, note: N_ONOFF }, { a: 3, note: N_ONOFF }], explain: 'turn off = 끄다, sit down = 앉다.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nBefore bed, I <b>brush my teeth</b> and <b>put away</b> my toys.\n\nQ. 자기 전에 내가 하는 일 두 가지는?',
+      options: ['이를 닦고, 장난감을 꺼내기', '이를 닦고, 장난감을 치우기', '손을 씻고, 장난감을 치우기', '이를 닦고, 책을 읽기', '세수하고, 장난감을 치우기'], answer: 2,
+      explain: 'brush my teeth = 이를 닦다, put away = 치우다·넣어 두다.' },
   ],
 };
