@@ -147,7 +147,7 @@ export const ENG_VOC_VARIANTS: Record<string, V[]> = {
   ],
   'ev2-1': [
     { text: '다음 영어 단어의 뜻은?\nturtle', options: ['토끼', '오리', '거북', '개구리', '뱀'], answer: 3, explain: 'turtle = 거북.' },
-    { text: '다음 영어 단어의 뜻은?\nduck', options: ['닭', '새', '거위', '펭귄', '오리'], answer: 5, explain: 'duck = 오리. 닭 chicken, 새 bird.' },
+    { text: '다음 영어 단어의 뜻은?\nduck', options: ['닭', '고양이', '거위', '펭귄', '오리'], answer: 5, explain: 'duck = 오리. 닭 chicken, 거위 goose.' },
     { text: '다음 영어 단어의 뜻은?\nmonkey', options: ['원숭이', '곰', '사자', '호랑이', '기린'], answer: 1, explain: 'monkey = 원숭이.' },
   ],
   'ev2-2': [
@@ -185,7 +185,7 @@ export const ENG_VOC_VARIANTS: Record<string, V[]> = {
   ],
   'ev2-8': [
     { text: '빈칸에 알맞은 말은?\nCows give us ______.', options: ['juice', 'milk', 'bread', 'eggs', 'rice'], answer: 2, explain: '소(cows)는 우유(milk)를 줘요.' },
-    { text: '빈칸에 알맞은 말은?\nHens give us ______.', options: ['milk', 'juice', 'apples', 'eggs', 'meat'], answer: 4, explain: '암탉(hens)은 달걀(eggs)을 낳아요.' },
+    { text: '빈칸에 알맞은 말은?\nHens give us ______.', options: ['milk', 'juice', 'apples', 'eggs', 'shoes'], answer: 4, explain: '암탉(hens)은 달걀(eggs)을 낳아요.' },
     { text: '빈칸에 알맞은 말은?\nI\'m hungry. I want some ______.', options: ['water', 'sleep', 'pizza', 'shoes', 'music'], answer: 3, explain: 'hungry(배고픈) → 먹을 것 pizza.' },
   ],
   'ev2-9': [
