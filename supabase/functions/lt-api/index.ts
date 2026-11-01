@@ -33,25 +33,26 @@ import { UNIT_SETS } from './tests/rec_units.ts';
 import { E4_SETS } from './tests/e4_sets.ts';
 import { GEO_E } from './tests/geo_e.ts';
 import { ENG_DIAG, engReliability } from './tests/eng_diag.ts';
-import { ENG_GRAM_SETS, ENG_VARIANTS } from './tests/eng_gram.ts';
-import { ENG_VOC_SETS, ENG_VOC_VARIANTS } from './tests/eng_voc.ts';
-import { ENG_M1_MW, ENG_M1_MW_VARIANTS } from './tests/eng_m1_mw.ts';
-import { ENG_M1_PH, ENG_M1_PH_VARIANTS } from './tests/eng_m1_ph.ts';
-import { ENG_SQ_SETS, ENG_SQ_VARIANTS } from './tests/eng_sq_check.ts';
+import { ENG_GRAM_SETS } from './tests/eng_gram.ts';
+import { ENG_VOC_SETS } from './tests/eng_voc.ts';
+import { ENG_M1_MW } from './tests/eng_m1_mw.ts';
+import { ENG_M1_PH } from './tests/eng_m1_ph.ts';
+import { ENG_SQ_SETS } from './tests/eng_sq_check.ts';
 import { MATH_EQW_SETS } from './tests/math_eqw.ts';
 import { MATH_M2_SETS } from './tests/math_m2.ts';
 import { grade } from './grade.ts';
 import { makeTwin, hasTwin, makeRng } from './twins.ts';
+import { usesVariants, variantsOf } from './variants.ts';
 import { KOR_M1_DIAG, KOR_E4_DIAG } from './tests/kor_diag.ts';
-import { SCI_GAS_SETS, SCI_TWINS } from './tests/sci_gas.ts';
-import { SCI_FORCE_SETS, SCI_FORCE_TWINS } from './tests/sci_force.ts';
-import { SCI_GAS_UNIT, SCI_GAS_UNIT_TWINS } from './tests/sci_gas_unit.ts';
-import { KOR_M1_GRAMMAR, KOR_GRAMMAR_TWINS } from './tests/kor_m1_grammar.ts';
-import { KOR_E4_READ, KOR_READ_TWINS } from './tests/kor_e4_read.ts';
-import { KOR_M1_LIT, KOR_LIT_TWINS } from './tests/kor_m1_lit.ts';
-import { KOR_M1_READ, KOR_READ_M1_TWINS } from './tests/kor_m1_read.ts';
+import { SCI_GAS_SETS } from './tests/sci_gas.ts';
+import { SCI_FORCE_SETS } from './tests/sci_force.ts';
+import { SCI_GAS_UNIT } from './tests/sci_gas_unit.ts';
+import { KOR_M1_GRAMMAR } from './tests/kor_m1_grammar.ts';
+import { KOR_E4_READ } from './tests/kor_e4_read.ts';
+import { KOR_M1_LIT } from './tests/kor_m1_lit.ts';
+import { KOR_M1_READ } from './tests/kor_m1_read.ts';
 import { GEO_SETS } from './tests/geo_sets.ts';
-import { KOR_V5_SETS, KOR_V5_TWINS } from './tests/kor_m1_vocab5.ts';
+import { KOR_V5_SETS } from './tests/kor_m1_vocab5.ts';
 import { health, NO_PROFILE, pubOf, toStored } from './students.ts';
 import { attemptCoach, dailyCoach, PLAN, SQ_USER, sqSummary } from './coach.ts';
 import { handleWork } from './work.ts';
@@ -119,7 +120,7 @@ async function wrongSources(sb: any, student: string, base: any) {
     .neq('status', 'in_progress').order('started_at', { ascending: false }).limit(1);
   const last = data && data[0]; if (!last) return [];
   const qs = last.questions || base.questions;
-  return unresolvedOf(last).filter((id) => canTwin(id) && base.questions.some((q: any) => q.id === id)).slice(0, MAX_SRC).map((id) => {
+  return unresolvedOf(last).filter((id) => canTwin(base.id, id) && base.questions.some((q: any) => q.id === id)).slice(0, MAX_SRC).map((id) => {
     const src = base.questions.find((q: any) => q.id === id), area = base.areas.find((a: any) => a.id === src.area);
     const ps = (last.result.perQ || []).filter((p: any) => srcId(p.id) === id && !p.correct), p = ps[ps.length - 1];
     const q = (p && qs.find((x: any) => x.id === p.id)) || src;
@@ -127,12 +128,11 @@ async function wrongSources(sb: any, student: string, base: any) {
       given: p ? p.given : null, dk: !!(p && p.dk), trap: p ? p.trap : null, explain: q.explain || '', tip: area && area.study ? area.study[1] || area.study[0] : '' } };
   });
 }
-// 다시 풀기 문제 만들기: 수학은 twins.ts 생성기, 국어·영어·과학은 과목 파일의 변형 문항(<과목>_VARIANTS[원래 문항 id])
-const VARIANTS: Record<string, any[]> = { ...SCI_TWINS, ...SCI_FORCE_TWINS, ...SCI_GAS_UNIT_TWINS, ...ENG_VARIANTS, ...ENG_VOC_VARIANTS, ...ENG_SQ_VARIANTS, ...KOR_GRAMMAR_TWINS, ...KOR_READ_TWINS, ...KOR_LIT_TWINS, ...KOR_READ_M1_TWINS, ...KOR_V5_TWINS };
-const canTwin = (id: string) => hasTwin(id) || !!VARIANTS[id]?.length;
-function twinOf(src: any, sd: number, used: string[] = []) {
-  if (hasTwin(src.id)) { const t = makeTwin(src, sd); if (t && t.fastSec == null && src.fastSec != null) t.fastSec = src.fastSec; return t; } // 찍기 경고 기준은 변형도 원래 문항을 따른다
-  const vs = VARIANTS[src.id]; if (!vs?.length) return null;
+// 다시 풀기 문제 만들기: 수학은 twins.ts 생성기, 국어·영어·과학은 과목 파일의 변형 문항(variants.ts, 문제지 id + 원래 문항 id 로 찾는다)
+const canTwin = (testId: string, id: string) => usesVariants(testId) ? variantsOf(testId, id).length > 0 : hasTwin(id);
+function twinOf(testId: string, src: any, sd: number, used: string[] = []) {
+  if (!usesVariants(testId)) { if (!hasTwin(src.id)) return null; const t = makeTwin(src, sd); if (t && t.fastSec == null && src.fastSec != null) t.fastSec = src.fastSec; return t; } // 찍기 경고 기준은 변형도 원래 문항을 따른다
+  const vs = variantsOf(testId, src.id); if (!vs.length) return null;
   const n = used.filter((id) => srcId(id) === src.id).length, k = n % vs.length, v = vs[k];
   // 변형을 다 쓰고 다시 낼 때만 보기 순서를 섞는다(같은 문제를 같은 자리로 외워 고르지 않게). keepOrder 보기(1개~5개처럼 순서가 있는 것)는 그대로
   const idx = v.options.map((_: any, i: number) => i);
@@ -375,7 +375,7 @@ Deno.serve(async (req) => {
       const sid = srcId(q.id), o = m[sid];
       if (!o.mastered && !o.stopped && o.pending === 0) {
         const src = baseOf(row.test_id).questions.find((x: any) => x.id === sid);
-        const t = src && twinOf(src, seed(), questions.map((x: any) => x.id));
+        const t = src && twinOf(baseOf(row.test_id).id, src, seed(), questions.map((x: any) => x.id));
         if (t) { questions = [...questions, t]; m = masteryOf(questions, answers); }
       }
       await sb.from('lt_attempts').update({ answers, qtimes, questions, saved_at: new Date().toISOString() }).eq('id', row.id).eq('status', 'in_progress');
@@ -410,7 +410,7 @@ Deno.serve(async (req) => {
         const srcs = await wrongSources(sb, student, test);
         if (!srcs.length) return json({ error: '다시 풀 틀린 문제가 없어요 🎉' }, 400);
         if (await retryLocked(sb, student, test)) return json({ error: LOCK_MSG }, 400);
-        questions = srcs.map((x: any) => twinOf(x.src, seed())).filter(Boolean);
+        questions = srcs.map((x: any) => twinOf(test.id, x.src, seed())).filter(Boolean);
         test = retryTest(test, questions);
       }
       const startedAt = new Date(now).toISOString();
