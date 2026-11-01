@@ -8,7 +8,7 @@
 // POST { action, ... }
 //   catalog                         시험 목록(문제 없음)
 //   version                         시험별 내용 해시(배포 확인용)
-//   progress {student}              문제지 목록 화면용: 시험별 푼 횟수·최근/최고 점수(정답·리포트 링크 없음)
+//   progress {student}              문제지 목록 화면용: 시험별 푼 횟수·최근/최고 점수(정답·리포트 링크 없음) + open(아빠가 열어 준 문제지 id, lt_open_sets)
 //   avatars                         문제지 목록 이름 버튼 사진 {이름: data URI} (public.lt_avatars, 저장소에는 사진 없음)
 //   retryInfo {testId, student}     틀린 문제 다시 풀기 안내(testId 는 '<문제지 id>:re') — 해결 못 한 유형 수와 유형별 설명 카드
 //   start {testId: '<id>:re', …}    해결 못 한 유형마다 비슷한 문제(twins.ts) 1개로 시작. 만든 문제는 lt_attempts.questions 에 저장
@@ -331,7 +331,9 @@ Deno.serve(async (req) => {
         progress[id].retry = { wrong, locked, inProgress: rows.some((r: any) => r.test_id === base.id + RE && r.status === 'in_progress'),
           rounds: rows.filter((r: any) => r.test_id === base.id + RE && r.status !== 'in_progress').length };
       }
-      return json({ student: pubOf(student), progress });
+      // 허브에 보일 문제지: 아빠가 연 것(lt_open_sets). 테이블이 없거나 읽기에 실패하면 open 을 빼서 허브가 전부 보여 준다(배포 순서가 어긋나도 빈 화면이 되지 않게)
+      const { data: openRows, error: openErr } = await sb.from('lt_open_sets').select('test_id').eq('student', pubOf(student));
+      return json({ student: pubOf(student), progress, ...(openErr ? {} : { open: (openRows || []).map((r: any) => r.test_id) }) });
     }
 
     if (action === 'avatars') {
