@@ -157,7 +157,7 @@
     app.innerHTML = '<div style="padding-top:80px"><div class="spin"></div></div>';
     Promise.all([catalog ? Promise.resolve(catalog) : LT.api('catalog'), LT.api('progress', { student: name }), loadAvatars()]).then(function (r) {
       catalog = r[0];
-      render(s, r[1].progress || {});
+      render(s, r[1].progress || {}, Array.isArray(r[1].open) ? r[1].open : null);
     }).catch(function (e) {
       app.innerHTML = '<div class="card" style="text-align:center"><div style="font-size:36px">😵</div><p class="sub">' + LT.esc(e.message) +
         '</p><button class="btn" style="margin-top:14px" onclick="location.reload()">다시 시도</button></div>';
@@ -199,21 +199,34 @@
     return h + '</div></div>';
   }
 
-  function render(s, progress) {
+  // 허브에는 아빠가 열어 준 문제지(open)만 보인다. 이미 푼 것·풀던 것·다시 풀기가 남은 것은 계속 보인다. open 이 없으면(서버가 아직 모르는 때) 전부 보인다.
+  function shown(id, progress, open) {
+    if (!open) return true;
+    var p = progress[id];
+    return open.indexOf(id) >= 0 || !!(p && (p.done > 0 || p.inProgress || p.count > 0));
+  }
+  function render(s, progress, open) {
     document.title = s.nick + ' · 공부 문제지';
-    var sets = s.sets.map(function (id) { return { id: id, when: WHEN[id] }; });
+    var vis = function (x) { return shown(x.id, progress, open); };
+    var sets = s.sets.map(function (id) { return { id: id, when: WHEN[id] }; }).filter(vis);
+    var anyShown = false;
     var doneN = sets.filter(function (x) { return progress[x.id] && progress[x.id].done > 0; }).length;
     var h = '<div class="card"><div class="top"><h1>' + face(s) + LT.esc(s.nick) + '</h1><button class="switch" id="switch">이름 바꾸기</button></div>' +
-      (s.sets.length ? '<div class="sum"><b>' + (s.setsLabel || '수학 · 초등 복습 문제지') + ' ' + s.sets.length + '개 중 ' + doneN + '개 완료</b>' + (doneN === s.sets.length ? ' 🎉' : '') +
-      '<div class="bar"><i style="width:' + Math.max(3, doneN / s.sets.length * 100) + '%"></i></div></div>' +
+      (sets.length ? '<div class="sum"><b>' + (s.setsLabel || '수학 · 초등 복습 문제지') + ' ' + sets.length + '개 중 ' + doneN + '개 완료</b>' + (doneN === sets.length ? ' 🎉' : '') +
+      '<div class="bar"><i style="width:' + Math.max(3, doneN / sets.length * 100) + '%"></i></div></div>' +
       '<p class="muted" style="margin:12px 0 0">위에서부터 하나씩! 그 단원 EBS 강의 먼저 보고 → 문제지 풀기 → 틀린 문제는 풀이 보고 다시. 3일 뒤에 「다시 풀기」로 한 번 더 풀어요.</p>'
-      : '<p class="muted" style="margin:12px 0 0">레벨테스트로 어디가 약한지 먼저 알아볼게요. 연습장과 연필 준비하고, 모르는 건 찍지 말고 「잘 모르겠어요」!</p>') + '</div>';
+      : (s.sets.length ? '' : '<p class="muted" style="margin:12px 0 0">레벨테스트로 어디가 약한지 먼저 알아볼게요. 연습장과 연필 준비하고, 모르는 건 찍지 말고 「잘 모르겠어요」!</p>')) + '</div>';
     (s.extra || []).forEach(function (g) {
-      var cards = g.items.map(function (x) { return card(x, '✎', s.code, progress[x.id]); }).filter(Boolean);
+      var cards = g.items.filter(vis).map(function (x) { return card(x, '✎', s.code, progress[x.id]); }).filter(Boolean);
+      if (cards.length) anyShown = true;
       if (cards.length) h += '<div class="sec">' + LT.esc(g.label) + '</div>' + cards.join('');
     });
-    if (s.sets.length) h += '<div class="sec">' + (s.setsLabel || '수학 · 초등 복습 문제지') + '</div>' + sets.map(function (x, i) { return card(x, i + 1, s.code, progress[x.id]); }).join('');
-    if (s.tests.length) h += '<div class="sec">수학 레벨테스트</div>' + s.tests.map(function (x, i) { return card(x, 'T', s.code, progress[x.id]); }).join('');
+    if (sets.length) anyShown = true;
+    if (sets.length) h += '<div class="sec">' + (s.setsLabel || '수학 · 초등 복습 문제지') + '</div>' + sets.map(function (x, i) { return card(x, i + 1, s.code, progress[x.id]); }).join('');
+    var tests = s.tests.filter(vis);
+    if (tests.length) anyShown = true;
+    if (tests.length) h += '<div class="sec">수학 레벨테스트</div>' + tests.map(function (x, i) { return card(x, 'T', s.code, progress[x.id]); }).join('');
+    if (!anyShown) h += '<div class="card" style="text-align:center"><div style="font-size:36px">🌱</div><p class="sub">지금은 풀 문제지가 없어요.<br>아빠가 새 문제지를 열어 주면 여기에 나타나요!</p></div>';
     app.innerHTML = h;
     LT.coachFab(s.code);
     app.style.paddingBottom = '88px'; // 고정 코치 버튼이 마지막 카드를 가리지 않게
