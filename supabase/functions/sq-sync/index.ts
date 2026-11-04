@@ -1,5 +1,5 @@
 // 영단어 앱(StudyQuest) 포인트·진도 동기화. 원본은 bliss 저장소의 sq-sync(v33) — studyquest HQ가 관리하며
-// 2026-10-25 아빠 결정으로 「틀린 문제가 있는 판은 보류, 오답 풀이를 전부 맞히면 지급」을 넣었다(sq_point_hold).
+// 2026-10-25 「틀린 문제가 있는 판은 보류, 오답 풀이를 전부 맞히면 지급」(sq_point_hold) → 2026-11-04 「맞힌 비율만큼 바로 지급, 나머지만 보류」(sq_split_round).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const CORS={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'content-type, authorization, apikey','Access-Control-Allow-Methods':'POST, OPTIONS'};
 const json=(b,s=200)=>new Response(JSON.stringify(b),{status:s,headers:{...CORS,'content-type':'application/json'}});
@@ -50,9 +50,10 @@ Deno.serve(async (req)=>{
     if(asked>0){
       let aw=null;
       if(REVIEW_OF[source]&&wrongN>0){
-        // 틀린 문제가 있는 판 → 보류(오답 풀이를 전부 맞히면 지급)
-        const r=await sb.rpc('sq_hold_round',{p_user:uname,p_amount:want,p_round:rid,p_source:source,p_asked:asked,p_detail:safeDetail,p_wrong:wrongN});
-        if(r.error)throw r.error; aw=r.data; held=Number(aw&&aw.held)||0; rule='held';
+        // 틀린 문제가 있는 판 → 맞힌 비율만큼(내림) 바로 지급, 나머지만 보류(오답 풀이를 전부 맞히면 지급). 전부 틀리면 지급 0
+        const paid=Math.floor(want*(qn-wrongN)/qn);
+        const r=await sb.rpc('sq_split_round',{p_user:uname,p_pay:paid,p_hold:want-paid,p_cap:dailyCap,p_round:rid,p_source:source,p_asked:asked,p_detail:safeDetail,p_wrong:wrongN});
+        if(r.error)throw r.error; aw=r.data; held=Number(aw&&aw.held)||0; rule='split';
       }else if(BASE_OF[source]&&(wrongN>0||!qn)){
         // 오답 풀이에서 또 틀림 → 이번 판은 지급 없음(다시 풀어서 전부 맞혀야 함). 기록만 0점으로
         const r=await sb.rpc('sq_award_round',{p_user:uname,p_add:0,p_cap:dailyCap,p_round:rid,p_source:source,p_asked:asked,p_detail:safeDetail});
@@ -69,7 +70,7 @@ Deno.serve(async (req)=>{
       }
       if(aw&&aw.ok){ points=aw.points; totalPoints=aw.totalPoints; if(aw.dailyPoints!=null)dailyPoints=aw.dailyPoints; added=(Number(aw.added)||0)+released; dup=!!aw.dup; }
     }
-    const clamped=!dup&&!held&&rule!=='review-not-perfect'&&asked>added-released;
+    const clamped=!dup&&rule!=='split'&&rule!=='review-not-perfect'&&asked>added-released;
     if(dup)console.error('duplicate round ignored',uname,'round',rid,'asked',asked);
     else if(clamped)console.error('point clamp',uname,'asked',asked,'->',added,'perRound',perRound,'dailyCap',dailyCap);
     const bc=Math.min(Math.max(acc.best_combo||0,Math.floor(Number(combo)||0)),Math.max(1,Math.min(60,Number(cfg.questions||30))));
