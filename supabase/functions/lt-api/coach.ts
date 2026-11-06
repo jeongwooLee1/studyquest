@@ -8,7 +8,7 @@ import { CODES, PROFILES } from './students.ts';
 const PLAN_BY_CODE: Record<string, { emoji: string; sets: string[]; wait?: string[]; tests: string[] }> = {
   k1: { emoji: '🐰', sets: ['u-mix', 'u-div', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'm2-solid', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'eng-m1-mw', 'eng-m1-ph', 'kor-m1-v5-1', 'kor-m1-v5-2', 'kor-m1-v5-3', 'kor-m1-v5-4', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
   k2: { emoji: '🐻', sets: ['u-mix', 'u-div', 'u-red', 'u-red-cmp', 'u-addf', 'g-area', 'g-circle', 'g-solid', 'm-eq-word', 'm2-basic', 'm2-cons', 'm2-poly', 'm2-circ', 'm2-solid', 'u-fdiv', 'u-ddiv', 'sci-n50', 'sci-n54', 'sci-gas-unit', 'sci-n37', 'sci-n38', 'sci-n39', 'sci-n40', 'sci-n41', 'eng-m1-past', 'eng-m1-modal', 'eng-m1-inf', 'eng-m1-comp', 'kor-m1-grammar', 'kor-m1-lit', 'kor-m1-read', 'eng-m1-mw', 'eng-m1-ph', 'u-ratio', 'u-prop'], wait: ['u-ratio', 'u-prop'], tests: ['geo-e', 'math-m1', 'eng-m1-diag', 'kor-m1-diag', 'sci-gas-diag'] },
-  k3: { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec', 'h-tri', 'h-quad', 'h-graph', 'h-poly', 'h-poly2', 'kor-e4-read', 'eng-sq-check', 'eng-e4-v1', 'eng-e4-v2', 'eng-e4-v3', 'eng-e4-v4', 'eng-e4-v5'], tests: ['math-e4', 'eng-e4-diag', 'kor-e4-diag'] },
+  k3: { emoji: '🐥', sets: ['h-frac', 'h-word', 'h-dec', 'h-tri', 'h-quad', 'h-graph', 'h-poly', 'h-poly2', 'kor-e4-read', 'eng-sq-check', 'eng-e4-v1', 'eng-e4-v2', 'eng-e4-v3', 'eng-e4-v4', 'eng-e4-v5', 'eng-e4-v6'], tests: ['math-e4', 'eng-e4-diag', 'kor-e4-diag'] },
 };
 // 아래 둘은 DB 에 저장된 학생 값(실명, secret STUDENT_PROFILES 의 name)이 키다 — 코드에는 이름이 없고 시작할 때 채운다
 export const PLAN: Record<string, { emoji: string; sets: string[]; wait?: string[]; tests: string[] }> = {};
@@ -53,6 +53,7 @@ export const LECTURES: Record<string, string> = {
   'eng-m1-mw': '강의 없이 — 아는 단어가 문장 속에서 다른 뜻으로 쓰인 것(run·kind·mean·change·leave)을 예문과 함께 읽고 풀기',
   'eng-m1-ph': '강의 없이 — 구동사·숙어(put off·give up·get along with·make up·turn down)를 예문과 함께 읽고 풀기',
   'eng-e4-v5': '강의 없이 — 뜻이 두 개인 단어(play·light·right)와 숙어(take off·turn down)를 예문과 함께 읽고 풀기',
+  'eng-e4-v6': 'EBS 초등 「초등 영어 4학년」 단어 복습 — 옷·색깔·가격',
   'g-solid': 'EBS 초등 「만점왕 수학 6-1」 「각기둥과 각뿔」·「직육면체의 부피와 겉넓이」, 6-2 「원기둥, 원뿔, 구」 개념 강의',
   'eng-m1-inf': 'EBS 중학 프리미엄 중1 영어 문법 「to부정사」·「동명사」 강의',
   'eng-m1-comp': 'EBS 중학 프리미엄 중1 영어 문법 「비교급·최상급」 강의',

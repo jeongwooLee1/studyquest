@@ -3,6 +3,8 @@
 //   eng-e4-v2  음식·동물 단어(10): 뜻 알기 · 영어 단어 고르기·분류 · 문장·글 속 단어(좋아한다/좋아하지 않는다, 누구)
 //   eng-e4-v3  시간·날씨·요일 단어(10): 요일·달·계절·날씨·숫자 · 시각 읽기 · 요일 순서 · No 뒤 끝까지 읽기
 //   eng-e4-v4  동작·감정 단어(10): 동작·기분·몸 상태 · can't · because · 누가 무엇을
+//   eng-e4-v5  한 단어 두 가지 뜻(10): 다의어 · 숙어
+//   eng-e4-v6  옷·색깔·가격 단어(10): 옷·색깔·싼/비싼 · 날씨에 맞는 옷 · How much · 누가 무엇을 샀는지
 // 다시 풀기용 변형 문항은 ENG_VOC_VARIANTS[원래 문항 id] 에 3개씩(sci_gas.ts·eng_gram.ts 와 같은 형식).
 // fastSec: 2 = 단어 하나만 알면 바로 풀리는 문항(뜻 알기·영어 단어 고르기). 찍기 경고를 2초 미만일 때만 띄운다. 문장·글을 읽는 문항은 기본 5초.
 // 표기: 줄바꿈 \n, 강조 <b>…</b>. '$'는 쓰지 않는다. 문항 id 는 세트마다 접두어(학교·가족 'ev1-', 음식·동물 'ev2-', 시간·날씨 'ev3-', 동작·감정 'ev4-').
@@ -198,7 +200,43 @@ export const ENG_E4_V5 = set('eng-e4-v5', '한 단어 두 가지 뜻', '초4 영
     explain: 'turn off = 끄다(turn on 켜다), put on = 입다(take off 벗다). off 는 끄고·벗고, on 은 켜고·입고예요.' },
 ]);
 
-export const ENG_VOC_SETS = [ENG_E4_V1, ENG_E4_V2, ENG_E4_V3, ENG_E4_V4, ENG_E4_V5];
+// ── 옷·색깔·가격 단어 ──
+const N_CLOTH = '옷 단어를 헷갈림 (skirt 치마 / pants 바지 / socks 양말 / gloves 장갑)';
+const N_COLOR = '색깔 단어를 헷갈림 (yellow 노란색 / orange 주황색 / purple 보라색 / pink 분홍색)';
+const N_PRICE = '가격 말을 헷갈림 (cheap 싼 / expensive 비싼)';
+const N_WEAR = '날씨와 옷을 연결하지 못함 (추운 날 scarf·gloves / 더운 날 shorts·sandals)';
+const N_NUM ='숫자 단위를 헷갈림 (five thousand 5,000 / fifteen thousand 15,000 / five hundred 500)';
+
+const areaC = (id: string, name: string, why: string, study: string[]) => ({ id, group: G, name, unit: '옷·색깔·가격', why, study });
+
+export const ENG_E4_V6 = set('eng-e4-v6', '옷·색깔·가격 단어', '초4 영어 어휘 · 옷, 색깔, 값 묻기', 10, true, [
+  areaC('a1', '뜻 알기', '옷과 색깔 단어는 가게·날씨 대화에서 자주 나와요.', ['EBS 초등 「초등 영어 4학년」 단어 복습', '입고 있는 옷을 보면서 영어로 말해 보기(skirt, socks, gloves)']),
+  areaC('a2', '영어 단어 고르기', '생김새가 비슷한 단어(shirt–skirt, socks–shorts)를 구분해서 골라야 해요.', ['EBS 초등 「초등 영어 4학년」 단어 복습', 'shirt–skirt, socks–shorts 처럼 헷갈리는 짝 카드 만들기']),
+  areaC('a3', '문장·글 속 단어', '날씨에 맞는 옷, 값(How much), 누가 무엇을 샀는지 끝까지 읽어야 맞힐 수 있어요.', ['글에서 색깔 단어와 값에 밑줄 치기', '질문의 사람(나, 그, 엄마)에 동그라미 치고 그 사람 문장만 다시 읽기']),
+], [
+  { id: 'ev6-1', fastSec: 2, area: 'a1', text: '다음 영어 단어의 뜻은?\nskirt', options: ['바지', '치마', '모자', '양말', '장갑'], answer: 2,
+    traps: [{ a: 1, note: N_CLOTH }], explain: 'skirt = 치마. 바지는 pants, 셔츠는 shirt.' },
+  { id: 'ev6-2', fastSec: 2, area: 'a1', text: '다음 영어 단어의 뜻은?\ngloves', options: ['양말', '모자', '신발', '장갑', '목도리'], answer: 4,
+    traps: [{ a: 1, note: N_CLOTH }], explain: 'gloves = 장갑(손에 껴요). 양말은 socks, 목도리는 scarf.' },
+  { id: 'ev6-3', fastSec: 2, area: 'a1', text: '다음 영어 단어의 뜻은?\npurple', options: ['분홍색', '주황색', '보라색', '갈색', '회색'], answer: 3,
+    traps: [{ a: 1, note: N_COLOR }], explain: 'purple = 보라색. 분홍색은 pink, 주황색은 orange.' },
+  { id: 'ev6-4', fastSec: 2, area: 'a2', text: '「양말」을 영어로 하면?', options: ['shoes', 'shirt', 'scarf', 'cap', 'socks'], answer: 5,
+    traps: [{ a: 1, note: N_CLOTH }], explain: '양말 = socks. shoes는 신발, scarf는 목도리.' },
+  { id: 'ev6-5', fastSec: 2, area: 'a2', text: '「노란색」을 영어로 하면?', options: ['yellow', 'orange', 'brown', 'pink', 'gold'], answer: 1,
+    traps: [{ a: 2, note: N_COLOR }], explain: '노란색 = yellow. 주황색은 orange, 갈색은 brown.' },
+  { id: 'ev6-6', fastSec: 2, area: 'a2', text: '「싼(값이 낮은)」을 영어로 하면?', options: ['expensive', 'new', 'small', 'old', 'cheap'], answer: 5,
+    traps: [{ a: 1, note: N_PRICE }], explain: '싼 = cheap. 비싼은 expensive.' },
+  { id: 'ev6-7', area: 'a3', text: '대화의 빈칸에 알맞은 말은?\nA: It\'s cold today.\nB: Put on your ______.', options: ['sandals', 'shorts', 'scarf', 'T-shirt', 'swimsuit'], answer: 3,
+    traps: [{ a: 4, note: N_WEAR }], explain: '추운 날 → 목도리 scarf. 샌들·반바지·티셔츠·수영복은 더운 날 입어요.' },
+  { id: 'ev6-8', area: 'a3', text: '대화를 읽고 질문에 답하세요.\n\nA: How much is this cap?\nB: It\'s five thousand won.\n\nQ. 모자의 값은?', options: ['500원', '5,000원', '50,000원', '15,000원', '4,000원'], answer: 2,
+    traps: [{ a: 1, note: N_NUM }, { a: 3, note: N_NUM }, { a: 4, note: N_NUM }], explain: 'five thousand = 5,000. five hundred는 500, fifteen thousand는 15,000.' },
+  { id: 'ev6-9', area: 'a3', text: '글을 읽고 질문에 답하세요.\n\nMina likes the blue shirt. But it is too expensive. So she buys a red shirt.\n\nQ. 미나가 <b>산</b> 것은?', options: ['파란 셔츠', '파란 치마', '빨간 치마', '빨간 셔츠', '아무것도 사지 않았다'], answer: 4,
+    traps: [{ a: 1, note: N_WHAT }], explain: 'But 뒤에 파란 셔츠는 너무 비싸다고 했고, So she buys a red shirt. → 빨간 셔츠.' },
+  { id: 'ev6-10', area: 'a3', text: '글을 읽고 질문에 답하세요.\n\nMy brother has a black cap and white sneakers. I have a white cap and black sneakers.\n\nQ. <b>나</b>는 무엇을 가지고 있나요?', options: ['흰 모자와 검은 운동화', '검은 모자와 흰 운동화', '검은 모자와 검은 운동화', '흰 모자와 흰 운동화', '검은 모자와 흰 양말'], answer: 1,
+    traps: [{ a: 2, note: N_WHAT }], explain: 'I have a white cap and black sneakers. → 흰 모자와 검은 운동화. 검은 모자와 흰 운동화는 형(오빠·남동생)이에요.' },
+]);
+
+export const ENG_VOC_SETS = [ENG_E4_V1, ENG_E4_V2, ENG_E4_V3, ENG_E4_V4, ENG_E4_V5, ENG_E4_V6];
 
 type V = { fastSec?: number; text: string; options: string[]; answer: number; traps?: { a: number; note: string }[]; explain: string };
 export const ENG_VOC_VARIANTS: Record<string, V[]> = {
@@ -564,5 +602,79 @@ export const ENG_VOC_VARIANTS: Record<string, V[]> = {
     { text: '글을 읽고 질문에 답하세요.\n\nBefore bed, I <b>brush my teeth</b> and <b>put away</b> my toys.\n\nQ. 자기 전에 내가 하는 일 두 가지는?',
       options: ['이를 닦고, 장난감을 꺼내기', '이를 닦고, 장난감을 치우기', '손을 씻고, 장난감을 치우기', '이를 닦고, 책을 읽기', '세수하고, 장난감을 치우기'], answer: 2,
       explain: 'brush my teeth = 이를 닦다, put away = 치우다·넣어 두다.' },
+  ],
+  'ev6-1': [
+    { fastSec: 2, text: '다음 영어 단어의 뜻은?\nshirt', options: ['바지', '셔츠', '치마', '모자', '양말'], answer: 2,
+      traps: [{ a: 3, note: N_CLOTH }], explain: 'shirt = 셔츠. 치마는 skirt.' },
+    { fastSec: 2, text: '다음 영어 단어의 뜻은?\ncap', options: ['신발', '장갑', '모자', '치마', '양말'], answer: 3, explain: 'cap = (챙이 있는) 모자.' },
+    { fastSec: 2, text: '다음 영어 단어의 뜻은?\nsneakers', options: ['슬리퍼', '운동화', '장화', '양말', '바지'], answer: 2, explain: 'sneakers = 운동화. 장화는 boots.' },
+  ],
+  'ev6-2': [
+    { fastSec: 2, text: '다음 영어 단어의 뜻은?\nscarf', options: ['장갑', '모자', '목도리', '양말', '바지'], answer: 3,
+      traps: [{ a: 1, note: N_CLOTH }], explain: 'scarf = 목도리(목에 둘러요). 장갑은 gloves.' },
+    { fastSec: 2, text: '다음 영어 단어의 뜻은?\nsocks', options: ['양말', '장갑', '신발', '모자', '치마'], answer: 1,
+      traps: [{ a: 2, note: N_CLOTH }], explain: 'socks = 양말. 장갑은 gloves.' },
+    { fastSec: 2, text: '다음 영어 단어의 뜻은?\nshorts', options: ['긴바지', '치마', '양말', '셔츠', '반바지'], answer: 5,
+      traps: [{ a: 1, note: N_CLOTH }], explain: 'shorts = 반바지. 긴바지는 pants. shorts, pants 는 늘 복수로 써요.' },
+  ],
+  'ev6-3': [
+    { fastSec: 2, text: '다음 영어 단어의 뜻은?\nbrown', options: ['검은색', '갈색', '주황색', '보라색', '흰색'], answer: 2, explain: 'brown = 갈색. 검은색은 black.' },
+    { fastSec: 2, text: '다음 영어 단어의 뜻은?\npink', options: ['분홍색', '빨간색', '주황색', '보라색', '갈색'], answer: 1,
+      traps: [{ a: 2, note: N_COLOR }], explain: 'pink = 분홍색. 빨간색은 red.' },
+    { fastSec: 2, text: '다음 영어 단어의 뜻은?\ngreen', options: ['파란색', '노란색', '초록색', '하늘색', '갈색'], answer: 3, explain: 'green = 초록색. 파란색은 blue.' },
+  ],
+  'ev6-4': [
+    { fastSec: 2, text: '「치마」를 영어로 하면?', options: ['skirt', 'shirt', 'shorts', 'socks', 'scarf'], answer: 1,
+      traps: [{ a: 2, note: N_CLOTH }, { a: 3, note: N_CLOTH }], explain: '치마 = skirt. shirt는 셔츠, shorts는 반바지.' },
+    { fastSec: 2, text: '「장갑」을 영어로 하면?', options: ['glasses', 'gloves', 'cap', 'coat', 'boots'], answer: 2,
+      traps: [{ a: 1, note: N_CLOTH }], explain: '장갑 = gloves. glasses는 안경.' },
+    { fastSec: 2, text: '「목도리」를 영어로 하면?', options: ['socks', 'shoes', 'shorts', 'skirt', 'scarf'], answer: 5,
+      traps: [{ a: 1, note: N_CLOTH }], explain: '목도리 = scarf.' },
+  ],
+  'ev6-5': [
+    { fastSec: 2, text: '「파란색」을 영어로 하면?', options: ['red', 'blue', 'brown', 'black', 'green'], answer: 2,
+      traps: [{ a: 4, note: N_COLOR }], explain: '파란색 = blue. black은 검은색.' },
+    { fastSec: 2, text: '「초록색」을 영어로 하면?', options: ['gray', 'blue', 'green', 'pink', 'white'], answer: 3, explain: '초록색 = green. 회색은 gray.' },
+    { fastSec: 2, text: '「검은색」을 영어로 하면?', options: ['brown', 'blue', 'pink', 'black', 'purple'], answer: 4,
+      traps: [{ a: 2, note: N_COLOR }], explain: '검은색 = black. 갈색은 brown, 파란색은 blue.' },
+  ],
+  'ev6-6': [
+    { fastSec: 2, text: '「비싼」을 영어로 하면?', options: ['cheap', 'expensive', 'new', 'small', 'short'], answer: 2,
+      traps: [{ a: 1, note: N_PRICE }], explain: '비싼 = expensive. 싼은 cheap.' },
+    { fastSec: 2, text: '「싼(값이 낮은)」을 영어로 하면?', options: ['cheap', 'expensive', 'long', 'big', 'old'], answer: 1,
+      traps: [{ a: 2, note: N_PRICE }], explain: '싼 = cheap. 비싼은 expensive.' },
+    { fastSec: 2, text: '「긴」을 영어로 하면?', options: ['short', 'small', 'long', 'tall', 'big'], answer: 3, explain: '긴 = long. 짧은은 short.' },
+  ],
+  'ev6-7': [
+    { text: '대화의 빈칸에 알맞은 말은?\nA: It\'s raining.\nB: Take your ______.', options: ['sunglasses', 'umbrella', 'sandals', 'swimsuit', 'T-shirt'], answer: 2,
+      traps: [{ a: 1, note: N_WEAR }], explain: '비가 온다 → 우산 umbrella. sunglasses는 선글라스.' },
+    { text: '대화의 빈칸에 알맞은 말은?\nA: It\'s sunny and hot.\nB: Let\'s wear ______.', options: ['gloves', 'boots', 'coat', 'scarf', 'shorts'], answer: 5,
+      traps: [{ a: 3, note: N_WEAR }], explain: '덥고 맑은 날 → 반바지 shorts. 장갑·장화·코트·목도리는 추운 날.' },
+    { text: '대화의 빈칸에 알맞은 말은?\nA: It\'s snowy.\nB: Put on your ______ and gloves.', options: ['sandals', 'shorts', 'T-shirt', 'boots', 'swimsuit'], answer: 4,
+      traps: [{ a: 1, note: N_WEAR }], explain: '눈 오는 날 → 장화 boots.' },
+  ],
+  'ev6-8': [
+    { text: '대화를 읽고 질문에 답하세요.\n\nA: How much are these socks?\nB: They\'re two thousand won.\n\nQ. 양말의 값은?', options: ['200원', '2,000원', '12,000원', '20,000원', '3,000원'], answer: 2,
+      traps: [{ a: 1, note: N_NUM }, { a: 4, note: N_NUM }], explain: 'two thousand = 2,000. twenty thousand는 20,000.' },
+    { text: '대화를 읽고 질문에 답하세요.\n\nA: How much is this bag?\nB: It\'s thirty thousand won.\n\nQ. 가방의 값은?', options: ['3,000원', '13,000원', '30,000원', '300,000원', '300원'], answer: 3,
+      traps: [{ a: 1, note: N_NUM }, { a: 2, note: N_NUM }], explain: 'thirty thousand = 30,000. thirteen thousand는 13,000.' },
+    { text: '대화를 읽고 질문에 답하세요.\n\nA: How much is the cap?\nB: It\'s nine thousand won.\nA: And the scarf?\nB: It\'s six thousand won.\n\nQ. <b>모자</b>의 값은?', options: ['6,000원', '9,000원', '15,000원', '90,000원', '3,000원'], answer: 2,
+      traps: [{ a: 1, note: N_WHAT }], explain: 'the cap → nine thousand = 9,000원. 6,000원은 목도리.' },
+  ],
+  'ev6-9': [
+    { text: '글을 읽고 질문에 답하세요.\n\nTom likes the black bag. But it is too expensive. So he buys a gray bag.\n\nQ. 톰이 <b>산</b> 것은?', options: ['검은 가방', '회색 가방', '검은 모자', '회색 모자', '아무것도 사지 않았다'], answer: 2,
+      traps: [{ a: 1, note: N_WHAT }], explain: 'But 뒤: 검은 가방은 너무 비싸다. So he buys a gray bag. → 회색 가방.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nSora likes the pink cap. It is cheap. So she buys it and a blue cap for her friend.\n\nQ. 소라가 산 것은?', options: ['분홍 모자 하나', '분홍 모자와 파란 모자', '파란 모자 하나', '분홍 모자와 파란 장갑', '아무것도 사지 않았다'], answer: 2,
+      traps: [{ a: 1, note: N_WHAT }], explain: 'buys it(분홍 모자) and a blue cap → 분홍 모자와 파란 모자.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nDad likes the brown coat. But it is too big. So he buys a smaller brown coat.\n\nQ. 아빠가 산 것은?', options: ['더 작은 갈색 코트', '더 큰 갈색 코트', '더 작은 검은 코트', '갈색 모자', '아무것도 사지 않았다'], answer: 1,
+      traps: [{ a: 2, note: N_WHAT }], explain: 'too big 이라서 smaller brown coat 를 샀어요.' },
+  ],
+  'ev6-10': [
+    { text: '글을 읽고 질문에 답하세요.\n\nI have a red cap and blue gloves. My sister has a blue cap and red gloves.\n\nQ. <b>여동생(언니·누나)</b>이 가진 것은?', options: ['빨간 모자와 파란 장갑', '파란 모자와 빨간 장갑', '빨간 모자와 빨간 장갑', '파란 모자와 파란 장갑', '파란 모자와 빨간 양말'], answer: 2,
+      traps: [{ a: 1, note: N_WHAT }], explain: 'My sister has a blue cap and red gloves. → 파란 모자와 빨간 장갑.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nDad wears a gray coat and a black hat. Mom wears a black coat and a gray hat.\n\nQ. <b>엄마</b>가 입고 쓴 것은?', options: ['회색 코트와 검은 모자', '검은 코트와 회색 모자', '검은 코트와 검은 모자', '회색 코트와 회색 모자', '검은 코트와 흰 모자'], answer: 2,
+      traps: [{ a: 1, note: N_WHAT }], explain: 'Mom wears a black coat and a gray hat. → 검은 코트와 회색 모자.' },
+    { text: '글을 읽고 질문에 답하세요.\n\nMy shirt is green and my pants are yellow. His shirt is yellow and his pants are green.\n\nQ. <b>그</b>의 바지 색깔은?', options: ['노란색', '파란색', '초록색', '검은색', '흰색'], answer: 3,
+      traps: [{ a: 1, note: N_WHAT }], explain: 'his pants are green → 초록색. 노란 바지는 나예요.' },
   ],
 };
