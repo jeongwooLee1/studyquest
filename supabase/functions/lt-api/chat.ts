@@ -216,7 +216,12 @@ async function loadSituation(sb: any, student: string, deps: ChatDeps): Promise<
         sb.from('sq_progress_log').select('username,date,mastered,level,play_seconds').eq('username', u).gte('date', kstIso(nowMs - 9 * 864e5)),
         sb.from('sq_point_log').select('username,source,amount').eq('username', u).gte('at', dayStartIso(nowMs)).lte('at', new Date(nowMs).toISOString()),
       ]);
-      if ((logs || []).length) sq = sqSummary(logs || [], pts || [], today);
+      let all: any[] = logs || [];
+      if (!all.length) { // 9일 안에 기록이 없으면 가장 최근 한 줄로 마지막 날·단계를 채운다
+        const { data: last } = await sb.from('sq_progress_log').select('username,date,mastered,level,play_seconds').eq('username', u).order('date', { ascending: false }).limit(1);
+        all = last || [];
+      }
+      if (all.length) sq = sqSummary(all, pts || [], today);
     } catch (e) { console.error('chat sq', e); }
   }
   let work: any = null;
