@@ -492,7 +492,13 @@ Deno.serve(async (req) => {
           sb.from('sq_progress_log').select('username,date,mastered,level,play_seconds').in('username', users).gte('date', new Date(Date.now() - 9 * 864e5).toISOString().slice(0, 10)),
           sb.from('sq_point_log').select('username,source,amount').in('username', users).gte('at', new Date(Date.parse(today + 'T00:00:00+09:00')).toISOString()).lte('at', nowIso),
         ]);
-        for (const [student, u] of Object.entries(SQ_USER)) sq[student] = sqSummary((logs || []).filter((r: any) => r.username === u), (pts || []).filter((r: any) => r.username === u), today);
+        // 9일 안에 기록이 없으면 가장 최근 한 줄만 따로 가져와 마지막 날·단계를 채운다
+        const allLogs: any[] = [...(logs || [])];
+        await Promise.all(users.filter((u) => !allLogs.some((r) => r.username === u)).map(async (u) => {
+          const { data: last } = await sb.from('sq_progress_log').select('username,date,mastered,level,play_seconds').eq('username', u).order('date', { ascending: false }).limit(1);
+          if (last && last[0]) allLogs.push(last[0]);
+        }));
+        for (const [student, u] of Object.entries(SQ_USER)) sq[student] = sqSummary(allLogs.filter((r: any) => r.username === u), (pts || []).filter((r: any) => r.username === u), today);
       } catch (e) { console.error('sq summary', e); }
       let chatN: Record<string, number> = {};
       try { chatN = await chatCounts(sb, Date.now()); } catch (e) { console.error('chat counts', e); }
