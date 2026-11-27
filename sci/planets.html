@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>우리나라에서 바라본 행성의 이동 경로</title>
 <style>
   :root{--bg:#070b18;--panel:#111a2e;--line:#26355a;--txt:#e8eefc;--dim:#9fb0d4;
@@ -60,6 +60,8 @@
     body.info footer{display:block}
   }
   #err{display:none;position:fixed;inset:30% 10% auto;background:#400;padding:16px;border-radius:8px;z-index:9}
+  .appbtn{display:inline-flex;align-items:center;padding:5px 10px;border-radius:8px;background:#1f2a44;border:1px solid #3a4a6e;color:#e8ecf4;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap}
+  header{padding-top:max(6px,env(safe-area-inset-top))}
 </style>
 <script type="importmap">
 {"imports":{
@@ -72,6 +74,7 @@
 <header>
   <h1>우리나라에서 바라본 행성의 이동 경로</h1>
   <div class="bar">
+    <div class="grp"><a class="appbtn" href="/" target="_top">🏠 앱</a></div>
     <div class="grp"><button id="play" class="on">⏸ 멈춤</button><button id="restart">처음으로</button></div>
     <div class="grp"><button id="infoBtn">설명</button></div>
     <div class="grp">속도 <input id="speed" type="range" min="1" max="60" value="12"> <span id="speedTxt">1초에 12일</span></div>
