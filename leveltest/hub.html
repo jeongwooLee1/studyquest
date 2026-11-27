@@ -227,6 +227,9 @@
     var tests = s.tests.filter(vis);
     if (tests.length) anyShown = true;
     if (tests.length) h += '<div class="sec">수학 레벨테스트</div>' + tests.map(function (x, i) { return card(x, 'T', s.code, progress[x.id]); }).join('');
+    h += '<div class="sec">과학 3D 보기</div>' +
+      '<a class="card" style="display:block;text-decoration:none;color:inherit" href="../sci/celestial.html"><b>🌏 천구와 태양·별의 하루 길</b><p class="muted" style="margin:6px 0 0">위도·계절·황도를 돌려 보며 일주 운동 이해하기</p></a>' +
+      '<a class="card" style="display:block;text-decoration:none;color:inherit" href="../sci/planets.html"><b>🪐 우리나라에서 본 행성의 이동 경로</b><p class="muted" style="margin:6px 0 0">화성이 거꾸로 가 보이는 까닭(순행·역행)</p></a>';
     if (!anyShown) h += '<div class="card" style="text-align:center"><div style="font-size:36px">🌱</div><p class="sub">지금은 풀 문제지가 없어요.<br>아빠가 새 문제지를 열어 주면 여기에 나타나요!</p></div>';
     app.innerHTML = h;
     LT.coachFab(s.code);
