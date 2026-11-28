@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>부력과 막대의 균형 (3D)</title>
+<style>
+  :root{--bg:#070b18;--panel:#111a2e;--line:#26355a;--txt:#e8eefc;--dim:#9fb0d4;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    -webkit-user-select:none;user-select:none;overflow:hidden}
+  body{display:flex;flex-direction:column;height:100vh;height:100dvh}
+  header{padding:6px 10px;background:var(--panel);border-bottom:1px solid var(--line)}
+  h1{font-size:17px;margin:2px 0 6px}
+  .bar{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:14px}
+  .grp{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+  .grp.hide,.hide{display:none!important}
+  button{font:inherit;font-size:14px;color:var(--txt);background:#1d2a48;border:1px solid #33497a;
+    border-radius:8px;padding:6px 11px;cursor:pointer;touch-action:manipulation}
+  button.on{background:#3b5bdb;border-color:#5c7cfa}
+  input[type=range]{width:200px}
+  #wTxt{font-weight:700;min-width:44px;display:inline-block}
+  main{flex:1;display:flex;min-height:0}
+  .view{position:relative;flex:1;min-width:0;min-height:0;overflow:hidden}
+  .stage{position:absolute;inset:0;overflow:hidden}
+  .stage canvas{display:block;touch-action:none}
+  .cap{position:absolute;left:8px;top:6px;font-size:15px;font-weight:700;pointer-events:none;
+    background:rgba(7,11,24,.7);padding:3px 8px;border-radius:6px;z-index:2}
+  .hud{position:absolute;left:8px;top:38px;font-size:13px;line-height:1.5;pointer-events:none;
+    background:rgba(7,11,24,.74);padding:5px 9px;border-radius:6px;max-width:min(55%,460px);z-index:2}
+  .hud i{display:inline-block;width:18px;height:4px;margin-right:4px;vertical-align:3px}
+  .panel{position:absolute;right:8px;top:8px;width:250px;z-index:3;background:rgba(10,16,34,.9);
+    border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13.5px;line-height:1.5}
+  .panel h2{font-size:13px;margin:0 0 4px;color:var(--dim);font-weight:700}
+  .row b{font-size:17px}
+  .ra b{color:#5ee08a} .rb b{color:#5ee08a}
+  .rbu{color:#7cc0ff}
+  #verdict{margin-top:5px;padding-top:5px;border-top:1px solid var(--line);font-weight:800;color:#ffe9a8;font-size:14px}
+  .lbl{position:relative;width:0;height:0;font-size:12.5px;font-weight:700;pointer-events:none;
+    text-shadow:0 0 3px #000,0 0 3px #000,0 0 5px #000}
+  .lbl span{position:absolute;white-space:nowrap;top:-9px}
+  .lbl.r span{left:5px} .lbl.l span{right:5px}
+  .lbl.g{color:#ff7a7a} .lbl.bu{color:#7cc0ff} .lbl.t{color:#6ff09a}
+  .lbl.ab{width:auto;height:auto;font-size:24px;font-weight:900;color:#ffd34d}
+  .lbl.ab.bb{color:#7cc0ff}
+  footer{background:var(--panel);border-top:1px solid var(--line);padding:6px 12px;font-size:14px;line-height:1.5}
+  footer b{color:#ffd34d}
+  footer .sub{color:var(--dim);font-size:13px}
+  #gear{display:none}
+  @media (max-width:600px){
+    header{padding:4px 6px} h1{display:none}
+    .bar{gap:4px 6px;font-size:12px} .grp{gap:3px}
+    button{font-size:12px;padding:4px 7px;border-radius:6px}
+    input[type=range]{width:120px}
+    .long{display:none} #gear{display:inline-block}
+    .bar>.grp.opt{display:none} body.open .bar>.grp.opt:not(.hide){display:flex}
+    .view{display:flex;flex-direction:column}
+    .stage{position:relative;inset:auto;flex:1;min-height:0;order:1}
+    .panel{position:static;order:0;width:auto;border:none;border-bottom:1px solid var(--line);border-radius:0;
+      padding:4px 8px;background:#0d1426;font-size:12px;line-height:1.4}
+    .panel h2{display:none} .row b{font-size:13px} #verdict{margin-top:2px;padding-top:2px;font-size:12.5px}
+    .cap{font-size:12px;padding:2px 6px} .hud{font-size:10.5px;padding:3px 6px;left:4px;top:auto;bottom:4px;max-width:96%}
+    .lbl{font-size:10.5px} .lbl.ab{font-size:18px}
+    footer{display:none;font-size:12px;line-height:1.4;padding:4px 8px;max-height:36vh;overflow:auto}
+    body.info footer{display:block}
+  }
+  @media (min-width:601px){ body.noinfo footer{display:none} }
+  #err{display:none;position:fixed;inset:30% 10% auto;background:#400;padding:16px;border-radius:8px;z-index:9}
+  .appbtn{display:inline-flex;align-items:center;padding:5px 10px;border-radius:8px;background:#1f2a44;border:1px solid #3a4a6e;color:#e8ecf4;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap}
+  header{padding-top:max(6px,env(safe-area-inset-top))}
+  html,body{overflow:hidden;overscroll-behavior:none} body{position:fixed;inset:0;width:100%}
+  header{flex:0 0 auto;max-height:60vh;max-height:60dvh;overflow-y:auto}
+</style>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<header>
+  <h1>부력과 막대의 균형 — B 컵에 물을 부으면?</h1>
+  <div class="bar">
+    <div class="grp"><a class="appbtn" href="/" target="_top">🏠 앱</a> <a class="appbtn" href="index.html">📚 목록</a></div>
+    <div class="grp" id="mainGrp"><button id="gear">⚙ 조작</button><button id="play">▶ 물 붓기</button>
+      <button id="reset" style="background:#2b7a4b;border-color:#3fa66a">⟲ 처음으로</button>
+      <button id="home">⟲<span class="long"> 기본 위치로</span></button>
+      <button id="infoBtn">ⓘ 설명</button></div>
+    <div class="grp opt">B 컵 물 높이 <input id="water" type="range" min="0" max="100" step="1" value="0"> <span id="wTxt">0%</span></div>
+    <div class="grp opt"><button id="tArrow" class="on">힘 화살표</button></div>
+  </div>
+</header>
+<main>
+  <div class="view" id="view">
+    <div class="panel" id="panel">
+      <h2>막대 양 끝 실이 당기는 힘 (실시간)</h2>
+      <div class="row ra">A 쪽 실이 당기는 힘 <b id="fA">2.0 N</b></div>
+      <div class="row rb">B 쪽 실이 당기는 힘 <b id="fB">2.0 N</b></div>
+      <div class="row rbu">B 가 물에 잠긴 정도 <span id="sub">0%</span> · 부력 <span id="fU">0.0 N</span></div>
+      <div id="verdict">막대가 수평이에요 (균형)</div>
+    </div>
+    <div class="stage" id="stage">
+      <div class="cap" id="cap">추 A, B 는 질량·부피가 같아요</div>
+      <div class="hud" id="hud"><i style="background:#ff5a5a"></i>중력 &nbsp;<i style="background:#4aa8ff"></i>부력 &nbsp;<i style="background:#38d46a"></i>실이 당기는 힘</div>
+    </div>
+  </div>
+</main>
+<footer id="foot">
+  <div><b>문제</b> 질량과 부피가 같은 추 A, B 를 나무 막대 양 끝에 실로 매달아 균형을 맞췄어요(막대 가운데를 위에서 실로 매담). 추 아래 빈 컵 속에 추가 떠 있어요. <b>B 쪽 컵에 물을 부어 B 가 물에 잠기면</b> 막대는 어떻게 될까요?</div>
+  <div><b>정답 예시</b> 막대가 <b>A 쪽으로 기운다(B 쪽이 올라간다).</b> 물에 잠긴 B 에 <b>위쪽으로 부력</b>이 작용해 B 쪽을 아래로 당기는 힘이 A 쪽보다 작아지기 때문이다.</div>
+  <div class="sub">· 물의 무게 때문이 아니에요 — 컵은 막대에 매달려 있지 않아요. &nbsp;· 추의 질량은 그대로예요. 물속에서 무게가 <b>줄어든 것처럼 보이는 것</b>이에요.</div>
+</footer>
+<div id="err">three.js 를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</div>
+
+<script>
+  setTimeout(()=>{ if(!window.__ok) document.getElementById('err').style.display='block'; }, 9000);
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+window.__ok = true;
+
+const D2R=Math.PI/180, PR=Math.min(window.devicePixelRatio||1,2);
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const ss=(a,b,x)=>{ const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+function label(text,cls){ const e=document.createElement('div'); e.className='lbl '+cls; const s=document.createElement('span'); s.textContent=text; e.appendChild(s); return new CSS2DObject(e); }
+function bigLabel(text,cls){ const e=document.createElement('div'); e.className='lbl ab '+cls; e.textContent=text; return new CSS2DObject(e); }
+const setTxt=(o,t)=>{ o.element.firstChild.textContent=t; };
+
+/* ---------- 치수 ---------- */
+const L=2.4, PY=3.9, STR=2.4, ARM=PY+2.0;      // 막대 반길이, 막대 높이, 실 길이, 받침대 팔 높이
+const WR=0.38, WH=0.9;                          // 추 반지름·높이
+const CX=2.4, CR=0.76, CH=3.2, WMAX=2.9;         // 컵 가운데 x, 반지름, 높이, 물 최대 높이
+const G=2.0, BMAX=0.6, K=0.5, MAXTILT=12*D2R;    // 중력 N, 최대 부력 N, 화살표 길이/N, 최대 기울기
+
+/* ---------- 렌더러·장면 ---------- */
+const stage=$('stage');
+const rend=new THREE.WebGLRenderer({antialias:true}); rend.setPixelRatio(PR); stage.prepend(rend.domElement);
+const lab=new CSS2DRenderer(); Object.assign(lab.domElement.style,{position:'absolute',left:0,top:0,pointerEvents:'none'}); stage.appendChild(lab.domElement);
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x0a1022);
+const cam=new THREE.PerspectiveCamera(40,1,0.1,200);
+const ctl=new OrbitControls(cam,rend.domElement); ctl.enableDamping=true; ctl.minDistance=6; ctl.maxDistance=40; ctl.enablePan=false;
+ctl.maxPolarAngle=Math.PI*0.52;
+scene.add(new THREE.HemisphereLight(0xcfe0ff,0x2a3350,1.1));
+const dl=new THREE.DirectionalLight(0xffffff,2.2); dl.position.set(4,9,8); scene.add(dl);
+const dl2=new THREE.DirectionalLight(0x9fb8ff,0.8); dl2.position.set(-6,3,-5); scene.add(dl2);
+
+const mat=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.7,metalness:.05},o));
+const cyl=(r,h,m,seg=24)=>new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,seg),m);
+
+/* 받침대 */
+{ const table=new THREE.Mesh(new THREE.BoxGeometry(10.2,0.3,3.4),mat(0x3a4560)); table.position.set(1.0,-0.15,0); scene.add(table);
+  const post=cyl(0.09,ARM,mat(0x9aa6c0,{metalness:.5,roughness:.4}),16); post.position.set(0,ARM/2,-1.3); scene.add(post);
+  const base=new THREE.Mesh(new THREE.BoxGeometry(1.0,0.12,1.0),mat(0x7d89a6,{metalness:.5})); base.position.set(0,0.06,-1.3); scene.add(base);
+  const arm=cyl(0.07,1.3,mat(0x9aa6c0,{metalness:.5,roughness:.4}),16); arm.rotation.x=Math.PI/2; arm.position.set(0,ARM,-0.65); scene.add(arm);
+  const tip=new THREE.Mesh(new THREE.SphereGeometry(0.09,12,8),mat(0x9aa6c0,{metalness:.5})); tip.position.set(0,ARM,0); scene.add(tip); }
+const thread=new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,1,6),new THREE.MeshBasicMaterial({color:0xe9e2cf}));
+const mkThread=()=>new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,1,6),new THREE.MeshBasicMaterial({color:0xe9e2cf}));
+const tMid=mkThread(), tA=mkThread(), tB=mkThread(); scene.add(tMid,tA,tB);
+tMid.scale.y=ARM-PY; tMid.position.set(0,(ARM+PY)/2,0);
+
+/* 막대 */
+const beam=new THREE.Group(); beam.position.set(0,PY,0); scene.add(beam);
+{ const woodTex=(()=>{ const c=document.createElement('canvas'); c.width=256; c.height=32; const g=c.getContext('2d');
+    g.fillStyle='#b98a52'; g.fillRect(0,0,256,32); let s=5; const rnd=()=>(s=(s*16807)%2147483647)/2147483647;
+    for(let i=0;i<40;i++){ g.strokeStyle=`rgba(90,55,20,${.1+rnd()*.25})`; g.lineWidth=1; const y=rnd()*32; g.beginPath(); g.moveTo(0,y); g.lineTo(256,y+(rnd()-.5)*3); g.stroke(); }
+    const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; })();
+  const b=new THREE.Mesh(new THREE.BoxGeometry(2*L+0.3,0.2,0.3),new THREE.MeshStandardMaterial({map:woodTex,roughness:.8})); beam.add(b);
+  const mid=new THREE.Mesh(new THREE.SphereGeometry(0.1,12,8),mat(0x555555)); mid.position.y=0.11; beam.add(mid);
+  for(const s of [-1,1]){ const h=new THREE.Mesh(new THREE.SphereGeometry(0.07,10,8),mat(0x555555)); h.position.set(s*L,-0.1,0); beam.add(h); }
+  const la=bigLabel('A',''); la.position.set(-L,0.55,0); beam.add(la);
+  const lb=bigLabel('B','bb'); lb.position.set(L,0.55,0); beam.add(lb); }
+
+/* 추 (금색 원통) */
+const goldMat=new THREE.MeshStandardMaterial({color:0xf2c530,roughness:.35,metalness:.35,emissive:0x5a4208});
+const wA=new THREE.Mesh(new THREE.CylinderGeometry(WR,WR,WH,32),goldMat), wB=new THREE.Mesh(new THREE.CylinderGeometry(WR,WR,WH,32),goldMat);
+scene.add(wA,wB);
+for(const w of [wA,wB]){ const ring=new THREE.Mesh(new THREE.TorusGeometry(0.07,0.02,8,16),mat(0x777777)); ring.position.y=WH/2+0.05; w.add(ring); }
+
+/* 유리컵 + 물 */
+const glass=new THREE.MeshPhysicalMaterial({color:0xcfe8ff,roughness:.05,metalness:0,transparent:true,opacity:.16,side:THREE.DoubleSide,depthWrite:false,clearcoat:1,clearcoatRoughness:.05});
+function mkCup(x){ const g=new THREE.Group(); g.position.set(x,0,0);
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(CR,CR,CH,48,1,true),glass); body.position.y=CH/2; g.add(body);
+  const bot=new THREE.Mesh(new THREE.CircleGeometry(CR,48),glass); bot.rotation.x=-Math.PI/2; bot.position.y=0.01; g.add(bot);
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(CR,0.03,8,48),new THREE.MeshBasicMaterial({color:0xdff0ff,transparent:true,opacity:.7})); rim.rotation.x=Math.PI/2; rim.position.y=CH; g.add(rim);
+  const rimB=new THREE.Mesh(new THREE.TorusGeometry(CR,0.025,8,48),new THREE.MeshBasicMaterial({color:0xdff0ff,transparent:true,opacity:.5})); rimB.rotation.x=Math.PI/2; rimB.position.y=0.02; g.add(rimB);
+  scene.add(g); return g; }
+const cupA=mkCup(-CX), cupB=mkCup(CX);
+const waterMat=new THREE.MeshPhysicalMaterial({color:0x3f95e8,roughness:.1,transparent:true,opacity:.5,depthWrite:false});
+const water=new THREE.Mesh(new THREE.CylinderGeometry(CR-0.04,CR-0.04,1,48),waterMat); water.position.x=CX; scene.add(water);
+const surf=new THREE.Mesh(new THREE.CircleGeometry(CR-0.04,48),new THREE.MeshBasicMaterial({color:0x8fcaff,transparent:true,opacity:.55,depthWrite:false,side:THREE.DoubleSide})); surf.rotation.x=-Math.PI/2; surf.position.x=CX; scene.add(surf);
+{ const l1=label('빈 컵','r'); l1.position.set(-CX,-0.35,0.9); setTxt(l1,'빈 컵'); l1.element.className='lbl bu'; l1.element.firstChild.style.cssText='transform:translateX(-50%);position:absolute;top:-9px;color:#bcd6ff'; scene.add(l1);
+  const l2=label('B 컵(물을 부어요)','r'); l2.position.set(CX,-0.35,0.9); l2.element.className='lbl'; l2.element.firstChild.style.cssText='transform:translateX(-50%);position:absolute;top:-9px;color:#bcd6ff'; scene.add(l2); }
+
+/* 비커 + 물줄기 */
+const beaker=new THREE.Group(); scene.add(beaker);
+const bkInner=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,1,32),new THREE.MeshBasicMaterial({color:0x3f95e8,transparent:true,opacity:.6,depthWrite:false}));
+{ const bw=new THREE.Mesh(new THREE.CylinderGeometry(0.56,0.56,1.3,32,1,true),glass.clone()); bw.material.opacity=.3; bw.position.set(0.56,-0.65,0); beaker.add(bw);
+  const bb=new THREE.Mesh(new THREE.CircleGeometry(0.56,32),bw.material); bb.rotation.x=-Math.PI/2; bb.position.set(0.56,-1.29,0); beaker.add(bb);
+  const rm=new THREE.Mesh(new THREE.TorusGeometry(0.56,0.03,8,32),new THREE.MeshBasicMaterial({color:0xdff0ff})); rm.rotation.x=Math.PI/2; rm.position.set(0.56,0,0); beaker.add(rm);
+  bkInner.position.set(0.56,-0.65,0); beaker.add(bkInner);
+  const spout=new THREE.Mesh(new THREE.SphereGeometry(0.06,8,6),new THREE.MeshBasicMaterial({color:0xdff0ff})); beaker.add(spout); }
+const stream=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.05,1,12),new THREE.MeshBasicMaterial({color:0x6fb4ff,transparent:true,opacity:.85})); scene.add(stream);
+
+/* 힘 화살표 (위/아래만) */
+function mkArrow(color){ const g=new THREE.Group(); const m=new THREE.MeshBasicMaterial({color,depthTest:false,transparent:true});
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,1,8),m); shaft.renderOrder=20; g.add(shaft);
+  const head=new THREE.Mesh(new THREE.ConeGeometry(0.13,0.24,12),m); head.renderOrder=20; g.add(head);
+  scene.add(g);
+  return { g, set(x,y,len,up){ g.visible=len>0.02; if(!g.visible) return; const hl=Math.min(0.24,len*0.6), s=up?1:-1;
+      shaft.scale.y=Math.max(0.001,len-hl); shaft.position.y=s*(len-hl)/2; head.scale.y=hl/0.24; head.rotation.z=up?0:Math.PI; head.position.y=s*(len-hl/2);
+      g.position.set(x,y,0.2); } }; }
+const aGrav=mkArrow(0xff5a5a), bGrav=mkArrow(0xff5a5a), bBuoy=mkArrow(0x4aa8ff), aTen=mkArrow(0x38d46a), bTen=mkArrow(0x38d46a);
+const lbl={ aG:label('','g r'), bG:label('','g r'), bU:label('','bu r'), aT:label('','t l'), bT:label('','t l') };
+for(const k in lbl) scene.add(lbl[k]);
+
+/* ---------- 상태 ---------- */
+const q=new URLSearchParams(location.search);
+let wLevel=0, wGoal=null, phi=0, pourT=null, hold=false, showArrows=true;
+const S={ f:0, buoy:0, tB:G };
+
+function wPos(side){ const s=side==='A'?-1:1, ex=s*L*Math.cos(phi), ey=PY+s*L*Math.sin(phi); return {ex,ey,top:ey-STR,cy:ey-STR-WH/2}; }
+function step(dt){
+  // 물줄기·비커
+  let lift=0,tilt=0,pouring=false;
+  if(pourT!==null){ if(!hold) pourT+=dt; const t=pourT;
+    lift=ss(0,.7,t)*(1-ss(5.2,5.9,t)); tilt=ss(.5,1.2,t)*(1-ss(4.7,5.4,t)); pouring=t>1.2&&t<4.7;
+    wLevel=clamp((t-1.2)/3.5,0,1);
+    if(t>=5.9&&!hold){ pourT=null; $('play').textContent='▶ 물 붓기'; $('play').classList.remove('on'); } }
+  else if(wGoal!==null){ const d=wGoal-wLevel; const st=0.7*dt; wLevel=Math.abs(d)<=st?wGoal:wLevel+Math.sign(d)*st; if(wLevel===wGoal) wGoal=null; }
+  const lipX=4.1+(2.95-4.1)*lift, lipY=1.3+(3.8-1.3)*lift;
+  beaker.position.set(lipX,lipY,0); beaker.rotation.z=75*D2R*tilt;
+  bkInner.scale.y=Math.max(0.001,0.75*(1-tilt*1.25)); bkInner.position.y=-1.29+bkInner.scale.y/2; bkInner.visible=tilt<0.78;
+  const lv=wLevel*WMAX;
+  water.visible=surf.visible=lv>0.01; water.scale.y=Math.max(lv,0.001); water.position.y=lv/2; surf.position.y=lv;
+  stream.visible=pouring; if(pouring){ const top=lipY-0.02, bot=Math.max(lv,0.02), len=Math.max(0.05,top-bot); stream.scale.y=len; stream.position.set(lipX-0.03,(top+bot)/2,0); }
+  // 부력·기울기
+  const pb=wPos('B'); S.f=clamp((lv-(pb.top-WH))/WH,0,1); S.buoy=BMAX*S.f; S.tB=G-S.buoy;
+  const target=MAXTILT*S.f; phi+=(target-phi)*(1-Math.exp(-dt*5));
+  if(Math.abs(target-phi)<1e-4) phi=target;
+}
+function layout(){
+  beam.rotation.z=phi;
+  const a=wPos('A'), b=wPos('B');
+  wA.position.set(a.ex,a.cy,0); wB.position.set(b.ex,b.cy,0);
+  for(const [t,p] of [[tA,a],[tB,b]]){ t.scale.y=STR; t.position.set(p.ex,p.ey-STR/2,0); }
+  const arrows=[aGrav,bGrav,bBuoy,aTen,bTen]; for(const o of arrows) o.g.visible=showArrows;
+  const aTn=G, bTn=S.tB;
+  aGrav.set(a.ex+0.2,a.cy,G*K,false); bGrav.set(b.ex+0.2,b.cy,G*K,false);
+  bBuoy.set(b.ex+0.2,b.cy,S.buoy*K,true);
+  aTen.set(a.ex-0.2,a.top,aTn*K,true); bTen.set(b.ex-0.2,b.top,bTn*K,true);
+  if(!showArrows){ for(const o of arrows) o.g.visible=false; }
+  const vis=showArrows;
+  lbl.aG.visible=lbl.bG.visible=lbl.aT.visible=lbl.bT.visible=vis; lbl.bU.visible=vis&&S.buoy>0.04;
+  lbl.aG.position.set(a.ex+0.2,a.cy-G*K-0.12,0); setTxt(lbl.aG,'중력 2 N');
+  lbl.bG.position.set(b.ex+0.2,b.cy-G*K-0.12,0); setTxt(lbl.bG,'중력 2 N');
+  lbl.bU.position.set(b.ex+0.2,b.cy+S.buoy*K+0.12,0); setTxt(lbl.bU,'부력 '+S.buoy.toFixed(1)+' N');
+  lbl.aT.position.set(a.ex-0.2,a.top+aTn*K+0.12,0); setTxt(lbl.aT,'실 '+aTn.toFixed(1)+' N');
+  lbl.bT.position.set(b.ex-0.2,b.top+bTn*K+0.12,0); setTxt(lbl.bT,'실 '+bTn.toFixed(1)+' N');
+  // 정보 상자
+  $('fA').textContent=aTn.toFixed(1)+' N'; $('fB').textContent=bTn.toFixed(1)+' N';
+  $('sub').textContent=Math.round(S.f*100)+'%'; $('fU').textContent=S.buoy.toFixed(1)+' N';
+  const v=$('verdict');
+  v.textContent= S.f<0.02 ? '막대가 수평이에요 (균형)' : (S.f<0.98||Math.abs(phi-MAXTILT*S.f)>0.01 ? '→ 막대가 A 쪽으로 기울어지는 중이에요' : '→ 막대가 A 쪽으로 기울어요 (B 쪽이 올라가요)');
+  const wp=Math.round(wLevel*100); if(+$('water').value!==wp) $('water').value=wp; $('wTxt').textContent=wp+'%';
+}
+
+/* ---------- 조작 ---------- */
+$('play').onclick=()=>{ if(pourT!==null) return; wGoal=null; wLevel=0; pourT=0; hold=false; $('play').textContent='물 붓는 중…'; $('play').classList.add('on'); };
+$('reset').onclick=()=>{ pourT=null; hold=false; wGoal=0; $('play').textContent='▶ 물 붓기'; $('play').classList.remove('on'); };
+$('water').oninput=e=>{ pourT=null; wGoal=null; wLevel=+e.target.value/100; $('play').textContent='▶ 물 붓기'; $('play').classList.remove('on'); };
+$('tArrow').onclick=()=>{ showArrows=!showArrows; $('tArrow').classList.toggle('on',showArrows); };
+$('home').onclick=()=>home();
+$('gear').onclick=()=>{ document.body.classList.toggle('open'); $('gear').classList.toggle('on',document.body.classList.contains('open')); };
+$('infoBtn').onclick=()=>{ const small=matchMedia('(max-width:600px)').matches;
+  if(small) document.body.classList.toggle('info'); else document.body.classList.toggle('noinfo');
+  $('infoBtn').classList.toggle('on', small?document.body.classList.contains('info'):!document.body.classList.contains('noinfo')); };
+$('infoBtn').classList.toggle('on',!matchMedia('(max-width:600px)').matches);
+
+/* ---------- 카메라 ---------- */
+const TX=0.95, TY=2.85, HALFW=4.7, HH=7.3;
+function home(){ const w=stage.clientWidth,h=stage.clientHeight; if(!w||!h) return;
+  const desk=!matchMedia('(max-width:600px)').matches, panelW=desk?270:0, avail=Math.max(200,w-panelW), asp=w/h;
+  cam.fov=40; cam.aspect=asp; const tv=Math.tan(20*D2R);
+  const dist=Math.max(HH/(2*tv), (2*HALFW)*(w/avail)/(2*tv*asp));
+  const el=9*D2R; ctl.target.set(TX,TY,0); cam.position.set(TX,TY+Math.sin(el)*dist,Math.cos(el)*dist);
+  if(desk&&panelW) cam.setViewOffset(w,h,panelW/2,0,w,h); else cam.clearViewOffset();
+  cam.updateProjectionMatrix(); ctl.update(); }
+function sizeAll(){ const w=stage.clientWidth,h=stage.clientHeight; if(!w||!h) return; rend.setSize(w,h); lab.setSize(w,h); cam.aspect=w/h; cam.updateProjectionMatrix(); }
+let sized=false;
+new ResizeObserver(()=>{ sizeAll(); if(!sized&&stage.clientWidth){ sized=true; } home(); }).observe(stage);
+
+/* ---------- URL 파라미터 (검증용) ---------- */
+if(q.get('water')!==null){ wLevel=clamp(+q.get('water')/100,0,1); for(let i=0;i<120;i++) step(0.05); }
+if(q.get('hold')!==null){ pourT=+q.get('hold'); hold=true; for(let i=0;i<120;i++) step(0.05); }
+else if(q.get('pour')==='1'){ $('play').click(); }
+if(q.get('open')==='1'){ document.body.classList.add('open'); $('gear').classList.add('on'); }
+if(q.get('info')==='1'){ document.body.classList.add('info'); }
+if(q.get('arrows')==='0'){ showArrows=false; $('tArrow').classList.remove('on'); }
+
+let last=performance.now();
+function loop(now){ const dt=Math.min(.1,(now-last)/1000); last=now;
+  step(dt); layout(); ctl.update(); rend.render(scene,cam); lab.render(scene,cam); requestAnimationFrame(loop); }
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

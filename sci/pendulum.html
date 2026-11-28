@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>속력과 운동 방향이 모두 변하는 운동 — 진자 (3D)</title>
+<style>
+  :root{--bg:#070b18;--panel:#111a2e;--line:#26355a;--txt:#e8eefc;--dim:#9fb0d4;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    -webkit-user-select:none;user-select:none;overflow:hidden}
+  body{display:flex;flex-direction:column;height:100vh;height:100dvh}
+  header{padding:6px 10px;background:var(--panel);border-bottom:1px solid var(--line)}
+  h1{font-size:17px;margin:2px 0 6px}
+  .bar{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:14px}
+  .grp{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+  .grp.hide,.hide{display:none!important}
+  button{font:inherit;font-size:14px;color:var(--txt);background:#1d2a48;border:1px solid #33497a;
+    border-radius:8px;padding:6px 11px;cursor:pointer;touch-action:manipulation}
+  button.on{background:#3b5bdb;border-color:#5c7cfa}
+  button:disabled{opacity:.4;cursor:default}
+  input[type=range]{width:160px}
+  #aTxt{font-weight:700;min-width:36px;display:inline-block}
+  main{flex:1;display:flex;min-height:0}
+  .view{position:relative;flex:1;min-width:0;min-height:0;overflow:hidden}
+  .stage{position:absolute;inset:0;overflow:hidden}
+  .stage canvas{display:block;touch-action:none}
+  .cap{position:absolute;left:8px;top:6px;font-size:15px;font-weight:700;pointer-events:none;
+    background:rgba(7,11,24,.7);padding:3px 8px;border-radius:6px;z-index:2}
+  .hud{position:absolute;left:8px;top:38px;font-size:13px;line-height:1.5;pointer-events:none;
+    background:rgba(7,11,24,.74);padding:5px 9px;border-radius:6px;max-width:min(55%,460px);z-index:2}
+  .hud i{display:inline-block;width:18px;height:4px;margin-right:4px;vertical-align:3px}
+  .gbox{position:absolute;left:8px;bottom:8px;width:300px;z-index:2;background:rgba(7,11,24,.78);
+    border:1px solid var(--line);border-radius:8px;padding:3px 4px 2px;pointer-events:none}
+  .gbox canvas{display:block;width:100%;height:120px}
+  .gbox .t{font-size:11.5px;color:var(--dim);padding:0 3px}
+  .panel{position:absolute;right:8px;top:8px;width:250px;z-index:3;background:rgba(10,16,34,.9);
+    border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13.5px;line-height:1.55}
+  .panel h2{font-size:13px;margin:0 0 4px;color:var(--dim);font-weight:700}
+  .row b{font-size:15px}
+  .row .k{color:var(--dim)}
+  .good{color:#5ee08a} .chg{color:#ffb35c} .frc{color:#ff8a8a}
+  .bar2{height:8px;background:#1c2744;border-radius:4px;margin:2px 0 3px;overflow:hidden}
+  .bar2 div{height:100%;width:0;background:linear-gradient(90deg,#2e9b57,#6ff09a)}
+  #verdict{margin-top:5px;padding-top:5px;border-top:1px solid var(--line);font-weight:800;color:#ffe9a8;font-size:14px}
+  .lbl{position:relative;width:0;height:0;font-size:12.5px;font-weight:700;pointer-events:none;
+    text-shadow:0 0 3px #000,0 0 3px #000,0 0 5px #000}
+  .lbl span{position:absolute;white-space:nowrap;top:-9px;left:5px}
+  .lbl.v{color:#6ff09a} .lbl.f{color:#ff8a8a} .lbl.n{color:#dfe8ff} .lbl.p{color:#ffe08a} .lbl.o{color:#ffb35c} .lbl.t{color:#f0f0f0}
+  .lbl.stop span{background:rgba(60,40,0,.85);border:1px solid #ffd34d;border-radius:6px;padding:2px 7px;color:#ffe9a8;font-size:13px;left:-90px;top:-34px}
+  footer{background:var(--panel);border-top:1px solid var(--line);padding:6px 12px;font-size:14px;line-height:1.5;max-height:40vh;overflow:auto}
+  footer b{color:#ffd34d}
+  footer .sub{color:var(--dim);font-size:13px}
+  table{border-collapse:collapse;margin:4px 0;font-size:13px;width:100%}
+  th,td{border:1px solid var(--line);padding:3px 6px;text-align:left;vertical-align:top}
+  th{background:#16213b;color:var(--dim)}
+  tr.hl td{background:#3a3010;font-weight:700;color:#fff1c2}
+  #gear{display:none}
+  @media (max-width:600px){
+    header{padding:4px 6px} h1{display:none}
+    .bar{gap:4px 6px;font-size:12px} .grp{gap:3px}
+    button{font-size:12px;padding:4px 7px;border-radius:6px}
+    input[type=range]{width:110px}
+    .long{display:none} #gear{display:inline-block}
+    .bar>.grp.opt{display:none} body.open .bar>.grp.opt:not(.hide){display:flex}
+    .view{display:flex;flex-direction:column}
+    .stage{position:relative;inset:auto;flex:1;min-height:0;order:1}
+    .panel{position:static;order:0;width:auto;border:none;border-bottom:1px solid var(--line);border-radius:0;
+      padding:4px 8px;background:#0d1426;font-size:12px;line-height:1.4}
+    .panel h2{display:none} .row b{font-size:12.5px} #verdict{margin-top:2px;padding-top:2px;font-size:12.5px}
+    .row.l2{display:inline-block;margin-right:8px}
+    .cap{font-size:12px;padding:2px 6px} .hud{font-size:10.5px;padding:3px 6px;left:4px;top:auto;bottom:4px;max-width:52%}
+    .gbox{left:auto;right:4px;bottom:4px;width:44%}
+    .gbox canvas{height:70px} .gbox .t{font-size:10px}
+    .lbl{font-size:10.5px}
+    .lbl.stop span{font-size:11px;left:-70px}
+    footer{display:none;font-size:12px;line-height:1.4;padding:4px 8px;max-height:44vh;overflow:auto}
+    body.info footer{display:block}
+    table{font-size:11px} th,td{padding:2px 4px}
+  }
+  @media (min-width:601px){ body.noinfo footer{display:none} }
+  #err{display:none;position:fixed;inset:30% 10% auto;background:#400;padding:16px;border-radius:8px;z-index:9}
+  .appbtn{display:inline-flex;align-items:center;padding:5px 10px;border-radius:8px;background:#1f2a44;border:1px solid #3a4a6e;color:#e8ecf4;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap}
+  header{padding-top:max(6px,env(safe-area-inset-top))}
+  html,body{overflow:hidden;overscroll-behavior:none} body{position:fixed;inset:0;width:100%}
+  header{flex:0 0 auto;max-height:60vh;max-height:60dvh;overflow-y:auto}
+</style>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<header>
+  <h1>속력과 운동 방향이 모두 변하는 운동 — 흔들리는 추(진자)</h1>
+  <div class="bar">
+    <div class="grp"><a class="appbtn" href="/" target="_top">🏠 앱</a> <a class="appbtn" href="index.html">📚 목록</a></div>
+    <div class="grp" id="mainGrp"><button id="gear">⚙ 조작</button><button id="play">▶ 시작</button>
+      <button id="reset" style="background:#2b7a4b;border-color:#3fa66a">⟲ 처음으로</button>
+      <button id="home">⟲<span class="long"> 기본 위치로</span></button>
+      <button id="infoBtn">ⓘ 설명</button></div>
+    <div class="grp opt">진폭 <input id="amp" type="range" min="10" max="60" step="1" value="40"> <span id="aTxt">40°</span></div>
+    <div class="grp opt">느리게 <button id="s1">1×</button><button id="s05" class="on">0.5×</button><button id="s025">0.25×</button></div>
+    <div class="grp opt"><button id="tArrow" class="on">화살표</button><button id="tSplit">중력 나누기</button><button id="tGhost">잔상 보기</button></div>
+  </div>
+</header>
+<main>
+  <div class="view" id="view">
+    <div class="panel" id="panel">
+      <h2>지금 추의 움직임 (실시간)</h2>
+      <div class="row"><span class="k">속력</span> <b class="good" id="iSp">0.0 m/s</b></div>
+      <div class="bar2"><div id="spBar"></div></div>
+      <div class="row l2"><span class="k">운동 방향</span> <b id="iDir">-</b></div>
+      <div class="row l2"><span class="k">지금</span> <b id="iState">-</b></div>
+      <div class="row"><span class="k">운동 종류</span> <b class="chg" id="iKind">속력과 운동 방향이 모두 변하는 운동</b></div>
+      <div id="verdict">▶ 시작을 눌러 보세요</div>
+    </div>
+    <div class="stage" id="stage">
+      <div class="cap" id="cap">진자 운동</div>
+      <div class="hud" id="hud"><i style="background:#38d46a"></i>속도 &nbsp;<i style="background:#ff4d4d"></i>중력 &nbsp;<i style="background:#e8e8e8"></i>실이 당기는 힘
+        <span id="hudSplit" class="hide">&nbsp;<i style="background:#ff9f1c"></i>중력의 운동 방향 성분 &nbsp;<i style="background:#b83a3a"></i>중력의 실 방향 성분</span></div>
+      <div class="gbox"><div class="t">시간–속력 그래프 (가로: 시간 초, 세로: 속력 m/s)</div><canvas id="graph" width="600" height="240"></canvas></div>
+    </div>
+  </div>
+</main>
+<footer id="foot">
+  <div><b>진자 운동</b>은 <b>속력도, 운동 방향도 계속 변해요.</b> 추에는 중력이 늘 아래로 작용하는데, 추가 움직이는 방향(원호의 접선)과 <b>비스듬해요</b>. 이 힘을 둘로 나누면 이해하기 쉬워요.</div>
+  <div>· <b>운동 방향 성분(주황)</b>: 속력을 바꿔요. 내려갈 땐 운동 방향과 같아서 <b>빨라지고</b>, 올라갈 땐 반대라서 <b>느려져요</b>.<br>
+  · <b>실 방향 성분(중력의 일부)</b>과 실이 당기는 힘: 운동 방향에 수직이라 <b>방향을 바꿔요</b>.</div>
+  <div>· <b>가장 아래(최저점)</b>에서 속력이 <b>가장 커요</b>. 양쪽 <b>끝</b>에서는 잠깐 <b>속력이 0</b>이 되고, 방향이 <b>반대로</b> 바뀌어요.<br>
+  <b>예</b> 그네, 바이킹, 시계추</div>
+  <table>
+    <tr><th>속력</th><th>방향</th><th>힘</th><th>예</th></tr>
+    <tr><td>일정</td><td>일정</td><td>없음(또는 힘의 합이 0)</td><td>등속 직선 운동: 무빙워크</td></tr>
+    <tr><td>변함</td><td>일정</td><td>운동 방향과 같거나 반대</td><td>자유 낙하, 브레이크 건 자동차</td></tr>
+    <tr><td>일정</td><td>변함</td><td>운동 방향에 수직</td><td>등속 원운동: 회전목마, 대관람차</td></tr>
+    <tr class="hl"><td>변함</td><td>변함</td><td>운동 방향에 비스듬히</td><td>진자(그네·바이킹·시계추), 던진 공</td></tr>
+  </table>
+  <div class="sub">· 이 장면은 마찰이 없다고 보고 계산했어요. 진폭이 달라도 추의 움직임 모양은 비슷해요. &nbsp;· 「잔상 보기」의 추는 같은 시간 간격으로 찍었어요. 가운데로 갈수록 간격이 넓어요 = 빠르다는 뜻이에요.</div>
+</footer>
+<div id="err">three.js 를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</div>
+
+<script>
+  setTimeout(()=>{ if(!window.__ok) document.getElementById('err').style.display='block'; }, 9000);
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+window.__ok = true;
+
+const D2R=Math.PI/180, PR=Math.min(window.devicePixelRatio||1,2);
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+function label(text,cls){ const e=document.createElement('div'); e.className='lbl '+cls; const s=document.createElement('span'); s.textContent=text; e.appendChild(s); return new CSS2DObject(e); }
+const setTxt=(o,t)=>{ o.element.firstChild.textContent=t; };
+
+/* ---------- 물리 (L=2 m, 장면 1 m = 2.5 칸) ---------- */
+const G=9.8, LM=2.0, S=2.5, LS=LM*S, HP=7.2; // 실 길이(칸), 받침점 높이
+const acc=th=>-(G/LM)*Math.sin(th);
+function rk4(s,dt){ // s=[θ,ω]
+  const f=(a,w)=>[w,acc(a)];
+  const k1=f(s[0],s[1]), k2=f(s[0]+dt/2*k1[0],s[1]+dt/2*k1[1]), k3=f(s[0]+dt/2*k2[0],s[1]+dt/2*k2[1]), k4=f(s[0]+dt*k3[0],s[1]+dt*k3[1]);
+  s[0]+=dt/6*(k1[0]+2*k2[0]+2*k3[0]+k4[0]); s[1]+=dt/6*(k1[1]+2*k2[1]+2*k3[1]+k4[1]); }
+
+/* ---------- 렌더러·장면 ---------- */
+const stage=$('stage');
+const rend=new THREE.WebGLRenderer({antialias:true}); rend.setPixelRatio(PR); stage.prepend(rend.domElement);
+const lab=new CSS2DRenderer(); Object.assign(lab.domElement.style,{position:'absolute',left:0,top:0,pointerEvents:'none'}); stage.appendChild(lab.domElement);
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x0a1022);
+const cam=new THREE.PerspectiveCamera(40,1,0.1,200);
+const ctl=new OrbitControls(cam,rend.domElement); ctl.enableDamping=true; ctl.minDistance=6; ctl.maxDistance=45; ctl.enablePan=false;
+ctl.maxPolarAngle=Math.PI*0.52;
+scene.add(new THREE.HemisphereLight(0xcfe0ff,0x2a3350,1.2));
+const dl=new THREE.DirectionalLight(0xffffff,2.0); dl.position.set(-4,10,8); scene.add(dl);
+const dl2=new THREE.DirectionalLight(0x9fb8ff,0.6); dl2.position.set(6,4,-5); scene.add(dl2);
+const mat=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.7,metalness:.05},o));
+
+/* 바닥 */
+{ const floor=new THREE.Mesh(new THREE.PlaneGeometry(26,14),mat(0x27506f,{roughness:.55,metalness:0})); floor.rotation.x=-Math.PI/2; scene.add(floor);
+  const grid=new THREE.GridHelper(26,26,0x4a7a9a,0x356483); grid.scale.z=14/26; grid.position.y=0.005; grid.material.transparent=true; grid.material.opacity=.4; scene.add(grid); }
+
+/* 스탠드: 받침대 + 세로 막대 + 가로대(앞으로 뻗음) */
+const ZR=-2.4;
+{ const base=new THREE.Mesh(new THREE.BoxGeometry(3.6,0.25,3.2),mat(0x4a5470,{roughness:.5,metalness:.3})); base.position.set(0,0.125,ZR+0.2); scene.add(base);
+  const rod=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.13,HP+0.5,16),mat(0x5d667c,{roughness:.5,metalness:.4})); rod.position.set(0,(HP+0.5)/2,ZR); scene.add(rod);
+  const arm=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.11,-ZR+0.3,16),mat(0xc9ced9,{roughness:.35,metalness:.6})); arm.rotation.x=Math.PI/2; arm.position.set(0,HP,(ZR+0.3)/2); scene.add(arm);
+  const piv=new THREE.Mesh(new THREE.SphereGeometry(0.17,16,12),mat(0xffd34d,{roughness:.3,metalness:.5})); piv.position.set(0,HP,0); scene.add(piv); }
+const PIV=new THREE.Vector3(0,HP,0);
+
+/* 기준선(가장 아래 위치) */
+function dashed(a,b,color,op=.8){ const g=new THREE.BufferGeometry().setFromPoints([a,b]);
+  const l=new THREE.Line(g,new THREE.LineDashedMaterial({color,dashSize:.22,gapSize:.16,transparent:true,opacity:op,depthTest:false})); l.computeLineDistances(); l.renderOrder=5; return l; }
+scene.add(dashed(new THREE.Vector3(0,HP,0),new THREE.Vector3(0,HP-LS-0.9,0),0x8fb4d8,.5));
+const lLow=label('최저점(가장 아래)','p'); lLow.position.set(0.3,HP-LS-0.95,0); scene.add(lLow);
+
+/* 호(경로) */
+let arc=null;
+function buildArc(A){ if(arc){ scene.remove(arc); arc.geometry.dispose(); }
+  const pts=[]; for(let i=0;i<=60;i++){ const t=-A+2*A*i/60; pts.push(new THREE.Vector3(LS*Math.sin(t),HP-LS*Math.cos(t),0)); }
+  arc=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0xffe08a,transparent:true,opacity:.7})); arc.visible=showGhost; scene.add(arc); }
+
+/* 추 + 실 */
+const BR=0.42;
+const bob=new THREE.Mesh(new THREE.SphereGeometry(BR,32,20),new THREE.MeshStandardMaterial({color:0xe5322d,roughness:.35,metalness:.1,emissive:0x400806})); scene.add(bob);
+const shadow=new THREE.Mesh(new THREE.CircleGeometry(0.4,24),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.35})); shadow.rotation.x=-Math.PI/2; shadow.position.y=0.012; scene.add(shadow);
+const thread=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,1,8),new THREE.MeshBasicMaterial({color:0x8e98b0})); scene.add(thread);
+
+/* 화살표 */
+const Y=new THREE.Vector3(0,1,0);
+function mkArrow(color,op=1,w=0.055,hw=0.17){ const g=new THREE.Group(); const m=new THREE.MeshBasicMaterial({color,depthTest:false,transparent:true,opacity:op});
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(w,w,1,8),m); shaft.renderOrder=20; g.add(shaft);
+  const head=new THREE.Mesh(new THREE.ConeGeometry(hw,0.3,14),m); head.renderOrder=20; g.add(head);
+  scene.add(g);
+  return { g, set(o,d,len){ g.position.copy(o); g.quaternion.setFromUnitVectors(Y,d); const hl=Math.min(0.3,len*0.5);
+      shaft.scale.y=Math.max(0.001,len-hl); shaft.position.y=(len-hl)/2; head.scale.y=hl/0.3; head.position.y=len-hl/2; } }; }
+const aV=mkArrow(0x38d46a,1,0.065,0.2), aG=mkArrow(0xff4d4d,1,0.06,0.19), aT=mkArrow(0xffffff,.95,0.085,0.22);
+const aO=mkArrow(0xff9f1c,1,0.07,0.2), aR=mkArrow(0xb83a3a,1,0.05,0.16);
+const lV=label('속도','v'), lG=label('중력','f'), lT=label('실이 당기는 힘','t'), lO=label('운동 방향 성분','o'), lR=label('실 방향 성분','f');
+scene.add(lV,lG,lT,lO,lR);
+const lStop=label('잠깐 멈춤(속력 0) → 방향이 반대로','stop'); scene.add(lStop); lStop.visible=false;
+
+/* 잔상 */
+const NG=9, ghosts=[];
+for(let k=0;k<NG;k++){ const a=mkArrow(0x38d46a,.8,.045,.15); a.g.visible=false;
+  const p=new THREE.Mesh(new THREE.SphereGeometry(0.3,16,12),new THREE.MeshBasicMaterial({color:0xff6a5a,transparent:true,opacity:.38})); p.visible=false; scene.add(p);
+  const ln=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,1,6),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.25})); ln.visible=false; scene.add(ln);
+  ghosts.push({a,p,ln}); }
+const lGh=label('속력 0','p'); scene.add(lGh); const lGh2=label('속력 0','p'); scene.add(lGh2); const lGm={visible:false,position:new THREE.Vector3()};
+let ghostState=[];
+function buildGhosts(A){ const s=[A,0], rec=[[A,0]]; const dt=0.001; let n=0;
+  while(n<20000){ rk4(s,dt); n++; rec.push([s[0],s[1]]); if(s[1]>=0) break; }
+  ghostState=[]; for(let k=0;k<NG;k++){ const i=Math.round(k/(NG-1)*n); ghostState.push(k===NG-1?[-A,0]:rec[i]); }
+  halfT=n*dt; }
+let halfT=1.4;
+
+/* ---------- 상태 ---------- */
+const q=new URLSearchParams(location.search);
+let amp=40*D2R, st=[amp,0], simT=0, playing=false, showArrows=true, showSplit=false, showGhost=false, slow=0.5, VMAX=0;
+const SA=[]; let lastSample=-1; // 그래프 표본 [t,v]
+function vmaxOf(A){ return Math.sqrt(2*G*LM*(1-Math.cos(A))); }
+function resetAll(){ st=[amp,0]; simT=0; SA.length=0; lastSample=-1; sample(); setPlaying(false); }
+function sample(){ if(simT-lastSample>=0.02-1e-9||lastSample<0){ SA.push([simT,LM*Math.abs(st[1])]); lastSample=simT; if(SA.length>1200) SA.shift(); } }
+function setPlaying(p){ playing=p; $('play').textContent=p?'❚❚ 멈춤':'▶ 시작'; $('play').classList.toggle('on',p); }
+function sim(dt){ const n=Math.max(1,Math.ceil(dt/0.002)), h=dt/n; for(let i=0;i<n;i++){ rk4(st,h); simT+=h; sample(); } }
+function setAmp(deg){ amp=deg*D2R; $('aTxt').textContent=deg+'°'; VMAX=vmaxOf(amp); buildGhosts(amp); buildArc(amp); }
+VMAX=vmaxOf(amp);
+
+/* ---------- 매 프레임 배치 ---------- */
+const bobPos=(th)=>new THREE.Vector3(LS*Math.sin(th),HP-LS*Math.cos(th),0);
+const tmp=new THREE.Vector3();
+function layout(){
+  const th=st[0], om=st[1], sp=LM*Math.abs(om), frac=VMAX>0?sp/VMAX:0;
+  const P=bobPos(th); bob.position.copy(P); shadow.position.set(P.x,0.012,0);
+  const d=P.clone().sub(PIV), len=d.length(); thread.scale.y=len; thread.position.copy(PIV).addScaledVector(d,.5); thread.quaternion.setFromUnitVectors(Y,d.normalize());
+  const sg=om<0?-1:1, e_t=new THREE.Vector3(Math.cos(th),Math.sin(th),0);
+  const stopped=frac<0.12, bottom=frac>0.97;
+  // 화살표
+  const vis=showArrows, GL=2.3;
+  const vLen=0.85*sp; const vd=e_t.clone().multiplyScalar(sg);
+  aV.g.visible=vis&&vLen>0.06; lV.visible=aV.g.visible;
+  if(aV.g.visible){ aV.set(P,vd,vLen); lV.position.copy(P).addScaledVector(vd,vLen+0.25); lV.position.y+=0.3; setTxt(lV,'속도 '+sp.toFixed(1)+' m/s'); }
+  aG.g.visible=vis; lG.visible=vis; aG.set(P,new THREE.Vector3(0,-1,0),GL); lG.position.set(P.x+0.15,P.y-GL-0.3,0);
+  const tn=Math.cos(th)+LM*om*om/G, tLen=GL*tn*0.9, inw=new THREE.Vector3(-Math.sin(th),Math.cos(th),0);
+  aT.g.visible=vis; lT.visible=vis; aT.set(P,inw,tLen); lT.position.copy(P).addScaledVector(inw,tLen+0.1); lT.position.x+=0.45;
+  const sh=vis&&showSplit;
+  const tcomp=-Math.sin(th)*GL, tabs=Math.abs(tcomp);
+  aO.g.visible=sh&&tabs>0.06; lO.visible=aO.g.visible;
+  if(aO.g.visible){ const od=e_t.clone().multiplyScalar(Math.sign(tcomp)); aO.set(P,od,tabs); lO.position.copy(P).addScaledVector(od,tabs+0.15); lO.position.y-=0.1; }
+  const rLen=GL*Math.cos(th), outw=new THREE.Vector3(Math.sin(th),-Math.cos(th),0);
+  aR.g.visible=sh; lR.visible=sh;
+  if(sh){ tmp.copy(P).add(new THREE.Vector3(Math.cos(th),Math.sin(th),0).multiplyScalar(-0.0)); aR.set(P,outw,rLen); lR.position.copy(P).addScaledVector(outw,rLen*0.55); lR.position.x+=-0.15*Math.sign(th||1)-0.3; }
+  // 잔상
+  for(let k=0;k<NG;k++){ const g=ghosts[k], S2=ghostState[k]; g.p.visible=showGhost; g.a.g.visible=false; g.ln.visible=false;
+    if(!showGhost) continue; const gp=bobPos(S2[0]); g.p.position.copy(gp);
+    const gs=LM*Math.abs(S2[1]), gl=0.85*gs;
+    if(gl>0.06){ const gd=new THREE.Vector3(Math.cos(S2[0]),Math.sin(S2[0]),0).multiplyScalar(S2[1]<0?-1:1); g.a.g.visible=vis; g.a.set(gp,gd,gl); }
+    else { g.a.g.visible=false; } }
+  lGh.visible=lGh2.visible=lGm.visible=showGhost;
+  if(showGhost){ lGh.position.copy(bobPos(ghostState[0][0])).add(new THREE.Vector3(0.1,0.8,0)); lGh2.position.copy(bobPos(ghostState[NG-1][0])).add(new THREE.Vector3(-1.9,0.8,0));
+    lGm.position.copy(bobPos(0)).add(new THREE.Vector3(0.35,-0.9,0)); }
+  arc.visible=showGhost;
+  // 끝 라벨
+  lStop.visible=stopped; if(stopped){ lStop.position.copy(P).add(new THREE.Vector3(th>0?1.2:-1.2,0.9,0)); if(!lStop.element.style) {} }
+  // 정보
+  const dirTxt=$('iDir'), stTxt=$('iState'), vd2=$('verdict');
+  $('iSp').textContent=sp.toFixed(1)+' m/s'; $('spBar').style.width=Math.min(100,sp/4.5*100)+'%';
+  const ang=Math.abs(th)*180/Math.PI;
+  let state, cls, verdict;
+  if(stopped){ state='끝: 속력 0, 방향 바뀜'; cls='chg'; dirTxt.textContent=(th>0?'→ 방향이 ← 로 바뀌는 중':'← 방향이 → 로 바뀌는 중'); verdict='끝에서 잠깐 멈췄다가, 반대 방향으로 가기 시작해요'; }
+  else {
+    const right=om>0, up=(right?th>=0:th<=0)?'아래':'위';
+    // 오른쪽으로 가면서 th<0(왼쪽 아래쪽)이면 올라가는 중
+    const goingDown=th*om<0;
+    dirTxt.textContent=(right?'→ 오른쪽 ':'← 왼쪽 ')+(goingDown?'아래':'위')+' '+ang.toFixed(0)+'°';
+    if(bottom){ state='최저점: 가장 빠름'; cls='good'; verdict='가장 아래에서 속력이 가장 커요 (운동 방향은 수평)'; dirTxt.textContent=(right?'→ 오른쪽 수평':'← 왼쪽 수평'); }
+    else if(goingDown){ state='내려가는 중: 빨라짐'; cls='good'; verdict='내려갈 땐 중력의 운동 방향 성분이 운동 방향과 같아서 빨라져요'; }
+    else { state='올라가는 중: 느려짐'; cls='frc'; verdict='올라갈 땐 중력의 운동 방향 성분이 운동 방향과 반대라서 느려져요'; }
+    if(bottom) cls='good'; stTxt.className=cls; }
+  if(stopped) stTxt.className='chg';
+  stTxt.textContent=state; if(!playing&&simT===0) { vd2.textContent='▶ 시작을 눌러 보세요 (처음엔 오른쪽 끝, 속력 0)'; } else vd2.textContent=verdict;
+  $('cap').textContent='진자 운동 — '+(stopped?'끝':bottom?'최저점':'움직이는 중');
+  drawGraph();
+}
+
+/* ---------- 그래프 ---------- */
+const gc=$('graph'), gx=gc.getContext('2d');
+function drawGraph(){
+  const cw=gc.clientWidth||300, ch=gc.clientHeight||120, dpr=Math.min(window.devicePixelRatio||1,2);
+  if(gc.width!==Math.round(cw*dpr)){ gc.width=Math.round(cw*dpr); gc.height=Math.round(ch*dpr); }
+  gx.setTransform(gc.width/cw,0,0,gc.height/ch,0,0); gx.clearRect(0,0,cw,ch);
+  const W=6, t1=Math.max(W,simT), t0=t1-W, L=26, Rr=6, T=8, B=16, pw=cw-L-Rr, ph=ch-T-B, ymax=VMAX*1.15||1;
+  const X=t=>L+(t-t0)/W*pw, Yv=v=>T+ph-v/ymax*ph;
+  gx.font='10px sans-serif'; gx.lineWidth=1; gx.strokeStyle='#26355a'; gx.fillStyle='#9fb0d4';
+  gx.beginPath(); gx.moveTo(L,T); gx.lineTo(L,T+ph); gx.lineTo(L+pw,T+ph); gx.stroke();
+  gx.textAlign='right'; gx.fillText('0',L-3,T+ph+3); gx.fillText(VMAX.toFixed(1),L-3,Yv(VMAX)+3);
+  gx.strokeStyle='#2a3a62'; gx.setLineDash([3,3]); gx.beginPath(); gx.moveTo(L,Yv(VMAX)); gx.lineTo(L+pw,Yv(VMAX)); gx.stroke(); gx.setLineDash([]);
+  gx.textAlign='center'; for(let s=Math.ceil(t0);s<=t1;s++){ if(s%2) continue; const x=X(s); gx.fillText(s,x,ch-4); gx.beginPath(); gx.moveTo(x,T+ph); gx.lineTo(x,T+ph+3); gx.stroke(); }
+  gx.strokeStyle='#6ff09a'; gx.lineWidth=2; gx.beginPath(); let first=true;
+  for(const p of SA){ if(p[0]<t0) continue; const x=X(p[0]), y=Yv(p[1]); if(first){ gx.moveTo(x,y); first=false; } else gx.lineTo(x,y); } gx.stroke();
+  const c=SA[SA.length-1]; if(c){ gx.fillStyle='#ffd34d'; gx.beginPath(); gx.arc(X(c[0]),Yv(c[1]),3.5,0,7); gx.fill(); }
+}
+
+/* ---------- 조작 ---------- */
+$('play').onclick=()=>setPlaying(!playing);
+$('reset').onclick=()=>resetAll();
+$('amp').oninput=e=>{ setAmp(+e.target.value); resetAll(); if(viewMode==='home') home(); };
+function setSlow(v){ slow=v; $('s1').classList.toggle('on',v===1); $('s05').classList.toggle('on',v===.5); $('s025').classList.toggle('on',v===.25); }
+$('s1').onclick=()=>setSlow(1); $('s05').onclick=()=>setSlow(.5); $('s025').onclick=()=>setSlow(.25);
+$('tArrow').onclick=()=>{ showArrows=!showArrows; $('tArrow').classList.toggle('on',showArrows); };
+function setSplit(b){ showSplit=b; $('tSplit').classList.toggle('on',b); $('hudSplit').classList.toggle('hide',!b); }
+$('tSplit').onclick=()=>setSplit(!showSplit);
+$('tGhost').onclick=()=>{ showGhost=!showGhost; $('tGhost').classList.toggle('on',showGhost); };
+$('home').onclick=()=>home();
+$('gear').onclick=()=>{ document.body.classList.toggle('open'); $('gear').classList.toggle('on',document.body.classList.contains('open')); };
+$('infoBtn').onclick=()=>{ const small=matchMedia('(max-width:600px)').matches;
+  if(small) document.body.classList.toggle('info'); else document.body.classList.toggle('noinfo');
+  $('infoBtn').classList.toggle('on', small?document.body.classList.contains('info'):!document.body.classList.contains('noinfo')); };
+$('infoBtn').classList.toggle('on',!matchMedia('(max-width:600px)').matches);
+
+/* ---------- 카메라: 기본은 정면(진동면에 수직) ---------- */
+function fit(el){ const w=stage.clientWidth,h=stage.clientHeight; if(!w||!h) return null;
+  const desk=!matchMedia('(max-width:600px)').matches, panelW=desk?270:0, avail=Math.max(200,w-panelW), asp=w/h;
+  cam.fov=40; cam.aspect=asp; const tv=Math.tan(20*D2R);
+  const dW=Math.max(3.8,LS*Math.sin(amp)+1.9)*(w/avail)/(tv*asp), dH=4.9/tv;
+  return {desk,panelW,w,h,dist:Math.max(dW,dH,9)}; }
+function place(el){ const f=fit(el); if(!f) return; const t=new THREE.Vector3(0,4.2,0);
+  ctl.target.copy(t); cam.position.set(t.x,t.y+Math.sin(el)*f.dist,t.z+Math.cos(el)*f.dist);
+  if(f.desk&&f.panelW) cam.setViewOffset(f.w,f.h,f.panelW/2,0,f.w,f.h); else cam.clearViewOffset();
+  cam.updateProjectionMatrix(); ctl.update(); }
+let viewMode='home';
+function home(){ viewMode='home'; place(5*D2R); }
+function sizeAll(){ const w=stage.clientWidth,h=stage.clientHeight; if(!w||!h) return; rend.setSize(w,h); lab.setSize(w,h); cam.aspect=w/h; cam.updateProjectionMatrix(); }
+new ResizeObserver(()=>{ sizeAll(); if(viewMode==='home') home(); }).observe(stage);
+ctl.addEventListener('start',()=>{ viewMode='free'; });
+
+/* ---------- URL 파라미터 (검증용) ---------- */
+// t=시뮬 시간(초), amp=10~60, arrows=0, split=1, ghosts=1, slow=1|0.5|0.25, play=1, open=1, info=1
+{ const a=q.get('amp'); const deg=a?clamp(Math.round(+a),10,60):40; $('amp').value=deg; setAmp(deg); }
+if(q.get('slow')) setSlow(+q.get('slow'));
+if(q.get('arrows')==='0'){ showArrows=false; $('tArrow').classList.remove('on'); }
+if(q.get('split')==='1') setSplit(true);
+if(q.get('ghosts')==='1'){ showGhost=true; $('tGhost').classList.add('on'); }
+resetAll();
+if(q.get('t')!==null){ const T=+q.get('t'); let s=0; while(s<T-1e-9){ const d=Math.min(0.02,T-s); sim(d); s+=d; } }
+if(q.get('play')==='1') setPlaying(true);
+if(q.get('open')==='1'){ document.body.classList.add('open'); $('gear').classList.add('on'); }
+if(q.get('info')==='1'){ document.body.classList.add('info'); }
+
+let last=performance.now();
+function loop(now){ const dt=Math.min(.1,(now-last)/1000); last=now;
+  if(playing) sim(dt*slow);
+  layout(); ctl.update(); rend.render(scene,cam); lab.render(scene,cam); requestAnimationFrame(loop); }
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

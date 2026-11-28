@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>운동 방향만 변하는 운동 (3D)</title>
+<style>
+  :root{--bg:#070b18;--panel:#111a2e;--line:#26355a;--txt:#e8eefc;--dim:#9fb0d4;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    -webkit-user-select:none;user-select:none;overflow:hidden}
+  body{display:flex;flex-direction:column;height:100vh;height:100dvh}
+  header{padding:6px 10px;background:var(--panel);border-bottom:1px solid var(--line)}
+  h1{font-size:17px;margin:2px 0 6px}
+  .bar{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:14px}
+  .grp{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+  .grp.hide,.hide{display:none!important}
+  button{font:inherit;font-size:14px;color:var(--txt);background:#1d2a48;border:1px solid #33497a;
+    border-radius:8px;padding:6px 11px;cursor:pointer;touch-action:manipulation}
+  button.on{background:#3b5bdb;border-color:#5c7cfa}
+  button:disabled{opacity:.4;cursor:default}
+  input[type=range]{width:160px}
+  #vTxt{font-weight:700;min-width:62px;display:inline-block}
+  main{flex:1;display:flex;min-height:0}
+  .view{position:relative;flex:1;min-width:0;min-height:0;overflow:hidden}
+  .stage{position:absolute;inset:0;overflow:hidden}
+  .stage canvas{display:block;touch-action:none}
+  .cap{position:absolute;left:8px;top:6px;font-size:15px;font-weight:700;pointer-events:none;
+    background:rgba(7,11,24,.7);padding:3px 8px;border-radius:6px;z-index:2}
+  .hud{position:absolute;left:8px;top:38px;font-size:13px;line-height:1.5;pointer-events:none;
+    background:rgba(7,11,24,.74);padding:5px 9px;border-radius:6px;max-width:min(55%,460px);z-index:2}
+  .hud i{display:inline-block;width:18px;height:4px;margin-right:4px;vertical-align:3px}
+  .panel{position:absolute;right:8px;top:8px;width:250px;z-index:3;background:rgba(10,16,34,.9);
+    border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13.5px;line-height:1.55}
+  .panel h2{font-size:13px;margin:0 0 4px;color:var(--dim);font-weight:700}
+  .row b{font-size:15px}
+  .row .k{color:var(--dim)}
+  .good{color:#5ee08a} .chg{color:#ffb35c} .frc{color:#ff8a8a}
+  #verdict{margin-top:5px;padding-top:5px;border-top:1px solid var(--line);font-weight:800;color:#ffe9a8;font-size:14px}
+  .lbl{position:relative;width:0;height:0;font-size:12.5px;font-weight:700;pointer-events:none;
+    text-shadow:0 0 3px #000,0 0 3px #000,0 0 5px #000}
+  .lbl span{position:absolute;white-space:nowrap;top:-9px;left:5px}
+  .lbl.v{color:#6ff09a} .lbl.f{color:#ff8a8a} .lbl.n{color:#dfe8ff} .lbl.p{color:#ffe08a}
+  footer{background:var(--panel);border-top:1px solid var(--line);padding:6px 12px;font-size:14px;line-height:1.5;max-height:40vh;overflow:auto}
+  footer b{color:#ffd34d}
+  footer .sub{color:var(--dim);font-size:13px}
+  table{border-collapse:collapse;margin:4px 0;font-size:13px;width:100%}
+  th,td{border:1px solid var(--line);padding:3px 6px;text-align:left;vertical-align:top}
+  th{background:#16213b;color:var(--dim)}
+  tr.hl td{background:#2a2410}
+  #gear{display:none}
+  @media (max-width:600px){
+    header{padding:4px 6px} h1{display:none}
+    .bar{gap:4px 6px;font-size:12px} .grp{gap:3px}
+    button{font-size:12px;padding:4px 7px;border-radius:6px}
+    input[type=range]{width:110px}
+    .long{display:none} #gear{display:inline-block}
+    .bar>.grp.opt{display:none} body.open .bar>.grp.opt:not(.hide){display:flex}
+    .view{display:flex;flex-direction:column}
+    .stage{position:relative;inset:auto;flex:1;min-height:0;order:1}
+    .panel{position:static;order:0;width:auto;border:none;border-bottom:1px solid var(--line);border-radius:0;
+      padding:4px 8px;background:#0d1426;font-size:12px;line-height:1.4}
+    .panel h2{display:none} .row b{font-size:12.5px} #verdict{margin-top:2px;padding-top:2px;font-size:12.5px}
+    .cap{font-size:12px;padding:2px 6px} .hud{font-size:10.5px;padding:3px 6px;left:4px;top:auto;bottom:4px;max-width:96%}
+    .lbl{font-size:10.5px}
+    footer{display:none;font-size:12px;line-height:1.4;padding:4px 8px;max-height:44vh;overflow:auto}
+    body.info footer{display:block}
+    table{font-size:11px} th,td{padding:2px 4px}
+  }
+  @media (min-width:601px){ body.noinfo footer{display:none} }
+  #err{display:none;position:fixed;inset:30% 10% auto;background:#400;padding:16px;border-radius:8px;z-index:9}
+  .appbtn{display:inline-flex;align-items:center;padding:5px 10px;border-radius:8px;background:#1f2a44;border:1px solid #3a4a6e;color:#e8ecf4;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap}
+  header{padding-top:max(6px,env(safe-area-inset-top))}
+  html,body{overflow:hidden;overscroll-behavior:none} body{position:fixed;inset:0;width:100%}
+  header{flex:0 0 auto;max-height:60vh;max-height:60dvh;overflow-y:auto}
+</style>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<header>
+  <h1>운동 방향만 변하는 운동 — 실에 잡힌 공은 어떻게 움직일까?</h1>
+  <div class="bar">
+    <div class="grp"><a class="appbtn" href="/" target="_top">🏠 앱</a> <a class="appbtn" href="index.html">📚 목록</a></div>
+    <div class="grp" id="mainGrp"><button id="gear">⚙ 조작</button><button id="play">▶ 시작</button>
+      <button id="reset" style="background:#2b7a4b;border-color:#3fa66a">⟲ 처음으로</button>
+      <button id="cut" style="background:#7a2b3a;border-color:#a63f55" disabled>✂ 실 끊기</button>
+      <button id="home">⟲<span class="long"> 기본 위치로</span></button>
+      <button id="infoBtn">ⓘ 설명</button></div>
+    <div class="grp opt">속력 <input id="speed" type="range" min="1" max="5" step="0.1" value="3"> <span id="vTxt">3.0 m/s</span></div>
+    <div class="grp opt"><button id="tArrow" class="on">화살표</button><button id="tAng">방향 변화 보기</button><button id="tTop">위에서 보기</button></div>
+  </div>
+</header>
+<main>
+  <div class="view" id="view">
+    <div class="panel" id="panel">
+      <h2>지금 공의 움직임 (실시간)</h2>
+      <div class="row"><span class="k">속력</span> <b class="good" id="iSp">일정 3.0 m/s</b></div>
+      <div class="row"><span class="k">운동 방향</span> <b id="iDir">일정</b></div>
+      <div class="row"><span class="k">힘</span> <b id="iF">없음</b></div>
+      <div class="row"><span class="k">운동 종류</span> <b id="iKind">등속 직선 운동</b></div>
+      <div id="verdict">힘이 없으면 운동 방향도 속력도 그대로예요</div>
+    </div>
+    <div class="stage" id="stage">
+      <div class="cap" id="cap">① 직선 운동</div>
+      <div class="hud" id="hud"><i style="background:#38d46a"></i>속도(방향·빠르기) &nbsp;<i style="background:#ff4d4d"></i>실이 당기는 힘 &nbsp;<i style="background:#fff"></i>실</div>
+    </div>
+  </div>
+</div>
+</main>
+<footer id="foot">
+  <div><b>운동 방향만 변하는 운동</b> = <b>속력은 일정</b>하고 <b>방향만 계속 바뀌는</b> 운동이에요. 힘이 <b>운동 방향에 수직(원의 중심 쪽)</b>으로 계속 작용할 때 생겨요. 이 힘은 방향만 바꾸고 속력은 바꾸지 못해요. (등속 원운동)</div>
+  <div><b>예</b> 회전목마, 대관람차, 인공위성, 쥐불놀이, 해머던지기</div>
+  <table>
+    <tr><th>속력</th><th>방향</th><th>힘</th><th>예</th></tr>
+    <tr><td>일정</td><td>일정</td><td>없음(또는 힘의 합이 0)</td><td>등속 직선 운동: 무빙워크</td></tr>
+    <tr><td>변함</td><td>일정</td><td>운동 방향과 같거나 반대</td><td>자유 낙하, 브레이크 건 자동차</td></tr>
+    <tr class="hl"><td>일정</td><td>변함</td><td>운동 방향에 수직</td><td>등속 원운동: 회전목마, 대관람차</td></tr>
+    <tr><td>변함</td><td>변함</td><td>운동 방향에 비스듬히</td><td>던진 공, 그네</td></tr>
+  </table>
+  <div class="sub">· 실을 끊으면 힘이 사라져서 공은 <b>끊은 순간의 운동 방향(원의 접선)</b>으로 곧장 날아가요. &nbsp;· 중심 쪽으로 당기는 힘은 속도 화살표와 늘 직각이에요.</div>
+</footer>
+<div id="err">three.js 를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</div>
+
+<script>
+  setTimeout(()=>{ if(!window.__ok) document.getElementById('err').style.display='block'; }, 9000);
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+window.__ok = true;
+
+const D2R=Math.PI/180, PR=Math.min(window.devicePixelRatio||1,2);
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+function label(text,cls){ const e=document.createElement('div'); e.className='lbl '+cls; const s=document.createElement('span'); s.textContent=text; e.appendChild(s); return new CSS2DObject(e); }
+const setTxt=(o,t)=>{ o.element.firstChild.textContent=t; };
+
+/* ---------- 치수 ---------- */
+const R=3.2, BR=0.4, BY=BR, X0=-8.5, XEND=13, HALFX=8.6;
+
+/* ---------- 렌더러·장면 ---------- */
+const stage=$('stage');
+const rend=new THREE.WebGLRenderer({antialias:true}); rend.setPixelRatio(PR); stage.prepend(rend.domElement);
+const lab=new CSS2DRenderer(); Object.assign(lab.domElement.style,{position:'absolute',left:0,top:0,pointerEvents:'none'}); stage.appendChild(lab.domElement);
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x0a1022);
+const cam=new THREE.PerspectiveCamera(40,1,0.1,200);
+const ctl=new OrbitControls(cam,rend.domElement); ctl.enableDamping=true; ctl.minDistance=6; ctl.maxDistance=45; ctl.enablePan=false;
+ctl.maxPolarAngle=Math.PI*0.48;
+scene.add(new THREE.HemisphereLight(0xcfe0ff,0x2a3350,1.2));
+const dl=new THREE.DirectionalLight(0xffffff,2.0); dl.position.set(-4,10,6); scene.add(dl);
+const dl2=new THREE.DirectionalLight(0x9fb8ff,0.6); dl2.position.set(6,4,-5); scene.add(dl2);
+const mat=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.7,metalness:.05},o));
+
+/* 얼음판 */
+{ const floor=new THREE.Mesh(new THREE.PlaneGeometry(30,16),mat(0x27506f,{roughness:.55,metalness:0})); floor.rotation.x=-Math.PI/2; scene.add(floor);
+  const grid=new THREE.GridHelper(30,30,0x4a7a9a,0x356483); grid.scale.z=16/30; grid.position.y=0.005; grid.material.transparent=true; grid.material.opacity=.45; scene.add(grid); }
+
+/* 기둥 (구심점) */
+const post=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.18,1.0,20),mat(0xc9a36a,{roughness:.5})); post.position.y=0.5; scene.add(post);
+const postTop=new THREE.Mesh(new THREE.SphereGeometry(0.16,16,12),mat(0xe8c48a)); postTop.position.y=1.0; scene.add(postTop);
+const lPost=label('기둥(중심)','n'); lPost.position.set(0.25,0.35,0.6); scene.add(lPost);
+
+/* 점선 반지름 R 과 접점 */
+function dashed(a,b,color,op=.8){ const g=new THREE.BufferGeometry().setFromPoints([a,b]);
+  const l=new THREE.Line(g,new THREE.LineDashedMaterial({color,dashSize:.22,gapSize:.16,transparent:true,opacity:op,depthTest:false})); l.computeLineDistances(); l.renderOrder=5; return l; }
+const rLine=dashed(new THREE.Vector3(0,0.03,0),new THREE.Vector3(0,0.03,R),0xffe08a,.7); scene.add(rLine);
+const tp=new THREE.Mesh(new THREE.RingGeometry(0.28,0.4,32),new THREE.MeshBasicMaterial({color:0xffe08a,side:THREE.DoubleSide,transparent:true,opacity:.9})); tp.rotation.x=-Math.PI/2; tp.position.set(0,0.03,R); scene.add(tp);
+const lTp=label('접점','p'); lTp.position.set(0.1,0.2,R+0.75); scene.add(lTp);
+const lR=label('R','p'); lR.position.set(0.15,0.2,R/2); scene.add(lR);
+// 직선 경로 안내선(처음 단계)
+const pathLine=dashed(new THREE.Vector3(X0-1,0.03,R),new THREE.Vector3(XEND,0.03,R),0x8fb4d8,.35); scene.add(pathLine);
+
+/* 공 */
+const ball=new THREE.Mesh(new THREE.SphereGeometry(BR,32,20),new THREE.MeshStandardMaterial({color:0xe5322d,roughness:.35,metalness:.1,emissive:0x400806})); scene.add(ball);
+const shadow=new THREE.Mesh(new THREE.CircleGeometry(BR*1.05,24),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.35})); shadow.rotation.x=-Math.PI/2; shadow.position.y=0.012; scene.add(shadow);
+
+/* 실 */
+const thread=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,1,8),new THREE.MeshBasicMaterial({color:0xffffff})); thread.visible=false; scene.add(thread);
+const flash=new THREE.Mesh(new THREE.RingGeometry(0.85,1,40),new THREE.MeshBasicMaterial({color:0xfff4b0,side:THREE.DoubleSide,transparent:true,opacity:0,depthTest:false})); flash.rotation.x=-Math.PI/2; flash.renderOrder=30; scene.add(flash);
+const glow=new THREE.Mesh(new THREE.SphereGeometry(1,20,14),new THREE.MeshBasicMaterial({color:0xfff4b0,transparent:true,opacity:0,depthTest:false})); glow.renderOrder=29; scene.add(glow);
+
+/* 자국(trail) */
+const TMAX=2400, tPos=new Float32Array(TMAX*3), tGeo=new THREE.BufferGeometry();
+tGeo.setAttribute('position',new THREE.BufferAttribute(tPos,3)); tGeo.setDrawRange(0,0);
+const trail=new THREE.Line(tGeo,new THREE.LineBasicMaterial({color:0x9fd8ff,transparent:true,opacity:.95})); trail.frustumCulled=false; scene.add(trail);
+let tN=0, tLast=null;
+
+/* 화살표 */
+const Y=new THREE.Vector3(0,1,0);
+function mkArrow(color,op=1,w=0.055,hw=0.17){ const g=new THREE.Group(); const m=new THREE.MeshBasicMaterial({color,depthTest:false,transparent:true,opacity:op});
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(w,w,1,8),m); shaft.renderOrder=20; g.add(shaft);
+  const head=new THREE.Mesh(new THREE.ConeGeometry(hw,0.3,14),m); head.renderOrder=20; g.add(head);
+  scene.add(g);
+  return { g, set(o,d,len){ g.position.copy(o); g.quaternion.setFromUnitVectors(Y,d); const hl=Math.min(0.3,len*0.5);
+      shaft.scale.y=Math.max(0.001,len-hl); shaft.position.y=(len-hl)/2; head.scale.y=hl/0.3; head.position.y=len-hl/2; } }; }
+const aV=mkArrow(0x38d46a,1,0.06,0.19), aF=mkArrow(0xff4d4d,1,0.06,0.19);
+const lV=label('속도','v'), lF=label('힘','f'); scene.add(lV,lF);
+const NG=8, ghosts=[];
+for(let k=0;k<NG;k++){ const a=mkArrow(0x38d46a,.5,.045,.15); a.g.visible=false; ghosts.push(a);
+  const th=k*2*Math.PI/NG, p=new THREE.Mesh(new THREE.SphereGeometry(0.1,10,8),new THREE.MeshBasicMaterial({color:0x6ff09a,transparent:true,opacity:.6})); p.position.set(R*Math.sin(th),BY,R*Math.cos(th)); p.visible=false; scene.add(p); a.dot=p; }
+// 끊은 뒤 접선(점선)
+let tanLine=null;
+
+/* ---------- 상태 ---------- */
+const q=new URLSearchParams(location.search);
+let mode='line', x=X0, th=0, v=3, playing=false, showArrows=true, showAng=false, flashT=-1, tCut=null;
+const pos=new THREE.Vector3(X0,BY,R), dir=new THREE.Vector3(1,0,0);
+let gone=false;
+
+function addTrail(){ if(tN>=TMAX) return; if(tLast&&tLast.distanceTo(pos)<0.1) return; tLast=pos.clone();
+  tPos[tN*3]=pos.x; tPos[tN*3+1]=0.03; tPos[tN*3+2]=pos.z; tN++; tGeo.setDrawRange(0,tN); tGeo.attributes.position.needsUpdate=true; }
+function clearTrail(){ tN=0; tLast=null; tGeo.setDrawRange(0,0); }
+function resetAll(){ mode='line'; x=X0; th=0; flashT=-1; gone=false; pos.set(X0,BY,R); dir.set(1,0,0); clearTrail(); thread.visible=false;
+  if(tanLine){ scene.remove(tanLine); tanLine=null; } addTrail(); pathLine.visible=true; setPlaying(false); }
+function setPlaying(p){ playing=p; $('play').textContent=p?'❚❚ 멈춤':'▶ 시작'; $('play').classList.toggle('on',p); }
+function sim(dt){
+  if(mode==='line'){ x+=v*dt; pos.set(x,BY,R); dir.set(1,0,0);
+    if(x>=0){ mode='circle'; th=x/R; flashT=0; pathLine.visible=false; } }
+  else if(mode==='circle'){ th+=v/R*dt; }
+  else if(mode==='cut'){ pos.addScaledVector(dir,v*dt); if(Math.abs(pos.x)>XEND||Math.abs(pos.z)>9){ gone=true; setPlaying(false); } }
+  if(mode==='circle'){ pos.set(R*Math.sin(th),BY,R*Math.cos(th)); dir.set(Math.cos(th),0,-Math.sin(th)); }
+  addTrail();
+}
+function doCut(){ if(mode!=='circle') return; mode='cut'; thread.visible=false; tCut=0;
+  if(tanLine) scene.remove(tanLine);
+  const a=pos.clone().addScaledVector(dir,-3), b=pos.clone().addScaledVector(dir,30); a.y=b.y=0.05;
+  tanLine=dashed(a,b,0xffe08a,.9); scene.add(tanLine); }
+
+function layout(dt){
+  ball.position.copy(pos); shadow.position.set(pos.x,0.012,pos.z);
+  // 실
+  if(mode==='circle'){ const c=new THREE.Vector3(0,BY,0), d=pos.clone().sub(c), len=d.length(); thread.visible=true;
+    thread.scale.y=len; thread.position.copy(c).addScaledVector(d,.5); thread.quaternion.setFromUnitVectors(Y,d.normalize());
+    const pulse=flashT>=0&&flashT<.35?1+1.2*(1-flashT/.35):1; thread.scale.x=thread.scale.z=pulse; }
+  // 연결 효과
+  if(flashT>=0){ flashT+=dt; const u=flashT/.6;
+    if(u>=1){ flashT=-1; flash.material.opacity=0; glow.material.opacity=0; }
+    else{ flash.position.set(0,0.06,R); flash.scale.setScalar(BR*(1+u*5)); flash.material.opacity=1-u; glow.position.copy(pos); glow.scale.setScalar(BR*(1.1+u*1.8)); glow.material.opacity=.7*(1-u); } }
+  // 속도·힘 화살표
+  const vis=showArrows, len=0.35*v+0.2;
+  aV.g.visible=vis; lV.visible=vis; aV.set(pos,dir,len); lV.position.copy(pos).addScaledVector(dir,len+0.2); lV.position.y=BY+0.25;
+  const fon=mode==='circle'; const fl=0.45+0.3*v*v/R;
+  aF.g.visible=vis&&fon; lF.visible=vis&&fon;
+  if(fon){ const inw=new THREE.Vector3(-pos.x,0,-pos.z).normalize(); aF.set(pos,inw,fl); lF.position.copy(pos).addScaledVector(inw,fl+0.3); lF.position.y=BY+0.3; setTxt(lF,'실의 힘'); }
+  setTxt(lV,'속도 '+v.toFixed(1)+' m/s');
+  // 방향 변화 잔상
+  for(let k=0;k<NG;k++){ const a=k*2*Math.PI/NG; const shown=showAng&&mode!=='line'&&(th>=a-1e-6)&&!(k===0&&false);
+    const g=ghosts[k]; g.g.visible=shown&&vis; g.dot.visible=shown;
+    if(shown){ const d=new THREE.Vector3(Math.cos(a),0,-Math.sin(a)); g.set(new THREE.Vector3(R*Math.sin(a),BY,R*Math.cos(a)),d,len); } }
+  // 정보
+  const sp=$('iSp'), dd=$('iDir'), ff=$('iF'), kk=$('iKind'), vd=$('verdict');
+  sp.textContent='일정 '+v.toFixed(1)+' m/s';
+  if(mode==='circle'){ dd.textContent='변하는 중'; dd.className='chg'; ff.textContent='실이 중심 쪽으로 당김'; ff.className='frc'; kk.textContent='운동 방향만 변하는 운동 (등속 원운동)'; kk.className='chg';
+    vd.textContent='힘이 운동 방향과 늘 수직 → 속력은 그대로, 방향만 바뀌어요'; $('cap').textContent='② 실에 잡힘 — 원운동'; }
+  else if(mode==='cut'){ dd.textContent='일정'; dd.className='good'; ff.textContent='없음'; ff.className=''; kk.textContent='등속 직선 운동'; kk.className='good';
+    vd.textContent=gone?'공이 멀리 날아갔어요. ⟲ 처음으로를 눌러 보세요':'힘이 사라지면 다시 직선 운동 (접선 방향)'; $('cap').textContent='③ 실이 끊어짐 — 직선 운동'; }
+  else { dd.textContent='일정'; dd.className='good'; ff.textContent='없음'; ff.className=''; kk.textContent='등속 직선 운동'; kk.className='good';
+    vd.textContent='힘이 없으면 운동 방향도 속력도 그대로예요'; $('cap').textContent='① 직선 운동'; }
+  $('cut').disabled=mode!=='circle';
+  $('vTxt').textContent=v.toFixed(1)+' m/s';
+}
+
+/* ---------- 조작 ---------- */
+$('play').onclick=()=>{ if(gone){ resetAll(); } setPlaying(!playing); };
+$('reset').onclick=()=>resetAll();
+$('cut').onclick=()=>doCut();
+$('speed').oninput=e=>{ v=+e.target.value; };
+$('tArrow').onclick=()=>{ showArrows=!showArrows; $('tArrow').classList.toggle('on',showArrows); };
+$('tAng').onclick=()=>{ showAng=!showAng; $('tAng').classList.toggle('on',showAng); };
+$('home').onclick=()=>home();
+$('tTop').onclick=()=>topView();
+$('gear').onclick=()=>{ document.body.classList.toggle('open'); $('gear').classList.toggle('on',document.body.classList.contains('open')); };
+$('infoBtn').onclick=()=>{ const small=matchMedia('(max-width:600px)').matches;
+  if(small) document.body.classList.toggle('info'); else document.body.classList.toggle('noinfo');
+  $('infoBtn').classList.toggle('on', small?document.body.classList.contains('info'):!document.body.classList.contains('noinfo')); };
+$('infoBtn').classList.toggle('on',!matchMedia('(max-width:600px)').matches);
+
+/* ---------- 카메라 ---------- */
+function fit(el){ const w=stage.clientWidth,h=stage.clientHeight; if(!w||!h) return null;
+  const desk=!matchMedia('(max-width:600px)').matches, panelW=desk?270:0, avail=Math.max(200,w-panelW), asp=w/h;
+  cam.fov=40; cam.aspect=asp; const tv=Math.tan(20*D2R);
+  const dW=HALFX*(w/avail)/(tv*asp), dH=(5.4/Math.max(.35,Math.sin(el))+1.2)/tv*0.5+1;
+  return {desk,panelW,w,h,dist:Math.max(dW,dH,8)}; }
+function place(el,az){ const f=fit(el); if(!f) return; const t=new THREE.Vector3(-1.4,0,-0.4);
+  ctl.target.copy(t); cam.position.set(t.x,t.y+Math.sin(el)*f.dist,t.z+Math.cos(el)*f.dist);
+  if(f.desk&&f.panelW) cam.setViewOffset(f.w,f.h,f.panelW/2,0,f.w,f.h); else cam.clearViewOffset();
+  cam.updateProjectionMatrix(); ctl.update(); }
+let viewMode='home';
+function home(){ viewMode='home'; $('tTop').classList.remove('on'); place(46*D2R); }
+function topView(){ viewMode='top'; $('tTop').classList.add('on'); place(89*D2R); }
+function sizeAll(){ const w=stage.clientWidth,h=stage.clientHeight; if(!w||!h) return; rend.setSize(w,h); lab.setSize(w,h); cam.aspect=w/h; cam.updateProjectionMatrix(); }
+new ResizeObserver(()=>{ sizeAll(); viewMode==='top'?topView():home(); }).observe(stage);
+ctl.addEventListener('start',()=>{ viewMode='free'; $('tTop').classList.remove('on'); });
+
+/* ---------- URL 파라미터 (검증용) ---------- */
+// t=시뮬 시간(초), cut=끊는 시각(초), speed, ang=1(방향 변화 보기), arrows=0, top=1, open=1, info=1
+if(q.get('speed')){ v=clamp(+q.get('speed'),1,5); $('speed').value=v; }
+if(q.get('ang')==='1'){ showAng=true; $('tAng').classList.add('on'); }
+if(q.get('arrows')==='0'){ showArrows=false; $('tArrow').classList.remove('on'); }
+if(q.get('t')!==null){ const T=+q.get('t'), C=q.get('cut')!==null?+q.get('cut'):1e9; resetAll(); let s=0;
+  while(s<T-1e-9){ const d=Math.min(0.02,T-s); if(s>=C&&mode==='circle') doCut(); sim(d); s+=d; if(gone) break; }
+  flashT=-1; }
+if(q.get('play')==='1') setPlaying(true);
+if(q.get('open')==='1'){ document.body.classList.add('open'); $('gear').classList.add('on'); }
+if(q.get('info')==='1'){ document.body.classList.add('info'); }
+if(q.get('top')==='1'){ topView(); }
+if(q.get('t')===null) resetAll();
+
+let last=performance.now();
+function loop(now){ const dt=Math.min(.1,(now-last)/1000); last=now;
+  if(playing&&!gone){ let r=dt; while(r>1e-9){ const d=Math.min(0.02,r); sim(d); r-=d; } }
+  layout(dt); ctl.update(); rend.render(scene,cam); lab.render(scene,cam); requestAnimationFrame(loop); }
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
